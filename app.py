@@ -168,4 +168,4 @@ else:
 # Auto-refresh
 st.markdown(f"⏳ Refreshing every {refresh_rate} seconds...")
 time.sleep(refresh_rate)
-st.experimental_rerun()
+#st.experimental_rerun()
