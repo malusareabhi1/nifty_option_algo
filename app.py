@@ -84,7 +84,16 @@ def monitor_exit(current_price, trade):
         return None, None
 
 # --- Main Logic ---
+
+
 spot = get_nifty_spot_price()
+try:
+    spot = float(spot)
+    st.write(f"Spot: ₹{spot:.2f}, ATM Strike: {atm_strike}")
+except (TypeError, ValueError):
+    st.error("❌ Spot value is not a valid number. Check your data source.")
+    st.write(f"Raw spot value: {spot}")
+    
 if spot is None:
     st.error("❌ Could not fetch NIFTY spot price")
     st.stop()
