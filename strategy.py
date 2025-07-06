@@ -5,3 +5,11 @@ def get_atm_strike(symbol="^NSEI"):
     spot_price = data['Close'].iloc[-1]
     atm_strike = round(spot_price / 50) * 50
     return atm_strike, spot_price
+
+def get_spot_price():
+    try:
+        data = yf.download("^NSEI", period="1d", interval="1m")
+        return data['Close'].iloc[-1]
+    except:
+        return None
+
