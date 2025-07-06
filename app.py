@@ -87,15 +87,17 @@ def monitor_exit(current_price, trade):
 
 
 spot = get_nifty_spot_price()
-st.write("Spot (raw):", spot, "Type:", type(spot))
+#st.write("Spot (raw):", spot, "Type:", type(spot))
+spot = float(spot)
 
-try:
-    spot = float(spot)
-    st.write(f"Spot: ₹{spot:.2f}, ATM Strike: {atm_strike}")
-except (TypeError, ValueError):
-    st.error("❌ Spot value is not a valid number. Check your data source.")
-    st.write(f"Raw spot value: {spot}")
-    
+# ATM Strike Calculation
+strike_gap = 50  # or 100 depending on NIFTY/BANKNIFTY
+atm_strike = round(spot / strike_gap) * strike_gap
+
+# Now safe to use
+st.write(f"Spot: ₹{spot:.2f}, ATM Strike: {atm_strike}")
+
+
 if spot is None:
     st.error("❌ Could not fetch NIFTY spot price")
     st.stop()
