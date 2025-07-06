@@ -14,7 +14,12 @@ expiry = st.text_input("Expiry (e.g., 11JUL24):", "11JUL24")
 
 if st.button("Get ATM Strike"):
     atm_strike, spot = get_atm_strike(symbol)
-    st.write(f"Spot: ₹{spot:.2f}, ATM Strike: {atm_strike}")
+    #st.write(f"Spot: ₹{spot:.2f}, ATM Strike: {atm_strike}")
+    if spot is not None and atm_strike is not None:
+        st.write(f"Spot: ₹{spot:.2f}, ATM Strike: {atm_strike}")
+    else:
+        st.error("❌ Unable to fetch spot price or calculate ATM strike.")
+
 
     if st.button("Backtest ATM Straddle"):
         result = backtest_straddle("NIFTY", expiry, atm_strike)
