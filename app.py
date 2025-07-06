@@ -1,68 +1,158 @@
+# streamlit_nifty_option_bot.py
 import streamlit as st
-from strategy import get_atm_strike
-from backtest import backtest_straddle
-from paper_trade import paper_trade, get_trade_log
-import pandas as pd
-import plotly.graph_objects as go
 import yfinance as yf
-from datetime import datetime
+import pandas as pd
+from datetime import datetime, timedelta
+import math
+import time
 
-st.title("🔁 Nifty Option Algo: Backtest + Paper Trade")
+st.set_page_config(page_title="NIFTY Options Algo Trading Bot", layout="wide")
+st.title("📈 NIFTY Options Paper Trading Bot – 3PM Breakout Strategy")
 
-symbol = "^NSEI"
-expiry = st.text_input("Expiry (e.g., 11JUL24):", "11JUL24")
+# Sidebar settings
+st.sidebar.header("⚙️ Settings")
+capital = st.sidebar.number_input("Initial Capital (₹)", value=100000, step=10000)
+risk_pct = st.sidebar.slider("Risk per Trade (%)", 0.5, 5.0, 2.0, step=0.5)
+offset = st.sidebar.number_input("Breakout/Breakdown Offset", value=100, step=10)
+refresh_rate = st.sidebar.slider("Refresh Interval (sec)", 30, 300, 60)
 
-if st.button("Get ATM Strike"):
-    atm_strike, spot = get_atm_strike(symbol)
-    #st.write(f"Spot: ₹{spot:.2f}, ATM Strike: {atm_strike}")
-    if spot is not None and atm_strike is not None:
-        st.write(f"Spot: ₹{spot:.2f}, ATM Strike: {atm_strike}")
+# Session state
+if "capital" not in st.session_state:
+    st.session_state.capital = capital
+if "position" not in st.session_state:
+    st.session_state.position = None
+if "logs" not in st.session_state:
+    st.session_state.logs = []
+
+# --- Utility Functions ---
+def get_nifty_spot_price():
+    df = yf.download("^NSEI", interval="1m", period="1d", progress=False)
+    if not df.empty:
+        return round(df['Close'].iloc[-1], 2)
+    return None
+
+def get_atm_strike(spot):
+    return int(round(spot / 50) * 50)
+
+def get_current_week_expiry():
+    today = datetime.now()
+    weekday = today.weekday()
+    expiry = today + timedelta((3 - weekday) % 7)
+    return expiry.strftime('%y%b%d').upper()
+
+def get_option_symbol(strike, opt_type='CE'):
+    expiry = get_current_week_expiry()
+    return f"NIFTY{expiry}{strike}{opt_type}"
+
+def fetch_option_price(symbol):
+    try:
+        df = yf.download(symbol + ".NS", period="1d", interval="1m", progress=False)
+        if not df.empty:
+            return round(df['Close'].iloc[-1], 2)
+    except:
+        return None
+    return None
+
+def calculate_quantity(option_price, capital, risk_pct):
+    risk_amt = capital * (risk_pct / 100)
+    max_loss = option_price * 0.3
+    qty = int(risk_amt / max_loss)
+    return qty
+
+def simulate_trade(entry_price, qty):
+    sl_price = round(entry_price * 0.7, 2)
+    target_price = round(entry_price + (entry_price - sl_price) * 1.5, 2)
+    return {
+        "entry": entry_price,
+        "sl": sl_price,
+        "target": target_price,
+        "qty": qty,
+        "status": "OPEN"
+    }
+
+def monitor_exit(current_price, trade):
+    if current_price <= trade['sl']:
+        pnl = (current_price - trade['entry']) * trade['qty']
+        return 'SL', pnl
+    elif current_price >= trade['target']:
+        pnl = (current_price - trade['entry']) * trade['qty']
+        return 'TARGET', pnl
+    elif datetime.now().time() >= datetime.strptime("15:25", "%H:%M").time():
+        pnl = (current_price - trade['entry']) * trade['qty']
+        return 'TIME EXIT', pnl
     else:
-        st.error("❌ Unable to fetch spot price or calculate ATM strike.")
+        return None, None
 
+# --- Main Logic ---
+spot = get_nifty_spot_price()
+if spot is None:
+    st.error("❌ Could not fetch NIFTY spot price")
+    st.stop()
 
-    if st.button("Backtest ATM Straddle"):
-        result = backtest_straddle("NIFTY", expiry, atm_strike)
-        if result is not None:
-            st.write(result)
-            st.success(f"Total P&L: ₹{result['P&L'].iloc[-1]:.2f}")
-        else:
-            st.error("Option data not available.")
+atm_strike = get_atm_strike(spot)
+st.write(f"Spot: ₹{spot:.2f}, ATM Strike: {atm_strike}")
 
-    qty = st.number_input("Lot Size", value=50)
-    sl = st.number_input("Stoploss %", value=0.2)
-    tgt = st.number_input("Target %", value=0.4)
-    entry_time = st.time_input("Paper Trade Entry Time", value=datetime.strptime("09:30:00", "%H:%M:%S").time())
+# Simulate 3PM levels for demo purposes
+threepm_high = spot + 50  # Simulated
+threepm_close = spot      # Simulated
 
-    if st.button("Paper Buy CE & PE"):
-        now = datetime.now().time()
-        if now >= entry_time:
-            df1 = paper_trade(f"NIFTY{expiry}{atm_strike}CE", "Buy", 100, qty, sl, tgt)
-            df2 = paper_trade(f"NIFTY{expiry}{atm_strike}PE", "Buy", 100, qty, sl, tgt)
-            df = pd.concat([df1, df2])
-            st.dataframe(df)
-        else:
-            st.warning(f"Current time {now.strftime('%H:%M:%S')} is before entry time {entry_time.strftime('%H:%M:%S')}")
+st.info(f"🕒 3PM High: ₹{threepm_high}, 3PM Close: ₹{threepm_close}")
 
-    if st.button("Refresh Trade Log"):
-        st.dataframe(get_trade_log())
+if not st.session_state.position:
+    if spot > threepm_high + offset:
+        symbol = get_option_symbol(atm_strike, "CE")
+        ltp = fetch_option_price(symbol)
+        if ltp:
+            qty = calculate_quantity(ltp, st.session_state.capital, risk_pct)
+            trade = simulate_trade(ltp, qty)
+            trade.update({"symbol": symbol, "type": "Breakout"})
+            st.session_state.position = trade
+            st.toast(f"🚀 Entered Breakout: {symbol} @ ₹{ltp}", icon="🟢")
+    elif spot < threepm_close - offset:
+        symbol = get_option_symbol(atm_strike, "PE")
+        ltp = fetch_option_price(symbol)
+        if ltp:
+            qty = calculate_quantity(ltp, st.session_state.capital, risk_pct)
+            trade = simulate_trade(ltp, qty)
+            trade.update({"symbol": symbol, "type": "Breakdown"})
+            st.session_state.position = trade
+            st.toast(f"🚨 Entered Breakdown: {symbol} @ ₹{ltp}", icon="🔴")
+else:
+    pos = st.session_state.position
+    ltp = fetch_option_price(pos['symbol'])
+    if ltp:
+        reason, pnl = monitor_exit(ltp, pos)
+        if reason:
+            st.toast(f"{reason} @ ₹{ltp} | P&L: ₹{pnl:.2f}", icon="💰" if pnl > 0 else "📉")
+            log = {
+                'Time': datetime.now(),
+                'Symbol': pos['symbol'],
+                'Type': pos['type'],
+                'Entry': pos['entry'],
+                'Exit': ltp,
+                'Qty': pos['qty'],
+                'P&L': round(pnl, 2),
+                'Reason': reason
+            }
+            st.session_state.logs.append(log)
+            st.session_state.capital += pnl
+            st.session_state.position = None
 
-    trade_df = get_trade_log()
-    if not trade_df.empty:
-        csv = trade_df.to_csv(index=False).encode('utf-8')
-        st.download_button("📥 Download Trade Log", csv, "trade_log.csv", "text/csv")
+# Show current position
+if st.session_state.position:
+    st.subheader("📌 Open Position")
+    st.write(st.session_state.position)
 
-    # Chart for CE price
-    if expiry and st.button("📈 Show CE Price Chart"):
-        ce_symbol = f"NIFTY{expiry}{atm_strike}CE.NS"
-        ce_data = yf.download(ce_symbol, period="1d", interval="5m")
-        if not ce_data.empty:
-            fig = go.Figure(data=[go.Candlestick(x=ce_data.index,
-                                                 open=ce_data['Open'],
-                                                 high=ce_data['High'],
-                                                 low=ce_data['Low'],
-                                                 close=ce_data['Close'])])
-            fig.update_layout(title=f"{ce_symbol} Price Chart", xaxis_title="Time", yaxis_title="Price")
-            st.plotly_chart(fig)
-        else:
-            st.warning("No CE data available.")
+# Trade Logs
+st.subheader("📋 Trade Log")
+log_df = pd.DataFrame(st.session_state.logs)
+if not log_df.empty:
+    st.dataframe(log_df)
+    st.success(f"Net P&L: ₹{log_df['P&L'].sum():,.2f} | Capital: ₹{st.session_state.capital:,.2f}")
+else:
+    st.info("No trades yet.")
+
+# Auto-refresh
+st.markdown(f"⏳ Refreshing every {refresh_rate} seconds...")
+time.sleep(refresh_rate)
+st.experimental_rerun()
