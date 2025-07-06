@@ -87,6 +87,8 @@ def monitor_exit(current_price, trade):
 
 
 spot = get_nifty_spot_price()
+st.write("Spot (raw):", spot, "Type:", type(spot))
+
 try:
     spot = float(spot)
     st.write(f"Spot: ₹{spot:.2f}, ATM Strike: {atm_strike}")
