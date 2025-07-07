@@ -99,6 +99,12 @@ spot = get_nifty_spot_price()
 #st.write("Spot (raw):", spot, "Type:", type(spot))
 spot = float(spot)
 
+#display data and col names
+st.write("First few rows:")
+st.write(spot.head())
+
+st.write("Columns:", spot.columns)
+
 # ATM Strike Calculation
 strike_gap = 50  # or 100 depending on NIFTY/BANKNIFTY
 atm_strike = round(spot / strike_gap) * strike_gap
