@@ -121,6 +121,15 @@ df.reset_index(inplace=True)
 # ✅ Flatten MultiIndex columns if needed
 if isinstance(df.columns, pd.MultiIndex):
     df.columns = ['_'.join(col).strip() if isinstance(col, tuple) else col for col in df.columns]
+
+df.rename(columns={datetime_col: 'datetime'}, inplace=True)
+ # ✅ Convert to datetime and localize
+df['datetime'] = pd.to_datetime(df['datetime'])
+if df['datetime'].dt.tz is None:
+    df['datetime'] = df['datetime'].dt.tz_localize('UTC')
+df['datetime'] = df['datetime'].dt.tz_convert('Asia/Kolkata')
+
+       
             
 st.write("First few rows:")
 st.write(df.head())
