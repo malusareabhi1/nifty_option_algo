@@ -91,7 +91,62 @@ def get_nifty_15min_chart():
     df.reset_index(inplace=True)
     return df
 
+def plot_candlestick_chart(df, df_3pm):
+    fig = go.Figure(data=[go.Candlestick(
+        x=df['datetime'],
+        open=df['open'],
+        high=df['high'],
+        low=df['low'],
+        close=df['close'],
+        name="NIFTY"
+    )])
 
+    fig.update_traces(increasing_line_color='green', decreasing_line_color='red')
+
+    # 🚀 Add horizontal lines from 3PM to next day 3PM
+    for i in range(len(df_3pm) - 1):
+        start_time = df_3pm.iloc[i]['datetime']
+        end_time = df_3pm.iloc[i + 1]['datetime']
+        high_val = df_3pm.iloc[i]['high']
+        low_val = df_3pm.iloc[i]['low']
+
+        fig.add_trace(go.Scatter(
+            x=[start_time, end_time],
+            y=[high_val, high_val],
+            mode='lines',
+            name='3PM High',
+            line=dict(color='orange', width=1.5, dash='dot'),
+            showlegend=(i == 0)  # Show legend only once
+        ))
+
+        fig.add_trace(go.Scatter(
+            x=[start_time, end_time],
+            y=[low_val, low_val],
+            mode='lines',
+            name='3PM Low',
+            line=dict(color='cyan', width=1.5, dash='dot'),
+            showlegend=(i == 0)
+        ))
+
+    fig.update_layout(
+        title="NIFTY 15-Min Chart (Last {} Trading Days)".format(analysis_days),
+        xaxis_title="DateTime (IST)",
+        yaxis_title="Price",
+        xaxis_rangeslider_visible=False,
+        xaxis=dict(
+            rangebreaks=[
+                dict(bounds=["sat", "mon"]),
+                dict(bounds=[16, 9.15], pattern="hour")
+            ],
+            showgrid=False
+        ),
+        yaxis=dict(showgrid=True),
+        plot_bgcolor='black',
+        paper_bgcolor='black',
+        font=dict(color='white'),
+        height=600
+    )
+    return fig
 # --- Main Logic ---
 
 
