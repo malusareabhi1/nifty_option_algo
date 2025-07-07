@@ -117,6 +117,11 @@ st.subheader("📉 NIFTY 15-Min Candlestick Chart")
 df = yf.download("^NSEI", interval="15m", period="5d", progress=False)
 df.dropna(inplace=True)
 df.reset_index(inplace=True)
+
+# ✅ Flatten MultiIndex columns if needed
+if isinstance(df.columns, pd.MultiIndex):
+    df.columns = ['_'.join(col).strip() if isinstance(col, tuple) else col for col in df.columns]
+            
 st.write("First few rows:")
 st.write(df.head())
 
