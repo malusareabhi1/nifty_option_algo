@@ -110,7 +110,7 @@ import plotly.graph_objects as go
 
 st.subheader("📉 NIFTY 15-Min Candlestick Chart")
 
-df = yf.download("NIFTYBEES.NS", interval="15m", period="5d", progress=False)
+df = yf.download("^NSEI", interval="15m", period="5d", progress=False)
 df.dropna(inplace=True)
 df.reset_index(inplace=True)
 
