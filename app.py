@@ -122,6 +122,14 @@ df.reset_index(inplace=True)
 if isinstance(df.columns, pd.MultiIndex):
     df.columns = ['_'.join(col).strip() if isinstance(col, tuple) else col for col in df.columns]
 
+# ✅ Find datetime column automatically
+datetime_col = next((col for col in df.columns if 'date' in col.lower() or 'time' in col.lower()), None)
+
+if not datetime_col:
+    st.error("❌ No datetime column found after reset_index().")
+    st.write("📋 Available columns:", df.columns.tolist())
+    st.stop()          
+
 df.rename(columns={datetime_col: 'datetime'}, inplace=True)
  # ✅ Convert to datetime and localize
 df['datetime'] = pd.to_datetime(df['datetime'])
