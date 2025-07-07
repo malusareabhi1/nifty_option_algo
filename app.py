@@ -97,6 +97,25 @@ atm_strike = round(spot / strike_gap) * strike_gap
 # Now safe to use
 st.write(f"Spot: ₹{spot:.2f}, ATM Strike: {atm_strike}")
 
+st.subheader("📉 NIFTY 15-Min Candlestick Chart (Last 5 Days)")
+df_chart = get_nifty_15min_chart()
+
+fig = go.Figure(data=[go.Candlestick(
+    x=df_chart['Datetime'],
+    open=df_chart['Open'],
+    high=df_chart['High'],
+    low=df_chart['Low'],
+    close=df_chart['Close'],
+    increasing_line_color='green',
+    decreasing_line_color='red'
+)])
+fig.update_layout(
+    xaxis_title='Time',
+    yaxis_title='Price',
+    xaxis_rangeslider_visible=False,
+    height=500
+)
+st.plotly_chart(fig, use_container_width=True)
 
 if spot is None:
     st.error("❌ Could not fetch NIFTY spot price")
@@ -164,6 +183,7 @@ if not log_df.empty:
     st.success(f"Net P&L: ₹{log_df['P&L'].sum():,.2f} | Capital: ₹{st.session_state.capital:,.2f}")
 else:
     st.info("No trades yet.")
+
 
 # Auto-refresh
 st.markdown(f"⏳ Refreshing every {refresh_rate} seconds...")
