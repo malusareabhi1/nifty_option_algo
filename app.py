@@ -168,6 +168,11 @@ st.write(f"Spot: ₹{spot:.2f}, ATM Strike: {atm_strike}")
 import plotly.graph_objects as go
 
 st.subheader("📉 NIFTY 15-Min Candlestick Chart")
+# Plot chart
+fig = plot_candlestick_chart(df, df_3pm)
+st.subheader("🕯️ NIFTY Candlestick Chart (15m)")
+st.plotly_chart(fig, use_container_width=True)
+
 
 def load_nifty_data(ticker="^NSEI", interval="15m", period="60d"):
     try:
