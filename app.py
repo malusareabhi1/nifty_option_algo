@@ -114,7 +114,6 @@ import plotly.graph_objects as go
 
 st.subheader("📉 NIFTY 15-Min Candlestick Chart")
 
-@st.cache_data(ttl=3600)
 def load_nifty_data(ticker="^NSEI", interval="15m", period="60d"):
     try:
         df = yf.download(ticker, interval=interval, period=period, progress=False)
@@ -152,6 +151,10 @@ def load_nifty_data(ticker="^NSEI", interval="15m", period="60d"):
                 (df['datetime'].dt.time <= pd.to_datetime("15:30").time())]
 
         return df
+
+    except Exception as e:
+        st.error(f"Error loading data: {e}")
+        return pd.DataFrame()
 
             
 
