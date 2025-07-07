@@ -97,10 +97,7 @@ def get_nifty_15min_chart():
 
 spot = get_nifty_spot_price()
 #display data and col names
-st.write("First few rows:")
-st.write(spot.head())
 
-st.write("Columns:", spot.columns)
 #st.write("Spot (raw):", spot, "Type:", type(spot))
 spot = float(spot)
 
@@ -120,6 +117,11 @@ st.subheader("📉 NIFTY 15-Min Candlestick Chart")
 df = yf.download("^NSEI", interval="15m", period="5d", progress=False)
 df.dropna(inplace=True)
 df.reset_index(inplace=True)
+st.write("First few rows:")
+st.write(df.head())
+
+st.write("Columns:", df.columns)
+
 
 if df.empty:
     st.warning("No candle data available.")
