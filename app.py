@@ -114,30 +114,45 @@ import plotly.graph_objects as go
 
 st.subheader("📉 NIFTY 15-Min Candlestick Chart")
 
-df = yf.download("^NSEI", interval="15m", period="5d", progress=False)
-df.dropna(inplace=True)
-df.reset_index(inplace=True)
+@st.cache_data(ttl=3600)
+def load_nifty_data(ticker="^NSEI", interval="15m", period="60d"):
+    try:
+        df = yf.download(ticker, interval=interval, period=period, progress=False)
+        if df.empty:
+            st.error("❌ No data returned from yfinance.")
+            st.stop()
 
-# ✅ Flatten MultiIndex columns if needed
-if isinstance(df.columns, pd.MultiIndex):
-    df.columns = ['_'.join(col).strip() if isinstance(col, tuple) else col for col in df.columns]
+        df.reset_index(inplace=True)
 
-# ✅ Find datetime column automatically
-datetime_col = next((col for col in df.columns if 'date' in col.lower() or 'time' in col.lower()), None)
+        # ✅ Flatten MultiIndex columns if needed
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = ['_'.join(col).strip() if isinstance(col, tuple) else col for col in df.columns]
 
-if not datetime_col:
-    st.error("❌ No datetime column found after reset_index().")
-    st.write("📋 Available columns:", df.columns.tolist())
-    st.stop()          
+        # ✅ Find datetime column automatically
+        datetime_col = next((col for col in df.columns if 'date' in col.lower() or 'time' in col.lower()), None)
 
-df.rename(columns={datetime_col: 'datetime'}, inplace=True)
- # ✅ Convert to datetime and localize
-df['datetime'] = pd.to_datetime(df['datetime'])
-if df['datetime'].dt.tz is None:
-    df['datetime'] = df['datetime'].dt.tz_localize('UTC')
-df['datetime'] = df['datetime'].dt.tz_convert('Asia/Kolkata')
+        if not datetime_col:
+            st.error("❌ No datetime column found after reset_index().")
+            st.write("📋 Available columns:", df.columns.tolist())
+            st.stop()
 
-       
+        df.rename(columns={datetime_col: 'datetime'}, inplace=True)
+
+        # ✅ Convert to datetime and localize
+        df['datetime'] = pd.to_datetime(df['datetime'])
+        if df['datetime'].dt.tz is None:
+            df['datetime'] = df['datetime'].dt.tz_localize('UTC')
+        df['datetime'] = df['datetime'].dt.tz_convert('Asia/Kolkata')
+
+        # ✅ Now lowercase column names
+        df.columns = [col.lower() for col in df.columns]
+
+        # ✅ Filter NSE market hours (9:15 to 15:30)
+        df = df[(df['datetime'].dt.time >= pd.to_datetime("09:15").time()) &
+                (df['datetime'].dt.time <= pd.to_datetime("15:30").time())]
+
+        return df
+
             
 st.write("First few rows:")
 st.write(df.head())
