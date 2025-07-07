@@ -154,32 +154,7 @@ def load_nifty_data(ticker="^NSEI", interval="15m", period="60d"):
         return df
 
             
-st.write("First few rows:")
-st.write(df.head())
 
-st.write("Columns:", df.columns)
-
-
-if df.empty:
-    st.warning("No candle data available.")
-else:
-    fig = go.Figure(data=[go.Candlestick(
-        x=df['Datetime'],
-        open=df['Open'],
-        high=df['High'],
-        low=df['Low'],
-        close=df['Close'],
-        increasing_line_color='green',
-        decreasing_line_color='red'
-    )])
-    fig.update_layout(
-        title="NIFTYBEES 15-min Chart",
-        xaxis_title="Time",
-        yaxis_title="Price",
-        xaxis_rangeslider_visible=False,
-        height=500
-    )
-    st.plotly_chart(fig, use_container_width=True)
 
 if spot is None:
     st.error("❌ Could not fetch NIFTY spot price")
