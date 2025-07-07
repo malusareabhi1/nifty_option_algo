@@ -5,6 +5,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 import math
 import time
+import plotly.graph_objects as go
 
 st.set_page_config(page_title="NIFTY Options Algo Trading Bot", layout="wide")
 st.title("📈 NIFTY Options Paper Trading Bot – 3PM Breakout Strategy")
@@ -82,6 +83,14 @@ def monitor_exit(current_price, trade):
         return 'TIME EXIT', pnl
     else:
         return None, None
+
+@st.cache_data(ttl=300)
+def get_nifty_15min_chart():
+    df = yf.download("^NSEI", interval="15m", period="5d", progress=False)
+    df.dropna(inplace=True)
+    df.reset_index(inplace=True)
+    return df
+
 
 # --- Main Logic ---
 
