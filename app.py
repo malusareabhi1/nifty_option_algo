@@ -96,14 +96,15 @@ def get_nifty_15min_chart():
 
 
 spot = get_nifty_spot_price()
-#st.write("Spot (raw):", spot, "Type:", type(spot))
-spot = float(spot)
-
 #display data and col names
 st.write("First few rows:")
 st.write(spot.head())
 
 st.write("Columns:", spot.columns)
+#st.write("Spot (raw):", spot, "Type:", type(spot))
+spot = float(spot)
+
+
 
 # ATM Strike Calculation
 strike_gap = 50  # or 100 depending on NIFTY/BANKNIFTY
