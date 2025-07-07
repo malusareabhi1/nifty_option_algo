@@ -106,25 +106,34 @@ atm_strike = round(spot / strike_gap) * strike_gap
 # Now safe to use
 st.write(f"Spot: ₹{spot:.2f}, ATM Strike: {atm_strike}")
 
-st.subheader("📉 NIFTY 15-Min Candlestick Chart (Last 5 Days)")
-df_chart = get_nifty_15min_chart()
+import plotly.graph_objects as go
 
-fig = go.Figure(data=[go.Candlestick(
-    x=df_chart['Datetime'],
-    open=df_chart['Open'],
-    high=df_chart['High'],
-    low=df_chart['Low'],
-    close=df_chart['Close'],
-    increasing_line_color='green',
-    decreasing_line_color='red'
-)])
-fig.update_layout(
-    xaxis_title='Time',
-    yaxis_title='Price',
-    xaxis_rangeslider_visible=False,
-    height=500
-)
-st.plotly_chart(fig, use_container_width=True)
+st.subheader("📉 NIFTY 15-Min Candlestick Chart")
+
+df = yf.download("NIFTYBEES.NS", interval="15m", period="5d", progress=False)
+df.dropna(inplace=True)
+df.reset_index(inplace=True)
+
+if df.empty:
+    st.warning("No candle data available.")
+else:
+    fig = go.Figure(data=[go.Candlestick(
+        x=df['Datetime'],
+        open=df['Open'],
+        high=df['High'],
+        low=df['Low'],
+        close=df['Close'],
+        increasing_line_color='green',
+        decreasing_line_color='red'
+    )])
+    fig.update_layout(
+        title="NIFTYBEES 15-min Chart",
+        xaxis_title="Time",
+        yaxis_title="Price",
+        xaxis_rangeslider_visible=False,
+        height=500
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
 if spot is None:
     st.error("❌ Could not fetch NIFTY spot price")
