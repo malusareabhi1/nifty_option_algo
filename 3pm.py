@@ -395,3 +395,9 @@ st.dataframe(trade_log_df.style.applymap(color_pnl, subset=['P&L']))
 
 show_trade_metrics(trade_log_df, "Breakout Trades")
 
+
+# Show breakdown trades
+st.subheader("📉 Breakdown Trades – Next Day Cross Below 3PM Close & Drop Offset Points")
+st.dataframe(breakdown_df.style.applymap(color_pnl, subset=['P&L']))
+
+show_trade_metrics(breakdown_df, "Breakdown Trades")
