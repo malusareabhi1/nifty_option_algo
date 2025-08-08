@@ -266,22 +266,22 @@ def plot_candlestick_chart(df, df_3pm):
         height=600
     )
     if len(df_3pm) > 0:
-    last_candle = df_3pm.iloc[-1]
-    start_time = last_candle['datetime']
-    # Extend line 1 hour after last candle, or till last data timestamp
-    end_time = df['datetime'].max() + pd.Timedelta(minutes=15)  # 15 min beyond last data
-
-    high_val = last_candle['high']
-    low_val = last_candle['low']
-
-    fig.add_trace(go.Scatter(
-        x=[start_time, end_time],
-        y=[high_val, high_val],
-        mode='lines',
-        name='3PM High',
-        line=dict(color='orange', width=1.5, dash='dot'),
-        showlegend=False  # No need to show legend again
-    ))
+        last_candle = df_3pm.iloc[-1]
+        start_time = last_candle['datetime']
+        # Extend line 1 hour after last candle, or till last data timestamp
+        end_time = df['datetime'].max() + pd.Timedelta(minutes=15)  # 15 min beyond last data
+    
+        high_val = last_candle['high']
+        low_val = last_candle['low']
+    
+        fig.add_trace(go.Scatter(
+            x=[start_time, end_time],
+            y=[high_val, high_val],
+            mode='lines',
+            name='3PM High',
+            line=dict(color='orange', width=1.5, dash='dot'),
+            showlegend=False  # No need to show legend again
+        ))
 
     fig.add_trace(go.Scatter(
         x=[start_time, end_time],
