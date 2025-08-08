@@ -33,10 +33,15 @@ if df is None or df.empty:
 # Flatten MultiIndex column names to strings
 df.columns = [str(c) for c in df.columns]
 
-# reset index and rename datetime column
+# After downloading
+df.columns = [str(c).strip().lower() for c in df.columns]
+
+# Reset index
 df = df.reset_index()
-dt_col = df.columns[0]
-df = df.rename(columns={dt_col: "Datetime"})
+
+# Rename datetime column
+df = df.rename(columns={df.columns[0]: "datetime"})
+
 
 # ---- Robust UTC -> IST conversion ----
 # ensure datetime dtype
