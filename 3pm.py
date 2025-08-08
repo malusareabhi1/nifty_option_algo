@@ -38,6 +38,17 @@ df.columns = [str(c).strip().lower() for c in df.columns]
 
 # Reset index
 df = df.reset_index()
+# Flatten and normalize all column names
+df.columns = [str(c).strip().lower() for c in df.columns]
+
+# Rename to standard OHLC names so later code can use "High", "Low"
+df = df.rename(columns={
+    "open": "Open",
+    "high": "High",
+    "low": "Low",
+    "close": "Close"
+})
+
 
 # Rename datetime column
 df = df.rename(columns={df.columns[0]: "datetime"})
