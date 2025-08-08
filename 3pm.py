@@ -45,7 +45,12 @@ df = df.rename(columns={df.columns[0]: "datetime"})
 
 # ---- Robust UTC -> IST conversion ----
 # ensure datetime dtype
-df["Datetime"] = pd.to_datetime(df["Datetime"], errors="coerce")
+#df["Datetime"] = pd.to_datetime(df["Datetime"], errors="coerce")
+# After reset_index()
+date_col = df.columns[0]  # first column after reset
+df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+df = df.rename(columns={date_col: "Datetime"})
+
 
 # If tz-naive: localize to UTC then convert. If already tz-aware: just convert.
 try:
