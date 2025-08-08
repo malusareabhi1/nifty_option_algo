@@ -15,19 +15,18 @@ start_date = end_date - timedelta(days=3)
 
 try:
     df = yf.download(symbol, start=start_date, end=end_date, interval="15m")
-    
+
     # Ensure column names are standard
-   def col_to_str(col):
+    def col_to_str(col):
         if isinstance(col, tuple):
             # Join tuple elements with underscore or space
             col_str = "_".join([str(c) for c in col if c])
         else:
             col_str = str(col)
         return col_str.capitalize()
-    
-        df.columns = [col_to_str(col) for col in df.columns]
 
-    
+    df.columns = [col_to_str(col) for col in df.columns]
+
     if not set(['Open', 'High', 'Low', 'Close']).issubset(df.columns):
         st.error(f"Missing OHLC columns in downloaded data: {df.columns.tolist()}")
     else:
