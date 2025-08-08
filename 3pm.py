@@ -38,17 +38,23 @@ df.columns = [str(c).strip().lower() for c in df.columns]
 
 # Reset index
 df = df.reset_index()
-# Flatten and normalize all column names
+# Normalize all column names
 df.columns = [str(c).strip().lower() for c in df.columns]
 
-# Rename to standard OHLC names so later code can use "High", "Low"
-df = df.rename(columns={
+# Standardize to capitalized OHLC names
+rename_map = {
     "open": "Open",
     "high": "High",
     "low": "Low",
     "close": "Close"
-})
+}
+df = df.rename(columns=rename_map)
 
+# Make sure we have these columns
+missing = [col for col in ["Open", "High", "Low", "Close"] if col not in df.columns]
+if missing:
+    st.error(f"Missing columns in data: {missing}")
+    st.stop()
 
 # Rename datetime column
 df = df.rename(columns={df.columns[0]: "datetime"})
