@@ -30,9 +30,12 @@ if df is None or df.empty:
     st.error("No data returned. Try another symbol or try again later.")
     st.stop()
 
-# reset index and make sure datetime column name is predictable
+# Flatten MultiIndex column names to strings
+df.columns = [str(c) for c in df.columns]
+
+# reset index and rename datetime column
 df = df.reset_index()
-dt_col = df.columns[0]  # typically 'Datetime' or the first column after reset_index
+dt_col = df.columns[0]
 df = df.rename(columns={dt_col: "Datetime"})
 
 # ---- Robust UTC -> IST conversion ----
