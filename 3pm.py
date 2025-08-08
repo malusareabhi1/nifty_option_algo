@@ -355,6 +355,35 @@ df_3pm = df_3pm.rename(columns={
 })
 #st.write("📋 df_3pm Columns:", df_3pm.columns.tolist())
 # Plot chart
+# After the for loop for all but last 3PM candle, add this:
+
+if len(df_3pm) > 0:
+    last_candle = df_3pm.iloc[-1]
+    start_time = last_candle['datetime']
+    # Extend line 1 hour after last candle, or till last data timestamp
+    end_time = df['datetime'].max() + pd.Timedelta(minutes=15)  # 15 min beyond last data
+
+    high_val = last_candle['high']
+    low_val = last_candle['low']
+
+    fig.add_trace(go.Scatter(
+        x=[start_time, end_time],
+        y=[high_val, high_val],
+        mode='lines',
+        name='3PM High',
+        line=dict(color='orange', width=1.5, dash='dot'),
+        showlegend=False  # No need to show legend again
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=[start_time, end_time],
+        y=[low_val, low_val],
+        mode='lines',
+        name='3PM Low',
+        line=dict(color='cyan', width=1.5, dash='dot'),
+        showlegend=False
+    ))
+
 fig = plot_candlestick_chart(df, df_3pm)
 st.subheader("🕯️ NIFTY Candlestick Chart (15m)")
 st.plotly_chart(fig, use_container_width=True)
