@@ -25,6 +25,17 @@ try:
             col_str = str(col)
         return col_str.capitalize()
 
+    def clean_col(col):
+        if isinstance(col, tuple):
+            col_str = "_".join([str(c) for c in col if c])
+        else:
+            col_str = str(col)
+        # Remove symbol suffix after last underscore
+        if '_' in col_str:
+            col_str = col_str.rsplit('_', 1)[0]
+        return col_str.strip().replace(' ', '').capitalize()
+
+
     df.columns = [col_to_str(col) for col in df.columns]
 
     if not set(['Open', 'High', 'Low', 'Close']).issubset(df.columns):
