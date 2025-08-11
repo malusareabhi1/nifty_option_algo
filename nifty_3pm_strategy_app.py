@@ -9,7 +9,7 @@ import pytz
 # --- Combined Condition Detection ---
 days_to_analyze = st.sidebar.slider(
     "Select number of past days to analyze", 
-    min_value=5, max_value=90, value=5, step=1
+    min_value=3, max_value=20, value=5, step=1
 )
 
 def detect_all_conditions(df):
