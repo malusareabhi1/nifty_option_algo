@@ -389,15 +389,16 @@ fig = plot_candlestick_chart(df, df_3pm)
 st.subheader("🕯️ NIFTY Candlestick Chart (15m)")
 st.plotly_chart(fig, use_container_width=True)
 
-# Show breakout trades
-st.subheader("📘 Breakout Trades – Next Day Break 3PM High + Offset Points")
-#st.dataframe(trade_log_df.style.applymap(color_pnl, subset=['P&L']))
+# Breakout Trades
+st.subheader("📈 Breakout Trades")
+if not trade_log_df.empty and "P&L" in trade_log_df.columns:
+    st.dataframe(trade_log_df.style.applymap(color_pnl, subset=["P&L"]))
+else:
+    st.warning("No breakout trades found for the selected period/offset.")
 
-#show_trade_metrics(trade_log_df, "Breakout Trades")
-
-
-# Show breakdown trades
-st.subheader("📉 Breakdown Trades – Next Day Cross Below 3PM Close & Drop Offset Points")
-#st.dataframe(breakdown_df.style.applymap(color_pnl, subset=['P&L']))
-
-#show_trade_metrics(breakdown_df, "Breakdown Trades")
+# Breakdown Trades
+st.subheader("📉 Breakdown Trades")
+if not breakdown_df.empty and "P&L" in breakdown_df.columns:
+    st.dataframe(breakdown_df.style.applymap(color_pnl, subset=["P&L"]))
+else:
+    st.warning("No breakdown trades found for the selected period/offset.")
