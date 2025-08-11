@@ -800,3 +800,165 @@ st.dataframe(signals_df.style.applymap(
     subset=['Condition1_BuyCall','Condition2_BuyPut','Condition3_BuyCall','Condition4_BuyPut']
 ))
 ##################################################################################
+def simulate_option_premium(underlying_price, strike_price, option_type):
+    """
+    Simplified premium simulation:
+    - ITM Call: premium = (underlying_price - strike_price) + base_premium
+    - ITM Put: premium = (strike_price - underlying_price) + base_premium
+    - base_premium is fixed to 20 for example
+    """
+    base_premium = 20
+    if option_type == 'call':
+        intrinsic = max(0, underlying_price - strike_price)
+    else:
+        intrinsic = max(0, strike_price - underlying_price)
+    return intrinsic + base_premium
+
+def simulate_trades(df, signals_df):
+    """
+    Simulate trades based on signals and underlying price candles.
+    For each triggered condition, simulate:
+    - Buy nearest ITM option premium at candle close price
+    - Monitor next candles for trailing SL, partial profit, time exit
+    """
+
+    trades = []
+
+    lot_size = 750
+    position_size = 10  # lots
+
+    for idx, row in signals_df.iterrows():
+        day1 = row['Day1_Date']
+        # Find candles for day1 from df
+        day1_candles = df[df['datetime'].dt.date == day1].reset_index(drop=True)
+        if day1_candles.empty:
+            continue
+        
+        # Entry time is candle after 9:15 candle (usually 9:30 candle)
+        # For simplicity, assume entry price at close of 9:30 candle
+        entry_candle_idx = day1_candles.index[day1_candles['datetime'].dt.time == time(9,30)]
+        if len(entry_candle_idx) == 0:
+            continue
+        entry_idx = entry_candle_idx[0]
+        entry_candle = day1_candles.loc[entry_idx]
+
+        underlying_entry_price = entry_candle['close']
+
+        # Define strike price as nearest ITM for call or put - simplified
+        # Assuming strike price rounded to nearest 100
+        strike_price = round(underlying_entry_price / 100) * 100
+
+        # Conditions checking
+        for cond_num, (flag_col, opt_type) in enumerate([
+            ('Condition1_BuyCall', 'call'),
+            ('Condition2_BuyPut', 'put'),
+            ('Condition3_BuyCall', 'call'),
+            ('Condition4_BuyPut', 'put'),
+        ], 1):
+            if row[flag_col]:
+                entry_premium = simulate_option_premium(underlying_entry_price, strike_price, opt_type)
+                stoploss_price = entry_premium * 0.90
+                target_price = entry_premium * 1.10
+
+                # Trade variables
+                position_qty = lot_size * position_size
+                qty_half = position_qty / 2
+
+                trade_open_time = entry_candle['datetime']
+                trade_close_time = None
+                exit_reason = None
+                exit_price = None
+                qty_remaining = position_qty
+                profit_realized = 0
+
+                # Monitor next candles max 16 minutes = 1 candle (for 15 min interval)
+                # So only candle at index entry_idx + 1
+                next_idx = entry_idx + 1
+                if next_idx < len(day1_candles):
+                    next_candle = day1_candles.loc[next_idx]
+                    # Simulate option premium at next candle close
+                    premium_next = simulate_option_premium(next_candle['close'], strike_price, opt_type)
+
+                    # Check partial profit (>= target price)
+                    if premium_next >= target_price:
+                        # Book 50% profit at target price
+                        profit_realized += qty_half * (target_price - entry_premium)
+                        qty_remaining = qty_half
+                        # Update stoploss to entry price for remaining qty (trailing)
+                        stoploss_price = entry_premium
+
+                        # Now check stoploss on next candle after partial profit booked
+                        # For demo, assume next candle after next_candle
+                        next_next_idx = next_idx + 1
+                        if next_next_idx < len(day1_candles):
+                            next_next_candle = day1_candles.loc[next_next_idx]
+                            premium_next_next = simulate_option_premium(next_next_candle['close'], strike_price, opt_type)
+                            if premium_next_next <= stoploss_price:
+                                exit_reason = "Stoploss hit after partial profit"
+                                trade_close_time = next_next_candle['datetime']
+                                exit_price = premium_next_next
+                                profit_realized += qty_remaining * (exit_price - entry_premium)
+                                qty_remaining = 0
+                            else:
+                                # Time exit if no SL hit after partial profit
+                                exit_reason = "Time exit after partial profit"
+                                trade_close_time = next_next_candle['datetime']
+                                exit_price = premium_next_next
+                                profit_realized += qty_remaining * (exit_price - entry_premium)
+                                qty_remaining = 0
+                        else:
+                            # No further candles, time exit at next candle
+                            exit_reason = "Time exit after partial profit (no more candles)"
+                            trade_close_time = next_candle['datetime']
+                            exit_price = premium_next
+                            profit_realized += qty_remaining * (exit_price - entry_premium)
+                            qty_remaining = 0
+
+                    elif premium_next <= stoploss_price:
+                        # Stoploss hit, exit full position
+                        exit_reason = "Stoploss hit"
+                        trade_close_time = next_candle['datetime']
+                        exit_price = premium_next
+                        profit_realized += qty_remaining * (exit_price - entry_premium)
+                        qty_remaining = 0
+
+                    else:
+                        # No TP or SL hit - time exit at next candle close
+                        exit_reason = "Time exit"
+                        trade_close_time = next_candle['datetime']
+                        exit_price = premium_next
+                        profit_realized += qty_remaining * (exit_price - entry_premium)
+                        qty_remaining = 0
+                else:
+                    # No next candle, time exit immediately
+                    exit_reason = "Time exit (no next candle)"
+                    trade_close_time = entry_candle['datetime']
+                    exit_price = entry_premium
+                    profit_realized = 0
+
+                trades.append({
+                    'Trade_Condition': f'Condition {cond_num}',
+                    'Trade_Date': day1,
+                    'Entry_Time': trade_open_time,
+                    'Exit_Time': trade_close_time,
+                    'Option_Type': opt_type,
+                    'Strike_Price': strike_price,
+                    'Entry_Premium': entry_premium,
+                    'Exit_Premium': exit_price,
+                    'Position_Qty': position_qty,
+                    'Profit': profit_realized,
+                    'Exit_Reason': exit_reason
+                })
+
+    return pd.DataFrame(trades)
+
+# assuming `signals_df` is your DataFrame from detect_all_conditions(df)
+trade_results = simulate_trades(df, signals_df)
+
+st.subheader("Simulated Trades and Results")
+if not trade_results.empty:
+    st.dataframe(trade_results)
+else:
+    st.write("No trades triggered for the selected period.")
+
+#################################################################################################
