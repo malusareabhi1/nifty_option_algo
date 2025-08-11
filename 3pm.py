@@ -5,6 +5,10 @@ import plotly.graph_objects as go
 import numpy as np
 #import plotly.express as px
 #import plotly.express as px
+from streamlit_autorefresh import st_autorefresh
+
+# Auto-refresh every 5 minutes (300 seconds = 300,000 ms)
+st_autorefresh(interval=5 * 60 * 1000, key="candlestick_refresh")
 st.set_page_config(page_title="NIFTY 15-Min Chart with 3PM Breakout Strategy", layout="wide")
 
 st.title("📈 NIFTY 15-Min Chart – 3PM Breakout/Breakdown Strategy")
