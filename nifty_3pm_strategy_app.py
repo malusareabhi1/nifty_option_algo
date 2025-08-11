@@ -314,8 +314,8 @@ df = load_data(days_to_analyze)
 st.write(f"Loaded data for last {days_to_analyze} trading days (weekdays only).")
 
 st.subheader("Raw Data Sample")
-st.dataframe(df.tail(10))
-
+#st.dataframe(df.tail(10))
+st.dataframe(df)
 st.subheader("Detecting Strategy Signals...")
 signals_df = detect_all_conditions(df)
 if not signals_df.empty:
