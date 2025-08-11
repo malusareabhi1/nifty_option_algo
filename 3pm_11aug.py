@@ -30,12 +30,18 @@ data['Datetime'] = pd.to_datetime(data['Datetime']).dt.tz_localize(None)  # Remo
 
 # Helper function to find 3:00-3:15 PM candle for a trading day
 def get_3pm_candle(df, day):
-    # Filter data for the given day and time between 3:00 and 3:15 PM
-    mask = (df['Datetime'].dt.date == day) & (df['Datetime'].dt.time >= time(15, 0)) & (df['Datetime'].dt.time < time(15, 15))
+    # yfinance timestamp is candle END time
+    # So 3:15 PM candle ends exactly at 3:15 PM
+    mask = (df['Datetime'].dt.date == day) & (df['Datetime'].dt.time == time(15, 15))
     candle = df.loc[mask]
+    if candle.empty:
+        # If exact 3:15 not found, try nearest between 3:10 to 3:20 PM
+        mask = (df['Datetime'].dt.date == day) & (df['Datetime'].dt.time >= time(15, 10)) & (df['Datetime'].dt.time <= time(15, 20))
+        candle = df.loc[mask]
     if candle.empty:
         return None
     return candle.iloc[0]
+
 
 # Show 3PM candle lines on Day 0
 all_days = sorted(data['Datetime'].dt.date.unique())
