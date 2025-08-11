@@ -455,3 +455,10 @@ def detect_condition1_breakout(df):
 
     return pd.DataFrame(signals)
 
+condition1_signals = detect_condition1_breakout(df)
+st.subheader("Condition 1 – Next Day Breakout Upwards Signals")
+if not condition1_signals.empty:
+    st.dataframe(condition1_signals.style.applymap(
+        lambda v: 'background-color: lightgreen' if v is True else '', subset=['Buy_Call_Triggered']))
+else:
+    st.write("No breakout signals detected.")
