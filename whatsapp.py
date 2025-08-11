@@ -1,33 +1,14 @@
-import streamlit as st
 from twilio.rest import Client
 
-# Twilio credentials (store securely in Streamlit secrets)
-TWILIO_ACCOUNT_SID = st.secrets["TWILIO_ACCOUNT_SID"]
-TWILIO_AUTH_TOKEN = st.secrets["TWILIO_AUTH_TOKEN"]
-TWILIO_WHATSAPP_NUMBER = "whatsapp:+919881999644"  # Twilio sandbox number
+account_sid = 'AC0ab7d53d5c46e69e2e766441b6ba7de1'
+auth_token = '[AuthToken]'
+client = Client(account_sid, auth_token)
 
-def send_whatsapp_message(to_number, message):
-    try:
-        client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-        client.messages.create(
-            from_=TWILIO_WHATSAPP_NUMBER,
-            body=message,
-            to=f"whatsapp:{to_number}"
-        )
-        return True
-    except Exception as e:
-        st.error(f"Error sending message: {e}")
-        return False
+message = client.messages.create(
+  from_='whatsapp:+14155238886',
+  content_sid='HXb5b62575e6e4ff6129ad7c8efe1f983e',
+  content_variables='{"1":"12/1","2":"3pm"}',
+  to='whatsapp:+919881999644'
+)
 
-# Streamlit UI
-st.title("📲 Send WhatsApp Message")
-
-recipient_number = st.text_input("Recipient Number (with country code, e.g. +919876543210)")
-message_text = st.text_area("Message")
-
-if st.button("Send Message"):
-    if recipient_number and message_text:
-        if send_whatsapp_message(recipient_number, message_text):
-            st.success("✅ Message sent successfully!")
-    else:
-        st.warning("Please fill in both fields.")
+print(message.sid)
