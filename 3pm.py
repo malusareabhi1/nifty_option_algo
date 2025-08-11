@@ -625,3 +625,73 @@ if not cond3_signals.empty:
         lambda v: 'background-color: lightgreen' if v is True else '', subset=['Buy_Call_Triggered']))
 else:
     st.write("No Major Gap Up signals detected.")
+###################################################################
+def detect_condition4_breakout_downwards(df):
+    """
+    Detect Condition 4 – Next Day Breakout Downwards (No Major Gap):
+    - Mark Day 0 3:00-3:15 PM candle open & close (reference lines).
+    - On Day 1, check first 15-min candle (9:15-9:30).
+    - If candle moves from above to below both reference lines and closes below both, trigger Buy Put.
+    
+    Returns DataFrame with signals.
+    """
+    df_3pm = df[(df['datetime'].dt.hour == 15) & (df['datetime'].dt.minute == 0)].copy()
+    df_3pm['date'] = df_3pm['datetime'].dt.date
+    
+    df_915 = df[(df['datetime'].dt.hour == 9) & (df['datetime'].dt.minute == 15)].copy()
+    df_915['date'] = df_915['datetime'].dt.date
+    
+    signals = []
+    
+    for i in range(len(df_3pm) - 1):
+        day0 = df_3pm.iloc[i]
+        next_day = df_3pm.iloc[i + 1]['date']
+        
+        candle_915 = df_915[df_915['date'] == next_day]
+        
+        if candle_915.empty:
+            continue  # Skip if missing candle
+        
+        candle_915 = candle_915.iloc[0]
+        
+        # Reference lines from Day 0 3PM candle
+        ref_open = day0['open']
+        ref_close = day0['close']
+        upper_ref = max(ref_open, ref_close)
+        lower_ref = min(ref_open, ref_close)
+        
+        # Check if 9:15 candle opens above both reference lines
+        open_above_both = candle_915['open'] > upper_ref
+        
+        # Check if 9:15 candle low is below both reference lines (crossed down)
+        low_below_both = candle_915['low'] < lower_ref
+        
+        # Check if 9:15 candle closes below both reference lines
+        close_below_both = candle_915['close'] < lower_ref
+        
+        buy_put_signal = False
+        
+        if open_above_both and low_below_both and close_below_both:
+            buy_put_signal = True
+        
+        signals.append({
+            'Day0_3PM_Date': day0['date'],
+            'Day1_Date': next_day,
+            'Day0_3PM_Open': ref_open,
+            'Day0_3PM_Close': ref_close,
+            'Day1_9_15_Open': candle_915['open'],
+            'Day1_9_15_Low': candle_915['low'],
+            'Day1_9_15_Close': candle_915['close'],
+            'Buy_Put_Triggered': buy_put_signal
+        })
+        
+    return pd.DataFrame(signals)
+#####################
+cond4_signals = detect_condition4_breakout_downwards(df)
+st.subheader("Condition 4 – Next Day Breakout Downwards (No Major Gap) Signals")
+if not cond4_signals.empty:
+    st.dataframe(cond4_signals.style.applymap(
+        lambda v: 'background-color: lightcoral' if v is True else '', subset=['Buy_Put_Triggered']))
+else:
+    st.write("No Condition 4 signals detected.")
+###########################################################################################
