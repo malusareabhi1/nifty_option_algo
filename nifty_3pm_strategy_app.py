@@ -288,15 +288,13 @@ def load_data():
     df = yf.download(ticker, period="5d", interval="15m")
     df.reset_index(inplace=True)
     
-    # If columns are MultiIndex, flatten them
+        # Flatten MultiIndex columns if any
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = df.columns.get_level_values(0)
-    
-    # Make columns lowercase for uniform access
     df.columns = [col.lower() for col in df.columns]
     
-    # Convert datetime column properly
     df['datetime'] = pd.to_datetime(df['datetime'])
+    
     # Filter only working days (Mon-Fri)
     df = df[df['datetime'].dt.weekday < 5].copy()
 
