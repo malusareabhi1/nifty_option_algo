@@ -297,6 +297,8 @@ def load_data():
     
     # Convert datetime column properly
     df['datetime'] = pd.to_datetime(df['datetime'])
+    # Filter only working days (Mon-Fri)
+    df = df[df['datetime'].dt.weekday < 5].copy()
 
     return df
 
