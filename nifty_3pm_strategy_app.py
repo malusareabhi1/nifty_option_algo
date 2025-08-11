@@ -3,6 +3,7 @@ import pandas as pd
 import yfinance as yf
 from datetime import datetime, time
 import plotly.graph_objects as go
+
 import pytz
 
 # --- Combined Condition Detection ---
@@ -284,7 +285,7 @@ def plot_candles_with_signals(df, signals_df):
 st.title("Nifty 15-Min Options Strategy Backtesting")
 
 @st.cache_data(ttl=600)
-import pytz  # <-- Add this import
+
 
 def load_data():
     ticker = "^NSEI"
@@ -298,9 +299,15 @@ def load_data():
     df['datetime'] = pd.to_datetime(df['datetime'])
 
     local_tz = pytz.timezone('Asia/Kolkata')
-    df['datetime'] = df['datetime'].dt.tz_localize('UTC').dt.tz_convert(local_tz)
 
-    df = df[df['datetime'].dt.weekday < 5].copy()  # Only Mon-Fri
+    # Check if datetime column is tz-naive or tz-aware
+    if df['datetime'].dt.tz is None:
+        df['datetime'] = df['datetime'].dt.tz_localize('UTC').dt.tz_convert(local_tz)
+    else:
+        df['datetime'] = df['datetime'].dt.tz_convert(local_tz)
+
+    # Filter only working days
+    df = df[df['datetime'].dt.weekday < 5].copy()
 
     return df
 
