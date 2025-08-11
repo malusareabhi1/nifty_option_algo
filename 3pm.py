@@ -403,16 +403,55 @@ fig = plot_candlestick_chart(df, df_3pm)
 st.subheader("🕯️ NIFTY Candlestick Chart (15m)")
 st.plotly_chart(fig, use_container_width=True)
 
-# Breakout Trades
-st.subheader("📈 Breakout Trades")
-if not trade_log_df.empty and "P&L" in trade_log_df.columns:
-    st.dataframe(trade_log_df.style.applymap(color_pnl, subset=["P&L"]))
-else:
-    st.warning("No breakout trades found for the selected period/offset.")
+def detect_condition1_breakout(df):
+    """
+    Detect Condition 1: Next Day Breakout Upwards (No Major Gap)
+    - Mark Open and Close of Day 0 3:00-3:15 PM candle as reference lines.
+    - On Day 1, check 9:15-9:30 AM candle:
+      If candle moves from below to above both reference lines and closes above both, signal Buy Call.
+    
+    Returns a DataFrame with dates and signal status.
+    """
 
-# Breakdown Trades
-st.subheader("📉 Breakdown Trades")
-if not breakdown_df.empty and "P&L" in breakdown_df.columns:
-    st.dataframe(breakdown_df.style.applymap(color_pnl, subset=["P&L"]))
-else:
-    st.warning("No breakdown trades found for the selected period/offset.")
+    # Filter 3:00–3:15 PM candles
+    df_3pm = df[(df['datetime'].dt.hour == 15) & (df['datetime'].dt.minute == 0)].copy()
+    df_3pm['date'] = df_3pm['datetime'].dt.date
+
+    # Filter 9:15–9:30 AM candles
+    df_915 = df[(df['datetime'].dt.hour == 9) & (df['datetime'].dt.minute == 15)].copy()
+    df_915['date'] = df_915['datetime'].dt.date
+
+    signals = []
+
+    for i in range(len(df_3pm) - 1):
+        day0 = df_3pm.iloc[i]
+        day1 = df_915[df_915['date'] == df_3pm.iloc[i + 1]['date']]
+
+        if day1.empty:
+            continue  # No 9:15 candle for next day, skip
+
+        day1_candle = day1.iloc[0]
+
+        open_3pm = day0['open']
+        close_3pm = day0['close']
+
+        # Condition: Day1 9:15 candle opens below both Day0 3PM open and close
+        open_cond = day1_candle['open'] < open_3pm and day1_candle['open'] < close_3pm
+
+        # Condition: Day1 9:15 candle closes above both Day0 3PM open and close
+        close_cond = day1_candle['close'] > open_3pm and day1_candle['close'] > close_3pm
+
+        buy_call_signal = open_cond and close_cond
+
+        signals.append({
+            'Day0_3PM_Date': day0['date'],
+            'Day1_Date': day1_candle['date'],
+            'Day0_3PM_Open': open_3pm,
+            'Day0_3PM_Close': close_3pm,
+            'Day1_9_15_Open': day1_candle['open'],
+            'Day1_9_15_Close': day1_candle['close'],
+            'Buy_Call_Triggered': buy_call_signal
+        })
+
+    return pd.DataFrame(signals)
+
