@@ -284,24 +284,23 @@ def plot_candles_with_signals(df, signals_df):
 st.title("Nifty 15-Min Options Strategy Backtesting")
 
 @st.cache_data(ttl=600)
+import pytz  # <-- Add this import
+
 def load_data():
     ticker = "^NSEI"
-    df = yf.download(ticker, period="5d", interval="15m")
+    df = yf.download(ticker, period="30d", interval="15m")
     df.reset_index(inplace=True)
-    
-        # Flatten MultiIndex columns if any
+
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = df.columns.get_level_values(0)
     df.columns = [col.lower() for col in df.columns]
-    
+
     df['datetime'] = pd.to_datetime(df['datetime'])
 
-    # Convert timezone from UTC to IST (or your local timezone)
     local_tz = pytz.timezone('Asia/Kolkata')
     df['datetime'] = df['datetime'].dt.tz_localize('UTC').dt.tz_convert(local_tz)
 
-    # Filter only working days (Mon-Fri)
-    df = df[df['datetime'].dt.weekday < 5].copy()
+    df = df[df['datetime'].dt.weekday < 5].copy()  # Only Mon-Fri
 
     return df
 
