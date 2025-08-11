@@ -462,3 +462,86 @@ if not condition1_signals.empty:
         lambda v: 'background-color: lightgreen' if v is True else '', subset=['Buy_Call_Triggered']))
 else:
     st.write("No breakout signals detected.")
+
+
+############################################################################################
+def detect_condition2_major_gap_down(df):
+    """
+    Detect Condition 2 – Major Gap Down:
+    - Mark Day 0 3:00-3:15 PM candle open & close.
+    - On Day 1, if open gaps down below Day 0 reference lines,
+      and 9:15-9:30 candle closes below both,
+      mark this candle as Reference Candle 2.
+    - If next 15-min candle breaks below Reference Candle 2 low, trigger Buy Put.
+    
+    Returns DataFrame with signals.
+    """
+    df_3pm = df[(df['datetime'].dt.hour == 15) & (df['datetime'].dt.minute == 0)].copy()
+    df_3pm['date'] = df_3pm['datetime'].dt.date
+    
+    df_915 = df[(df['datetime'].dt.hour == 9) & (df['datetime'].dt.minute == 15)].copy()
+    df_915['date'] = df_915['datetime'].dt.date
+    
+    df_930 = df[(df['datetime'].dt.hour == 9) & (df['datetime'].dt.minute == 30)].copy()
+    df_930['date'] = df_930['datetime'].dt.date
+    
+    signals = []
+    
+    for i in range(len(df_3pm) - 1):
+        day0 = df_3pm.iloc[i]
+        next_day = df_3pm.iloc[i+1]['date']
+        
+        candle_915 = df_915[df_915['date'] == next_day]
+        candle_930 = df_930[df_930['date'] == next_day]
+        
+        if candle_915.empty or candle_930.empty:
+            continue  # Missing required candles, skip
+        
+        candle_915 = candle_915.iloc[0]
+        candle_930 = candle_930.iloc[0]
+        
+        # Reference lines from Day 0 3PM candle
+        ref_open = day0['open']
+        ref_close = day0['close']
+        lower_ref = min(ref_open, ref_close)
+        
+        # Check gap down open on Day 1 9:15 candle
+        gap_down_open = candle_915['open'] < lower_ref
+        
+        # Check 9:15-9:30 candle closes below both reference lines
+        close_below_ref = (candle_915['close'] < ref_open) and (candle_915['close'] < ref_close)
+        
+        buy_put_signal = False
+        
+        if gap_down_open and close_below_ref:
+            ref_candle2_low = candle_915['low']
+            
+            # Check if next candle breaks below Reference Candle 2 low
+            breaks_below_ref_low = candle_930['low'] < ref_candle2_low
+            
+            if breaks_below_ref_low:
+                buy_put_signal = True
+        
+        signals.append({
+            'Day0_3PM_Date': day0['date'],
+            'Day1_Date': next_day,
+            'Day0_3PM_Open': ref_open,
+            'Day0_3PM_Close': ref_close,
+            'Day1_9_15_Open': candle_915['open'],
+            'Day1_9_15_Close': candle_915['close'],
+            'Day1_9_15_Low': candle_915['low'],
+            'Day1_9_30_Low': candle_930['low'],
+            'Buy_Put_Triggered': buy_put_signal
+        })
+        
+    return pd.DataFrame(signals)
+
+#####################################
+cond2_signals = detect_condition2_major_gap_down(df)
+st.subheader("Condition 2 – Major Gap Down Signals")
+if not cond2_signals.empty:
+    st.dataframe(cond2_signals.style.applymap(
+        lambda v: 'background-color: lightcoral' if v is True else '', subset=['Buy_Put_Triggered']))
+else:
+    st.write("No Major Gap Down signals detected.")
+#########################################
