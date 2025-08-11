@@ -695,3 +695,107 @@ if not cond4_signals.empty:
 else:
     st.write("No Condition 4 signals detected.")
 ###########################################################################################
+
+
+import pandas as pd
+
+def detect_all_conditions(df):
+    """
+    Detect all 4 conditions as per your strategy and return combined DataFrame with signals.
+    
+    Input:
+    - df: DataFrame with 'datetime', 'open', 'high', 'low', 'close' columns at 15-min interval
+    
+    Returns:
+    - DataFrame with one row per Day0 3PM candle and next day candle signals:
+      Columns include info from all 4 conditions with True/False signal flags.
+    """
+    # Prepare 3PM candles for Day 0
+    df_3pm = df[(df['datetime'].dt.hour == 15) & (df['datetime'].dt.minute == 0)].copy()
+    df_3pm['date'] = df_3pm['datetime'].dt.date
+
+    # Prepare Day 1 9:15 and 9:30 candles
+    df_915 = df[(df['datetime'].dt.hour == 9) & (df['datetime'].dt.minute == 15)].copy()
+    df_915['date'] = df_915['datetime'].dt.date
+
+    df_930 = df[(df['datetime'].dt.hour == 9) & (df['datetime'].dt.minute == 30)].copy()
+    df_930['date'] = df_930['datetime'].dt.date
+
+    records = []
+
+    for i in range(len(df_3pm) - 1):
+        day0 = df_3pm.iloc[i]
+        next_day = df_3pm.iloc[i + 1]['date']
+
+        candle_915 = df_915[df_915['date'] == next_day]
+        candle_930 = df_930[df_930['date'] == next_day]
+
+        if candle_915.empty:
+            continue  # no 9:15 candle on next day
+        candle_915 = candle_915.iloc[0]
+
+        # For conditions needing 9:30 candle, check availability
+        candle_930_available = not candle_930.empty
+        candle_930 = candle_930.iloc[0] if candle_930_available else None
+
+        ref_open = day0['open']
+        ref_close = day0['close']
+        upper_ref = max(ref_open, ref_close)
+        lower_ref = min(ref_open, ref_close)
+
+        ### Condition 1: Next Day Breakout Upwards (No Major Gap)
+        open_cond_1 = (candle_915['open'] < ref_open) and (candle_915['open'] < ref_close)
+        close_cond_1 = (candle_915['close'] > ref_open) and (candle_915['close'] > ref_close)
+        cond1_signal = open_cond_1 and close_cond_1
+
+        ### Condition 2: Major Gap Down
+        cond2_signal = False
+        if candle_930_available:
+            gap_down_open = candle_915['open'] < lower_ref
+            close_below_ref = (candle_915['close'] < ref_open) and (candle_915['close'] < ref_close)
+            if gap_down_open and close_below_ref:
+                ref_candle2_low = candle_915['low']
+                breaks_below_ref_low = candle_930['low'] < ref_candle2_low
+                cond2_signal = breaks_below_ref_low
+
+        ### Condition 3: Major Gap Up
+        cond3_signal = False
+        if candle_930_available:
+            gap_up_open = candle_915['open'] > upper_ref
+            close_above_ref = (candle_915['close'] > ref_open) and (candle_915['close'] > ref_close)
+            if gap_up_open and close_above_ref:
+                ref_candle2_high = candle_915['high']
+                breaks_above_ref_high = candle_930['high'] > ref_candle2_high
+                cond3_signal = breaks_above_ref_high
+
+        ### Condition 4: Next Day Breakout Downwards (No Major Gap)
+        open_above_both = candle_915['open'] > upper_ref
+        low_below_both = candle_915['low'] < lower_ref
+        close_below_both = candle_915['close'] < lower_ref
+        cond4_signal = open_above_both and low_below_both and close_below_both
+
+        records.append({
+            'Day0_3PM_Date': day0['date'],
+            'Day1_Date': next_day,
+            'Day0_3PM_Open': ref_open,
+            'Day0_3PM_Close': ref_close,
+            'Day1_9_15_Open': candle_915['open'],
+            'Day1_9_15_High': candle_915['high'],
+            'Day1_9_15_Low': candle_915['low'],
+            'Day1_9_15_Close': candle_915['close'],
+            'Day1_9_30_High': candle_930['high'] if candle_930_available else None,
+            'Day1_9_30_Low': candle_930['low'] if candle_930_available else None,
+            'Condition1_BuyCall': cond1_signal,
+            'Condition2_BuyPut': cond2_signal,
+            'Condition3_BuyCall': cond3_signal,
+            'Condition4_BuyPut': cond4_signal
+        })
+
+    return pd.DataFrame(records)
+
+signals_df = detect_all_conditions(df)
+st.dataframe(signals_df.style.applymap(
+    lambda v: 'background-color: lightgreen' if v is True else ('background-color: lightcoral' if v is False else ''), 
+    subset=['Condition1_BuyCall','Condition2_BuyPut','Condition3_BuyCall','Condition4_BuyPut']
+))
+##################################################################################
