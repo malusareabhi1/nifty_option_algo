@@ -7,6 +7,10 @@ import plotly.graph_objects as go
 import pytz
 
 # --- Combined Condition Detection ---
+days_to_analyze = st.sidebar.slider(
+    "Select number of past days to analyze", 
+    min_value=5, max_value=90, value=30, step=1
+)
 
 def detect_all_conditions(df):
     df_3pm = df[(df['datetime'].dt.hour == 15) & (df['datetime'].dt.minute == 0)].copy()
@@ -312,6 +316,9 @@ def load_data():
     return df
 
 df = load_data()
+st.write(f"Loaded data for last {days_to_analyze} days")
+
+#st.dataframe(df.tail(10))
 
 st.subheader("Raw Data Sample")
 st.dataframe(df.tail(10))
