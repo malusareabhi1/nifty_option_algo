@@ -286,9 +286,18 @@ st.title("Nifty 15-Min Options Strategy Backtesting")
 def load_data():
     ticker = "^NSEI"
     df = yf.download(ticker, period="30d", interval="15m")
-    df = df.reset_index()
-    df.rename(columns={'Datetime': 'datetime'}, inplace=True)
+    df.reset_index(inplace=True)
+    
+    # If columns are MultiIndex, flatten them
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = df.columns.get_level_values(0)
+    
+    # Make columns lowercase for uniform access
+    df.columns = [col.lower() for col in df.columns]
+    
+    # Convert datetime column properly
     df['datetime'] = pd.to_datetime(df['datetime'])
+
     return df
 
 df = load_data()
