@@ -793,6 +793,7 @@ def detect_all_conditions(df):
 
     return pd.DataFrame(records)
 
+st.subheader("Condition All – Next Day Breakout  Signals")
 signals_df = detect_all_conditions(df)
 st.dataframe(signals_df.style.applymap(
     lambda v: 'background-color: lightgreen' if v is True else ('background-color: lightcoral' if v is False else ''), 
