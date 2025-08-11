@@ -391,7 +391,7 @@ st.plotly_chart(fig, use_container_width=True)
 
 # Show breakout trades
 st.subheader("📘 Breakout Trades – Next Day Break 3PM High + Offset Points")
-st.dataframe(trade_log_df.style.applymap(color_pnl, subset=['P&L']))
+#st.dataframe(trade_log_df.style.applymap(color_pnl, subset=['P&L']))
 
 show_trade_metrics(trade_log_df, "Breakout Trades")
 
