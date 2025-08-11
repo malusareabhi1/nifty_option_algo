@@ -3,7 +3,7 @@ from twilio.rest import Client
 
 # Put your Twilio credentials here (or better, use Streamlit secrets)
 account_sid = 'AC0ab7d53d5c46e69e2e766441b6ba7de1'
-auth_token = 'TWILIO_AUTH_TOKEN'  # Replace with your real Auth Token
+auth_token = 'f57da25825ca02d2f5220c0a9d7cac07'  # Replace with your real Auth Token
 
 client = Client(account_sid, auth_token)
 
