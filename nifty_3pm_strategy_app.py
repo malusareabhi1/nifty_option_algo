@@ -291,9 +291,10 @@ st.title("Nifty 15-Min Options Strategy Backtesting")
 @st.cache_data(ttl=600)
 
 
-def load_data():
+@st.cache_data(ttl=600)
+def load_data(days):
     ticker = "^NSEI"
-    period="days_to_analyze"
+    period = f"{days}d"
     df = yf.download(ticker, period=period, interval="15m")
     df.reset_index(inplace=True)
 
@@ -305,18 +306,18 @@ def load_data():
 
     local_tz = pytz.timezone('Asia/Kolkata')
 
-    # Check if datetime column is tz-naive or tz-aware
     if df['datetime'].dt.tz is None:
         df['datetime'] = df['datetime'].dt.tz_localize('UTC').dt.tz_convert(local_tz)
     else:
         df['datetime'] = df['datetime'].dt.tz_convert(local_tz)
 
-    # Filter only working days
     df = df[df['datetime'].dt.weekday < 5].copy()
 
     return df
 
-df = load_data()
+df = load_data(days_to_analyze)
+
+#df = load_data()
 st.write(f"Loaded data for last {days_to_analyze} days")
 
 #st.dataframe(df.tail(10))
