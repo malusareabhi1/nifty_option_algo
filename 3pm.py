@@ -365,6 +365,16 @@ if missing_cols:
 
 trade_log_df, breakdown_df = generate_trade_logs(df, offset_points)
 
+st.subheader("📜 Trade Log")
+if not trade_log_df.empty:
+    # Color P&L column if it exists
+    if "P&L" in trade_log_df.columns:
+        st.dataframe(trade_log_df.style.applymap(color_pnl, subset=["P&L"]))
+    else:
+        st.dataframe(trade_log_df)
+else:
+    st.warning("No trades found for the selected period/offset.")
+
 
 trade_log_df = simulate_paper_trades(trade_log_df, initial_capital, risk_per_trade_pct)
 breakdown_df = simulate_paper_trades(breakdown_df, initial_capital, risk_per_trade_pct)
