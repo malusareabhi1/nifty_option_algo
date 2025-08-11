@@ -400,4 +400,4 @@ st.subheader("📘 Breakout Trades – Next Day Break 3PM High + Offset Points")
 st.subheader("📉 Breakdown Trades – Next Day Cross Below 3PM Close & Drop Offset Points")
 #st.dataframe(breakdown_df.style.applymap(color_pnl, subset=['P&L']))
 
-show_trade_metrics(breakdown_df, "Breakdown Trades")
+#show_trade_metrics(breakdown_df, "Breakdown Trades")
