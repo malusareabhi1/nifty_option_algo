@@ -2,8 +2,8 @@ import streamlit as st
 from twilio.rest import Client
 
 # Twilio credentials (store securely in Streamlit secrets)
-TWILIO_ACCOUNT_SID = st.secrets["US9fc4f6053ddacf45be89cdd4a161810a"]
-TWILIO_AUTH_TOKEN = st.secrets["f57da25825ca02d2f5220c0a9d7cac07"]
+TWILIO_ACCOUNT_SID = st.secrets["TWILIO_ACCOUNT_SID"]
+TWILIO_AUTH_TOKEN = st.secrets["TWILIO_AUTH_TOKEN"]
 TWILIO_WHATSAPP_NUMBER = "whatsapp:+919881999644"  # Twilio sandbox number
 
 def send_whatsapp_message(to_number, message):
