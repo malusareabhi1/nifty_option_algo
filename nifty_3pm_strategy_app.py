@@ -16,7 +16,7 @@ days_to_analyze = st.sidebar.slider(
 @st.cache_data(ttl=600)
 def load_data(days):
     # Download more days to ensure enough data for filtering
-    df = yf.download("^NSEI", period="40d", interval="15m")
+    df = yf.download("^NSEI", period="10d", interval="15m")
     df.reset_index(inplace=True)
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = df.columns.get_level_values(0)
