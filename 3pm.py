@@ -3,6 +3,8 @@ import yfinance as yf
 import pandas as pd
 import plotly.graph_objects as go
 import numpy as np
+from datetime import time
+
 #import plotly.express as px
 #import plotly.express as px
 from streamlit_autorefresh import st_autorefresh
