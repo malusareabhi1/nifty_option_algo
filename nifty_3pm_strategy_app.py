@@ -323,8 +323,9 @@ st.write(f"Loaded data for last {days_to_analyze} days")
 #st.dataframe(df.tail(10))
 
 st.subheader("Raw Data Sample")
+st.write(df)
 #st.dataframe(df.tail(10))
-st.dataframe(df)
+#st.dataframe(df)
 
 st.subheader("Detecting Strategy Signals...")
 signals_df = detect_all_conditions(df)
