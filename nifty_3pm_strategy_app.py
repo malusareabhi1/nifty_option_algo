@@ -294,7 +294,11 @@ def load_data():
     df.columns = [col.lower() for col in df.columns]
     
     df['datetime'] = pd.to_datetime(df['datetime'])
-    
+
+    # Convert timezone from UTC to IST (or your local timezone)
+    local_tz = pytz.timezone('Asia/Kolkata')
+    df['datetime'] = df['datetime'].dt.tz_localize('UTC').dt.tz_convert(local_tz)
+
     # Filter only working days (Mon-Fri)
     df = df[df['datetime'].dt.weekday < 5].copy()
 
