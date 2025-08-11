@@ -4,4 +4,4 @@ pandas
 numpy
 plotly
 streamlit-autorefresh
-Client
+
