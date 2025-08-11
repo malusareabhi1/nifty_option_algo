@@ -7,7 +7,7 @@ import pytz
 
 st.title("Nifty 15-Min Options Strategy Backtesting")
 
-# Sidebar days selector
+# Sidebar: Select number of past days (weekdays) to analyze
 days_to_analyze = st.sidebar.slider(
     "Select number of past days to analyze", 
     min_value=3, max_value=20, value=5, step=1
@@ -15,11 +15,9 @@ days_to_analyze = st.sidebar.slider(
 
 @st.cache_data(ttl=600)
 def load_data(days):
-    ticker = "^NSEI"
-    period = f"{days}d"
-    df = yf.download(ticker, period=period, interval="15m")
+    # Download more days to ensure enough data for filtering
+    df = yf.download("^NSEI", period="40d", interval="15m")
     df.reset_index(inplace=True)
-
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = df.columns.get_level_values(0)
     df.columns = [col.lower() for col in df.columns]
@@ -33,24 +31,22 @@ def load_data(days):
     else:
         df['datetime'] = df['datetime'].dt.tz_convert(local_tz)
 
-    # Explicitly filter last N calendar days (including today)
-    last_date = df['datetime'].dt.date.max()
-    min_date = last_date - pd.Timedelta(days=days - 1)
-    df = df[df['datetime'].dt.date >= min_date]
-
-    # Remove weekends
+    # Remove weekends from entire dataset
     df = df[df['datetime'].dt.weekday < 5].copy()
+
+    # Now filter only last N calendar days with data available
+    last_date = df['datetime'].dt.date.max()
+    # Collect only data from last N weekdays (trading days)
+    unique_days = sorted(df['datetime'].dt.date.unique())
+    last_n_days = unique_days[-days:]  # last N weekdays with data
+
+    df = df[df['datetime'].dt.date.isin(last_n_days)].copy()
 
     return df
 
 def detect_all_conditions(df):
     df_3pm = df[(df['datetime'].dt.hour == 15) & (df['datetime'].dt.minute == 0)].copy()
     df_3pm['date'] = df_3pm['datetime'].dt.date
-
-    # Limit to last N days to sync with loaded data
-    last_date = df_3pm['date'].max()
-    min_date = last_date - pd.Timedelta(days=days_to_analyze - 1)
-    df_3pm = df_3pm[df_3pm['date'] >= min_date].reset_index(drop=True)
 
     df_915 = df[(df['datetime'].dt.hour == 9) & (df['datetime'].dt.minute == 15)].copy()
     df_915['date'] = df_915['datetime'].dt.date
@@ -60,6 +56,7 @@ def detect_all_conditions(df):
 
     records = []
 
+    # Use only dates present in df_3pm (which is filtered already)
     for i in range(len(df_3pm) - 1):
         day0 = df_3pm.iloc[i]
         next_day = df_3pm.iloc[i + 1]['date']
@@ -188,7 +185,6 @@ def simulate_trades(df, signals_df):
                     premium_next = simulate_option_premium(next_candle['close'], strike_price, opt_type)
 
                     if premium_next >= target_price:
-                        # Book 50% profit
                         profit_realized += qty_half * (target_price - entry_premium)
                         qty_remaining = qty_half
                         stoploss_price = entry_premium
@@ -254,4 +250,85 @@ def simulate_trades(df, signals_df):
 def plot_candles_with_signals(df, signals_df):
     fig = go.Figure()
 
-    fig.add_trace(go
+    fig.add_trace(go.Candlestick(
+        x=df['datetime'],
+        open=df['open'],
+        high=df['high'],
+        low=df['low'],
+        close=df['close'],
+        name='Nifty 15min'
+    ))
+
+    for _, row in signals_df.iterrows():
+        day0_date = row['Day0_3PM_Date']
+        day1_date = row['Day1_Date']
+        candle_3pm = df[(df['datetime'].dt.date == day0_date) &
+                        (df['datetime'].dt.hour == 15) &
+                        (df['datetime'].dt.minute == 0)]
+        if candle_3pm.empty:
+            continue
+        candle_3pm = candle_3pm.iloc[0]
+        open_price = candle_3pm['open']
+        close_price = candle_3pm['close']
+
+        fig.add_hline(y=open_price, line_dash="dash", line_color="blue",
+                      annotation_text=f"{day0_date} 3PM Open",
+                      annotation_position="top left")
+        fig.add_hline(y=close_price, line_dash="dash", line_color="red",
+                      annotation_text=f"{day0_date} 3PM Close",
+                      annotation_position="bottom left")
+
+        candle_915 = df[(df['datetime'].dt.date == day1_date) &
+                        (df['datetime'].dt.hour == 9) &
+                        (df['datetime'].dt.minute == 15)]
+        if candle_915.empty:
+            continue
+        candle_915 = candle_915.iloc[0]
+        x = candle_915['datetime']
+        y = candle_915['close']
+
+        if row['Condition1_BuyCall']:
+            fig.add_trace(go.Scatter(x=[x], y=[y], mode='markers',
+                                     marker=dict(color='green', size=12, symbol='triangle-up'),
+                                     name='Cond1 Buy Call'))
+        if row['Condition2_BuyPut']:
+            fig.add_trace(go.Scatter(x=[x], y=[y], mode='markers',
+                                     marker=dict(color='red', size=12, symbol='triangle-down'),
+                                     name='Cond2 Buy Put'))
+        if row['Condition3_BuyCall']:
+            fig.add_trace(go.Scatter(x=[x], y=[y], mode='markers',
+                                     marker=dict(color='lime', size=12, symbol='triangle-up'),
+                                     name='Cond3 Buy Call'))
+        if row['Condition4_BuyPut']:
+            fig.add_trace(go.Scatter(x=[x], y=[y], mode='markers',
+                                     marker=dict(color='darkred', size=12, symbol='triangle-down'),
+                                     name='Cond4 Buy Put'))
+
+    fig.update_layout(title="Nifty 15-min Candles with Strategy Signals",
+                      xaxis_rangeslider_visible=False)
+    st.plotly_chart(fig, use_container_width=True)
+
+# --- Main ---
+
+df = load_data(days_to_analyze)
+st.write(f"Loaded data for last {days_to_analyze} trading days (weekdays only).")
+
+st.subheader("Raw Data Sample")
+st.dataframe(df.tail(10))
+
+st.subheader("Detecting Strategy Signals...")
+signals_df = detect_all_conditions(df)
+if not signals_df.empty:
+    st.dataframe(signals_df)
+else:
+    st.write("No signals detected.")
+
+st.subheader("Simulating Trades...")
+trade_results = simulate_trades(df, signals_df)
+if not trade_results.empty:
+    st.dataframe(trade_results)
+else:
+    st.write("No trades executed in simulation.")
+
+st.subheader("Visualizing Candles and Signals")
+plot_candles_with_signals(df, signals_df)
