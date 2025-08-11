@@ -285,7 +285,7 @@ st.title("Nifty 15-Min Options Strategy Backtesting")
 @st.cache_data(ttl=600)
 def load_data():
     ticker = "^NSEI"
-    df = yf.download(ticker, period="30d", interval="15m")
+    df = yf.download(ticker, period="5d", interval="15m")
     df.reset_index(inplace=True)
     
     # If columns are MultiIndex, flatten them
