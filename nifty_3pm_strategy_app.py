@@ -293,6 +293,7 @@ st.title("Nifty 15-Min Options Strategy Backtesting")
 
 def load_data():
     ticker = "^NSEI"
+    period="days_to_analyze"
     df = yf.download(ticker, period="30d", interval="15m")
     df.reset_index(inplace=True)
 
