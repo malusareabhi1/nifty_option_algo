@@ -728,8 +728,8 @@ def find_nearest_itm_option():
     import pandas as pd
     option_chain_df = pd.DataFrame(df)
     option_chain_df['expiryDate'] = pd.to_datetime(option_chain_df['expiryDate'])
-    st.write(option_chain_df.head())
-
+    #st.write(option_chain_df.head())
+    return  option_chain_df
 
 # Example usage:
 # result = find_nearest_itm_option(option_chain_df, spot_price=18250, option_type='CE', lots=10, lot_size=75)
@@ -750,6 +750,6 @@ else:
     st.write("No trade signal for today based on conditions.")
 
 ########################
-find_nearest_itm_option()
-
+result_chain=find_nearest_itm_option()
+st.write(result_chain.tail())
 #################################################
