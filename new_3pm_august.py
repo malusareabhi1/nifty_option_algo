@@ -697,8 +697,8 @@ def get_live_nifty_option_chain():
     return option_chain_df
 
 # Usage:
-option_chain_df = get_live_nifty_option_chain()
-st.write(option_chain_df.head())
+#option_chain_df = get_live_nifty_option_chain()
+#st.write(option_chain_df.head())
 
 ################################################################################################
 def find_nearest_itm_option(option_chain_df, spot_price, option_type, lots=10, lot_size=75):
