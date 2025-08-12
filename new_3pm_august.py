@@ -323,8 +323,8 @@ open_3pm, close_3pm = display_3pm_candle_info(df_plot, last_day)
 
 ##########################################################################################################
 
-import pandas as pd
-import streamlit as st
+#import pandas as pd
+#import streamlit as st
 
 def display_todays_candles_with_trend(df):
     """
@@ -377,6 +377,84 @@ def display_todays_candles_with_trend(df):
     st.table(display_df)
 
 ###########################################################################################
+import pandas as pd
+import streamlit as st
+
+def display_todays_candles_with_trend_and_signal(df):
+    """
+    Display all today's candles with OHLC + Trend + Signal columns in Streamlit.
+
+    Args:
+    - df: DataFrame with columns ['Datetime', 'Open_^NSEI', 'High_^NSEI', 'Low_^NSEI', 'Close_^NSEI']
+          'Datetime' must be timezone-aware or convertible to datetime.
+
+    Output:
+    - Shows table in Streamlit with added Trend and Signal columns.
+    """
+    if df.empty:
+        st.warning("No candle data available.")
+        return
+    
+    # Get today date from last datetime in df (assumes df sorted)
+    today_date = df['Datetime'].dt.date.max()
+    
+    # Filter today's data
+    todays_df = df[df['Datetime'].dt.date == today_date].copy()
+    if todays_df.empty:
+        st.warning(f"No data for today: {today_date}")
+        return
+    
+    # Calculate Trend column
+    def calc_trend(row):
+        if row['Close_^NSEI'] > row['Open_^NSEI']:
+            return "Bullish 🔥"
+        elif row['Close_^NSEI'] < row['Open_^NSEI']:
+            return "Bearish ❄️"
+        else:
+            return "Doji ⚪"
+    
+    todays_df['Trend'] = todays_df.apply(calc_trend, axis=1)
+    
+    # Calculate Signal column
+    signals = []
+    for i in range(len(todays_df)):
+        if i == 0:
+            # No previous candle, so no signal
+            signals.append("-")
+        else:
+            prev_high = todays_df.iloc[i-1]['High_^NSEI']
+            prev_low = todays_df.iloc[i-1]['Low_^NSEI']
+            curr_close = todays_df.iloc[i]['Close_^NSEI']
+            curr_trend = todays_df.iloc[i]['Trend']
+            
+            if curr_trend == "Bullish 🔥" and curr_close > prev_high:
+                signals.append("Buy")
+            elif curr_trend == "Bearish ❄️" and curr_close < prev_low:
+                signals.append("Sell")
+            else:
+                signals.append("-")
+    
+    todays_df['Signal'] = signals
+    
+    # Format datetime for display
+    todays_df['Time'] = todays_df['Datetime'].dt.strftime('%H:%M')
+    
+    # Select and reorder columns to display
+    display_df = todays_df[['Time', 'Open_^NSEI', 'High_^NSEI', 'Low_^NSEI', 'Close_^NSEI', 'Trend', 'Signal']].copy()
+    display_df.rename(columns={
+        'Open_^NSEI': 'Open',
+        'High_^NSEI': 'High',
+        'Low_^NSEI': 'Low',
+        'Close_^NSEI': 'Close'
+    }, inplace=True)
+    
+    st.write(f"All 15-min candles for today ({today_date}):")
+    st.table(display_df)
+
+
+###################################################################################################
 #run_check_for_all_candles(df)  # df = your full OHLC DataFrame
 
-display_todays_candles_with_trend(df)
+#display_todays_candles_with_trend(df)
+display_todays_candles_with_trend_and_signal(df)
+
