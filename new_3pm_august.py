@@ -141,7 +141,7 @@ def display_current_candle(df):
     """
     st.write(df.columns)
     # Ensure datetime is timezone-aware and converted to Asia/Kolkata
-    local_dt = current_candle['Datetime']
+    local_dt = current_candle['Datetime_']
     if local_dt.tzinfo is None:
         local_dt = local_dt.tz_localize('UTC').tz_convert('Asia/Kolkata')
     else:
