@@ -1,100 +1,76 @@
 import streamlit as st
-import pandas as pd
 import yfinance as yf
+import pandas as pd
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 
-st.set_page_config(layout="wide")
+st.title("Nifty 15-min Chart for Selected Date & Previous Day")
 
-# 1) Add date picker - default to today or last available trading day
-selected_date = st.date_input("Select date to download and plot NSEI data", value=datetime.today())
+# Select date input (default today)
+selected_date = st.date_input("Select date", value=datetime.today())
 
-# 2) Calculate start and end dates for yf.download
-# We'll download 7 calendar days ending at the day after selected_date to include full selected_date data
+# Calculate date range to download (7 days before selected_date to day after selected_date)
+start_date = selected_date - timedelta(days=7)
 end_date = selected_date + timedelta(days=1)
-start_date = end_date - timedelta(days=7)
 
-# 3) Download data for this date range
+# Download data for ^NSEI from start_date to end_date
 df = yf.download("^NSEI", start=start_date.strftime("%Y-%m-%d"), end=end_date.strftime("%Y-%m-%d"), interval="15m")
 
-if isinstance(df.index, pd.DatetimeIndex):
-    df.reset_index(inplace=True)
+if df.empty:
+    st.warning("No data downloaded for the selected range.")
+    st.stop()
 
-df['Datetime'] = pd.to_datetime(df['Datetime'])
+# Reset index to get Datetime as column
+df = df.reset_index()
 
-if df['Datetime'].dt.tz is None:
-    # If naive, localize to UTC then convert to Asia/Kolkata
-    df['Datetime'] = df['Datetime'].dt.tz_localize('UTC').dt.tz_convert('Asia/Kolkata')
+# Convert to India timezone
+df['Datetime'] = pd.to_datetime(df['Datetime']).dt.tz_localize('UTC').dt.tz_convert('Asia/Kolkata')
+
+# Get unique sorted trading dates in data
+unique_dates = sorted(df['Datetime'].dt.date.unique())
+
+if selected_date not in unique_dates:
+    st.warning(f"No trading data for {selected_date}. Showing last available trading date instead.")
+    # Pick closest previous trading day
+    valid_dates = [d for d in unique_dates if d <= selected_date]
+    if not valid_dates:
+        st.error("No trading data available before selected date.")
+        st.stop()
+    plot_date = valid_dates[-1]
 else:
-    # Already tz-aware, just convert timezone
-    df['Datetime'] = df['Datetime'].dt.tz_convert('Asia/Kolkata')
+    plot_date = selected_date
 
+# Get previous trading day for plot_date
+plot_date_idx = unique_dates.index(plot_date)
+prev_date_idx = max(0, plot_date_idx - 1)
+days_to_plot = unique_dates[prev_date_idx:plot_date_idx+1]
 
-# Extract unique trading days from downloaded data
-unique_days = sorted(df['Datetime'].dt.date.unique())
+# Filter df for those two days
+df_plot = df[df['Datetime'].dt.date.isin(days_to_plot)]
 
-if len(unique_days) < 2:
-    st.warning("Not enough data for two trading days to plot.")
-else:
-    # Find selected_date in unique_days, fallback to closest earlier day if missing
-    if selected_date not in unique_days:
-        # Pick closest previous day if selected_date not in data (eg. weekend or holiday)
-        valid_dates = [d for d in unique_days if d <= selected_date]
-        if not valid_dates:
-            st.error("No trading data available for or before selected date.")
-            st.stop()
-        plot_date = valid_dates[-1]
-        st.info(f"Selected date {selected_date} is not a trading day. Using {plot_date} instead.")
-    else:
-        plot_date = selected_date
+st.write(f"Showing data for {days_to_plot[0]} and {days_to_plot[1]}")
 
-    # Find index of plot_date and pick previous day also for plot
-    idx = unique_days.index(plot_date)
-    prev_idx = max(0, idx - 1)
-    days_to_plot = unique_days[prev_idx:idx + 1]
+# Plot candlestick chart
+fig = go.Figure(data=[go.Candlestick(
+    x=df_plot['Datetime'],
+    open=df_plot['Open'],
+    high=df_plot['High'],
+    low=df_plot['Low'],
+    close=df_plot['Close']
+)])
 
-    # Filter df for these two trading days
-    df_plot = df[df['Datetime'].dt.date.isin(days_to_plot)]
-
-    # Get previous day 3PM candle open and close (the day before plot_date)
-    prev_day = days_to_plot[0]
-    candle_3pm = df_plot[(df_plot['Datetime'].dt.date == prev_day) & 
-                         (df_plot['Datetime'].dt.hour == 15) & 
-                         (df_plot['Datetime'].dt.minute == 0)]
-
-    if not candle_3pm.empty:
-        open_3pm = candle_3pm.iloc[0]['Open']
-        close_3pm = candle_3pm.iloc[0]['Close']
-    else:
-        open_3pm = None
-        close_3pm = None
-        st.warning("No 3:00 PM candle found for previous trading day.")
-
-    # Plot candlestick chart with Plotly
-    fig = go.Figure(data=[go.Candlestick(
-        x=df_plot['Datetime'],
-        open=df_plot['Open'],
-        high=df_plot['High'],
-        low=df_plot['Low'],
-        close=df_plot['Close']
-    )])
-
-    if open_3pm is not None and close_3pm is not None:
-        fig.add_hline(y=open_3pm, line_dash="dot", line_color="blue", annotation_text="3PM Open", annotation_position="top left")
-        fig.add_hline(y=close_3pm, line_dash="dot", line_color="red", annotation_text="3PM Close", annotation_position="top left")
-
-    fig.update_layout(
-        title=f"Nifty 15-min candles for {days_to_plot[0]} & {days_to_plot[-1]}",
-        xaxis_rangeslider_visible=False,
-        xaxis=dict(
-            rangebreaks=[
-                dict(bounds=["sat", "mon"]),  # hide weekends
-                dict(bounds=[15.5, 9.25], pattern="hour")  # hide non-trading hours
-            ]
-        )
+fig.update_layout(
+    title="Nifty 15-min Candlestick Chart",
+    xaxis_rangeslider_visible=False,
+    xaxis=dict(
+        rangebreaks=[
+            dict(bounds=["sat", "mon"]),  # hide weekends
+            dict(bounds=[15.5, 9.25], pattern="hour")  # hide non-trading hours
+        ]
     )
+)
 
-    st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, use_container_width=True)
 
 def display_3pm_candle_info(df, day):
     """
