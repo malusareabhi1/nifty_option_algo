@@ -861,7 +861,7 @@ def generate_trade_log_from_option(result, trade_signal):
         "Condition": condition,
         "Option Type": option_type,
         "Strike Price": option.get('strikePrice'),
-        "Exit Price": exit_price,  # ✅ new column
+        #"Exit Price": exit_price,  # ✅ new column
         "Buy Premium": buy_price,
         "Stoploss (Trailing 10%)": stoploss,
         "Take Profit (10% rise)": take_profit,
