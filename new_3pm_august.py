@@ -72,29 +72,11 @@ else:
         fig.add_hline(y=open_3pm, line_dash="dot", line_color="blue", annotation_text="3PM Open")
         fig.add_hline(y=close_3pm, line_dash="dot", line_color="red", annotation_text="3PM Close")
 
-if not candle_3pm_next_day.empty:
-    dt_3pm_next_day = candle_3pm_next_day.iloc[0]['Datetime']
-else:
-    dt_3pm_next_day = None
-    st.warning("No 3:00 PM candle found for today.")
+
 
 
     # Draw horizontal lines as line segments only between 3PM last day and 3PM next day
-if open_3pm and close_3pm and dt_3pm_last_day and dt_3pm_next_day:
-    fig.add_trace(go.Scatter(
-        x=[dt_3pm_last_day, dt_3pm_next_day],
-        y=[open_3pm, open_3pm],
-        mode="lines",
-        line=dict(color="blue", dash="dot"),
-        name="3PM Open"
-    ))
-    fig.add_trace(go.Scatter(
-        x=[dt_3pm_last_day, dt_3pm_next_day],
-        y=[close_3pm, close_3pm],
-        mode="lines",
-        line=dict(color="red", dash="dot"),
-        name="3PM Close"
-    ))
+
     
     fig.update_layout(title="Nifty 15-min candles - Last Day & Today", xaxis_rangeslider_visible=False)
     fig.update_layout(
