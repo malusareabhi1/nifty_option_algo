@@ -843,6 +843,15 @@ def generate_trade_log_from_option(result, trade_signal):
     partial_qty = qty // 2
     time_exit = entry_time + timedelta(minutes=16)
 
+    if stoploss_hit:
+        exit_price = stoploss_price
+    elif target_hit:
+        exit_price = take_profit_price
+    else:
+        exit_price = market_price_at_exit_time
+
+    
+
     trade_log = {
         "Condition": condition,
         "Option Type": option_type,
