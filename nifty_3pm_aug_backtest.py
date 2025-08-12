@@ -833,12 +833,7 @@ def generate_trade_log_from_option(result, trade_signal):
     #exit_time = pd.to_datetime(exit_time)
     #result.index = pd.to_datetime(result.index)
 
-    try:
-        price_at_exit = result.loc[exit_time, "Close"]
-    except KeyError:
-        # Fallback to nearest available time
-        nearest_idx = result.index.get_indexer([exit_time], method="nearest")[0]
-        price_at_exit = result.iloc[nearest_idx]["Close"]
+    
     
     
 
