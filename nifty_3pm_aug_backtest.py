@@ -829,16 +829,27 @@ def generate_trade_log_from_option(result, trade_signal):
     # Determine exit reason and price
     stoploss_hit = False
     target_hit = False
-    if result.loc[exit_time, "Close"] <= stoploss_price:
+    
+    exit_time = pd.to_datetime(exit_time)
+    result.index = pd.to_datetime(result.index)
+
+    try:
+        price_at_exit = result.loc[exit_time, "Close"]
+    except KeyError:
+        # Fallback to nearest available time
+        nearest_idx = result.index.get_indexer([exit_time], method="nearest")[0]
+        price_at_exit = result.iloc[nearest_idx]["Close"]
+    
+    if price_at_exit <= stoploss_price:
         stoploss_hit = True
         exit_price = stoploss_price
         reason = "Stoploss hit"
-    elif result.loc[exit_time, "Close"] >= target_price:
+    elif price_at_exit >= target_price:
         target_hit = True
         exit_price = target_price
         reason = "Target hit"
     else:
-        exit_price = result.loc[exit_time, "Close"]
+        exit_price = price_at_exit
         reason = "Time exit"
 
     option = result['option_data']
