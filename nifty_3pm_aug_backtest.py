@@ -790,7 +790,7 @@ def option_chain_finder(option_chain_df, spot_price, option_type, lots=10, lot_s
         raise ValueError(f"No options found for expiry {nearest_expiry.date()} and type {option_type}")
 
     # Find nearest ITM strike
-    if option_type == 'CE':
+    if option_type == 'CALL':
         itm_strikes = df_expiry[df_expiry['strikePrice'] <= spot_price]
         if itm_strikes.empty:
             # fallback to minimum strike (OTM)
