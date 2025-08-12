@@ -224,8 +224,8 @@ def condition_1_trade_signal(nifty_df):
     ]
     if candle_3pm.empty:
         return {'buy_signal': False, 'message': '3 PM candle on day0 not found.'}
-    open_3pm = candle_3pm.iloc[0]['Open']
-    close_3pm = candle_3pm.iloc[0]['Close']
+    open_3pm = candle_3pm.iloc[0]['Open_^NSEI']
+    close_3pm = candle_3pm.iloc[0]['Close_^NSEI']
     
     # Step 3: Get first 15-min candle of day1 closing at 9:30 AM (9:15-9:30)
     candle_930 = nifty_df[
@@ -235,10 +235,10 @@ def condition_1_trade_signal(nifty_df):
     ]
     if candle_930.empty:
         return {'buy_signal': False, 'message': '9:30 AM candle on day1 not found.'}
-    open_930 = candle_930.iloc[0]['Open']
-    close_930 = candle_930.iloc[0]['Close']
-    high_930 = candle_930.iloc[0]['High']
-    low_930 = candle_930.iloc[0]['Low']
+    open_930 = candle_930.iloc[0]['Open_^NSEI']
+    close_930 = candle_930.iloc[0]['Close_^NSEI']
+    high_930 = candle_930.iloc[0]['High_^NSEI']
+    low_930 = candle_930.iloc[0]['Low_^NSEI']
     close_time_930 = candle_930.iloc[0]['Datetime']
     
     # Step 4: Check if candle cuts both lines from below to above and closes above both lines
