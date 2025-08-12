@@ -830,17 +830,17 @@ def generate_trade_log_from_option(result, trade_signal):
     stoploss_hit = False
     target_hit = False
     if result.loc[exit_time, "Close"] <= stoploss_price:
-            stoploss_hit = True
-            exit_price = stoploss_price
-            reason = "Stoploss hit"
+        stoploss_hit = True
+        exit_price = stoploss_price
+        reason = "Stoploss hit"
     elif result.loc[exit_time, "Close"] >= target_price:
-            target_hit = True
-            exit_price = target_price
-            reason = "Target hit"
-     else:
-            exit_price = result.loc[exit_time, "Close"]
-            reason = "Time exit"
-    
+        target_hit = True
+        exit_price = target_price
+        reason = "Target hit"
+    else:
+        exit_price = result.loc[exit_time, "Close"]
+        reason = "Time exit"
+
     option = result['option_data']
     qty = result['total_quantity']
 
