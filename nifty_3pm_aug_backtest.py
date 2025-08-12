@@ -980,6 +980,7 @@ def trade_with_signal(result_chain, signal, price_data):
 display_todays_candles_with_trend_and_signal(df)
 ########################
 result_chain=find_nearest_itm_option()
+st.write(result_chain)
 #calling all condition in one function
 signal = trading_signal_all_conditions(df)
 st.write(signal)
@@ -1006,7 +1007,7 @@ else:
 #st.write(result_chain.tail())
 #################################################
 # 2. Get option chain for that expiry
-result_chain = option_chain_finder(symbol="NIFTY", expiry=signal["expiry"])
+#result_chain = option_chain_finder(symbol="NIFTY", expiry=signal["expiry"])
 
 # 3. Get historical minute-by-minute (or tick) prices for that expiry's options
 price_data = get_option_price_data(symbols=result_chain['symbol'].tolist(), 
