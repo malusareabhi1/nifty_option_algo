@@ -701,7 +701,7 @@ def get_live_nifty_option_chain():
 #st.write(option_chain_df.head())
 
 ################################################################################################
-def find_nearest_itm_option(option_chain_df, spot_price, option_type, lots=10, lot_size=75):
+def find_nearest_itm_option():
     import nsepython
 
     option_chain = nse_optionchain_scrapper('NIFTY')
@@ -748,18 +748,6 @@ else:
     st.write("No trade signal for today based on conditions.")
 
 ########################
-result = find_nearest_itm_option(
-    option_chain_df=option_chain_df,  # your option chain DataFrame
-    spot_price=18250,                 # example spot price
-    option_type='CE',                 # 'CE' for Call, or 'PE' for Put
-    lots=10,                         # number of lots you want to buy (default is 10)
-    lot_size=75                      # lot size (default 75 for Nifty)
-)
+find_nearest_itm_option( )
 
-st.write("Nearest ITM Strike Price:", result['strikePrice'])
-st.write("Expiry Date:", result['expiryDate'].date())
-st.write("Option Type:", result['optionType'])
-st.write("Total Quantity:", result['total_quantity'])
-st.write("Option Data (full row):")
-st.write(result['option_data'])
 #################################################
