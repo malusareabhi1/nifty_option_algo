@@ -262,6 +262,60 @@ def condition_1_trade_signal(nifty_df):
         }
     
     return {'buy_signal': False, 'message': 'No buy signal: conditions not met.'}
+ #######################################################################################################################################   
+def condition_1_trade_signal_for_candle(nifty_df, candle_time):
+    """
+    Check buy condition for a specific candle_time on day1.
+    candle_time: pd.Timestamp of candle close time to check (e.g. 9:30 AM, 9:45 AM, ...)
+    
+    Returns buy signal dict if condition met, else no signal.
+    """
+    unique_days = sorted(nifty_df['Datetime'].dt.date.unique())
+    if len(unique_days) < 2:
+        return {'buy_signal': False, 'message': 'Not enough trading days.'}
+    
+    day0 = unique_days[-2]
+    day1 = unique_days[-1]
+    
+    # 3PM candle day0
+    candle_3pm = nifty_df[
+        (nifty_df['Datetime'].dt.date == day0) &
+        (nifty_df['Datetime'].dt.hour == 15) &
+        (nifty_df['Datetime'].dt.minute == 0)
+    ]
+    if candle_3pm.empty:
+        return {'buy_signal': False, 'message': '3 PM candle day0 not found.'}
+    open_3pm = candle_3pm.iloc[0]['Open_^NSEI']
+    close_3pm = candle_3pm.iloc[0]['Close_^NSEI']
+    
+    # The candle on day1 at candle_time
+    candle = nifty_df[nifty_df['Datetime'] == candle_time]
+    if candle.empty:
+        return {'buy_signal': False, 'message': f'No candle found at {candle_time}.'}
+    
+    open_c = candle.iloc[0]['Open_^NSEI']
+    close_c = candle.iloc[0]['Close_^NSEI']
+    low_c = candle.iloc[0]['Low_^NSEI']
+    close_time = candle.iloc[0]['Datetime']
+    
+    crossed_open_line = (low_c < open_3pm) and (close_c > open_3pm)
+    crossed_close_line = (low_c < close_3pm) and (close_c > close_3pm)
+    closes_above_both = (close_c > open_3pm) and (close_c > close_3pm)
+    
+    if crossed_open_line and crossed_close_line and closes_above_both:
+        buy_price = close_c
+        stoploss = buy_price * 0.9
+        take_profit = buy_price * 1.10
+        return {
+            'buy_signal': True,
+            'buy_price': buy_price,
+            'stoploss': stoploss,
+            'take_profit': take_profit,
+            'entry_time': close_time,
+            'message': 'Buy signal triggered.'
+        }
+    
+    return {'buy_signal': False, 'message': 'Condition not met.'}
 
 #####################################################################################################################################
 open_3pm, close_3pm = display_3pm_candle_info(df_plot, last_day)
@@ -281,6 +335,40 @@ if result['buy_signal']:
      st.write(f"Set trailing SL at {result['stoploss']} and TP at {result['take_profit']}")
 else:
      st.write(result['message'])
+##########################################################################################################
+#import streamlit as st
 
+def run_check_for_all_candles(nifty_df):
+    unique_days = sorted(nifty_df['Datetime'].dt.date.unique())
+    if len(unique_days) < 2:
+        st.warning("Not enough data for two trading days.")
+        return
+    
+    day1 = unique_days[-1]
+    # Filter all day1 candles at or after 9:30 AM (assuming 15-min intervals)
+    day1_candles = nifty_df[
+        (nifty_df['Datetime'].dt.date == day1) & 
+        ( (nifty_df['Datetime'].dt.hour > 9) | 
+          ((nifty_df['Datetime'].dt.hour == 9) & (nifty_df['Datetime'].dt.minute >= 30))
+        )
+    ].sort_values('Datetime')
+    
+    for idx, row in day1_candles.iterrows():
+        candle_time = row['Datetime']
+        result = condition_1_trade_signal_for_candle(nifty_df, candle_time)
+        if result['buy_signal']:
+            st.write(f"Buy signal at {candle_time}")
+            st.table({
+                'Entry Time': [result['entry_time']],
+                'Buy Price': [result['buy_price']],
+                'Stoploss': [result['stoploss']],
+                'Take Profit': [result['take_profit']]
+            })
+            # You may want to break here if only first buy signal matters
+            break
+        else:
+            st.write(f"No buy signal at {candle_time}")
 
+###########################################################################################
+run_check_for_all_candles(df)  # df = your full OHLC DataFrame
 
