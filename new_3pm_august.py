@@ -13,7 +13,18 @@ df = yf.download(symbol, period="5d", interval="5m")
 df = df.reset_index()
 
 # Convert timezone to IST
-df['Datetime'] = pd.to_datetime(df['Datetime']).dt.tz_localize('UTC').dt.tz_convert('Asia/Kolkata')
+#df['Datetime'] = pd.to_datetime(df['Datetime']).dt.tz_localize('UTC').dt.tz_convert('Asia/Kolkata')
+# Convert to datetime first (if not already)
+df['Datetime'] = pd.to_datetime(df['Datetime'])
+
+# Check if tz-aware or not, then apply appropriate conversion
+if df['Datetime'].dt.tz is None:
+    # tz-naive -> localize then convert
+    df['Datetime'] = df['Datetime'].dt.tz_localize('UTC').dt.tz_convert('Asia/Kolkata')
+else:
+    # tz-aware -> just convert to target tz
+    df['Datetime'] = df['Datetime'].dt.tz_convert('Asia/Kolkata')
+
 
 # Get unique trading dates
 unique_dates = sorted(df['Datetime'].dt.date.unique())
