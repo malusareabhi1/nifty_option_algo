@@ -627,8 +627,78 @@ def trading_signal_all_conditions(df, quantity=10*750):
 
 
 #########################################################################################################
-import pandas as pd
 
+#import pandas as pd
+#import requests
+#import pandas as pd
+
+def get_live_nifty_option_chain():
+    url = "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                      "(KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Referer": "https://www.nseindia.com/option-chain",
+        "Connection": "keep-alive",
+    }
+
+    session = requests.Session()
+    # First request to get cookies
+    session.get("https://www.nseindia.com", headers=headers)
+
+    # Now get option chain JSON
+    response = session.get(url, headers=headers)
+    data = response.json()
+
+    records = []
+    for record in data['records']['data']:
+        strike_price = record['strikePrice']
+        expiry_dates = data['records']['expiryDates']
+        # Calls data
+        if 'CE' in record:
+            ce = record['CE']
+            ce_row = {
+                'strikePrice': strike_price,
+                'expiryDate': ce['expiryDate'],
+                'optionType': 'CE',
+                'lastPrice': ce.get('lastPrice', None),
+                'bidQty': ce.get('bidQty', None),
+                'askQty': ce.get('askQty', None),
+                'openInterest': ce.get('openInterest', None),
+                'changeinOpenInterest': ce.get('changeinOpenInterest', None),
+                'impliedVolatility': ce.get('impliedVolatility', None),
+                'underlying': ce.get('underlying', None),
+            }
+            records.append(ce_row)
+        # Puts data
+        if 'PE' in record:
+            pe = record['PE']
+            pe_row = {
+                'strikePrice': strike_price,
+                'expiryDate': pe['expiryDate'],
+                'optionType': 'PE',
+                'lastPrice': pe.get('lastPrice', None),
+                'bidQty': pe.get('bidQty', None),
+                'askQty': pe.get('askQty', None),
+                'openInterest': pe.get('openInterest', None),
+                'changeinOpenInterest': pe.get('changeinOpenInterest', None),
+                'impliedVolatility': pe.get('impliedVolatility', None),
+                'underlying': pe.get('underlying', None),
+            }
+            records.append(pe_row)
+
+    option_chain_df = pd.DataFrame(records)
+    # Convert expiryDate column to datetime
+    option_chain_df['expiryDate'] = pd.to_datetime(option_chain_df['expiryDate'])
+
+    return option_chain_df
+
+# Usage:
+option_chain_df = get_live_nifty_option_chain()
+st.write(option_chain_df.head())
+
+################################################################################################
 def find_nearest_itm_option(option_chain_df, spot_price, option_type, lots=10, lot_size=75):
     """
     Finds the nearest ITM option for nearest weekly expiry.
