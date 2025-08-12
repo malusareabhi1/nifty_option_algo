@@ -6,6 +6,9 @@ import plotly.graph_objects as go
 # Load data (replace this with your data loading logic)
 df = yf.download("^NSEI", period="7d", interval="15m")
 df.reset_index(inplace=True)
+# Rename 'Date' column to 'Datetime' if it exists
+if 'Date' in df.columns:
+    df.rename(columns={'Date': 'Datetime'}, inplace=True)
 
 st.write(df.columns)
 
