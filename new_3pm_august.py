@@ -188,11 +188,99 @@ def display_current_trend(df):
     st.markdown(f"<span style='color:{trend_color}; font-weight:bold; font-size:20px;'>Trend: {trend_text}</span>", unsafe_allow_html=True)
 
 
+
+#import pandas as pd
+
+def condition_1_trade_signal(nifty_df):
+    """
+    Parameters:
+    - nifty_df: pd.DataFrame with columns ['Datetime', 'Open', 'High', 'Low', 'Close']
+      'Datetime' is timezone-aware pandas Timestamp.
+      Data must cover trading day 0 3PM candle and trading day 1 9:30AM candle.
+      
+    Returns:
+    - dict with keys:
+      - 'buy_signal': bool
+      - 'buy_price': float (close of first candle next day if buy_signal True)
+      - 'stoploss': float (10% below buy_price)
+      - 'take_profit': float (10% above buy_price)
+      - 'entry_time': pd.Timestamp of buy candle close time
+      - 'message': str for info/logging
+    """
+    
+    # Step 1: Identify trading days
+    unique_days = sorted(nifty_df['Datetime'].dt.date.unique())
+    if len(unique_days) < 2:
+        return {'buy_signal': False, 'message': 'Not enough trading days in data.'}
+    
+    day0 = unique_days[-2]
+    day1 = unique_days[-1]
+    
+    # Step 2: Get 3PM candle of day0 closing at 3:15 PM
+    candle_3pm = nifty_df[
+        (nifty_df['Datetime'].dt.date == day0) &
+        (nifty_df['Datetime'].dt.hour == 15) &
+        (nifty_df['Datetime'].dt.minute == 0)
+    ]
+    if candle_3pm.empty:
+        return {'buy_signal': False, 'message': '3 PM candle on day0 not found.'}
+    open_3pm = candle_3pm.iloc[0]['Open']
+    close_3pm = candle_3pm.iloc[0]['Close']
+    
+    # Step 3: Get first 15-min candle of day1 closing at 9:30 AM (9:15-9:30)
+    candle_930 = nifty_df[
+        (nifty_df['Datetime'].dt.date == day1) &
+        (nifty_df['Datetime'].dt.hour == 9) &
+        (nifty_df['Datetime'].dt.minute == 15)
+    ]
+    if candle_930.empty:
+        return {'buy_signal': False, 'message': '9:30 AM candle on day1 not found.'}
+    open_930 = candle_930.iloc[0]['Open']
+    close_930 = candle_930.iloc[0]['Close']
+    high_930 = candle_930.iloc[0]['High']
+    low_930 = candle_930.iloc[0]['Low']
+    close_time_930 = candle_930.iloc[0]['Datetime']
+    
+    # Step 4: Check if candle cuts both lines from below to above and closes above both lines
+    # "cuts lines from below to upwards" means low < open_3pm and close > open_3pm, same for close_3pm
+    
+    crossed_open_line = (low_930 < open_3pm) and (close_930 > open_3pm)
+    crossed_close_line = (low_930 < close_3pm) and (close_930 > close_3pm)
+    closes_above_both = (close_930 > open_3pm) and (close_930 > close_3pm)
+    
+    if crossed_open_line and crossed_close_line and closes_above_both:
+        buy_price = close_930  # use close of 9:30 candle as buy price
+        stoploss = buy_price * 0.9  # 10% trailing stoploss below buy price
+        take_profit = buy_price * 1.10  # 10% profit booking target
+        return {
+            'buy_signal': True,
+            'buy_price': buy_price,
+            'stoploss': stoploss,
+            'take_profit': take_profit,
+            'entry_time': close_time_930,
+            'message': 'Buy signal triggered: Crossed above 3PM open and close lines.'
+        }
+    
+    return {'buy_signal': False, 'message': 'No buy signal: conditions not met.'}
+
+#####################################################################################################################################
 open_3pm, close_3pm = display_3pm_candle_info(df_plot, last_day)
 
 # Now you have values to use in plotting or other logic
 
 #display_current_candle(df)
 display_current_trend(df)
+
+# Prepare nifty_df with required columns: Datetime, Open, High, Low, Close
+# Make sure Datetime is timezone-aware and in India time or UTC converted to IST.
+
+result = condition_1_trade_signal(nifty_df)
+
+if result['buy_signal']:
+    print(f"BUY @ {result['buy_price']} at {result['entry_time']}")
+    print(f"Set trailing SL at {result['stoploss']} and TP at {result['take_profit']}")
+else:
+    print(result['message'])
+
 
 
