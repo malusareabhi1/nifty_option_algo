@@ -8,13 +8,12 @@ df = yf.download("^NSEI", period="7d", interval="15m")
 if isinstance(df.index, pd.DatetimeIndex):
     df.reset_index(inplace=True)
 
-# Rename Datetime_ to Datetime
 if 'Datetime_' in df.columns:
     df.rename(columns={'Datetime_': 'Datetime'}, inplace=True)
-#df.reset_index(inplace=True)
-# Rename 'Date' column to 'Datetime' if it exists
-if 'Date' in df.columns:
+elif 'Date' in df.columns:
     df.rename(columns={'Date': 'Datetime'}, inplace=True)
+# Add any other detected name if needed
+
 
 st.write(df.columns)
 st.write(df.head(10))
