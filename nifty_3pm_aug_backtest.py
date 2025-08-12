@@ -9,12 +9,21 @@ st.set_page_config(layout="wide")
 # Place at the very top of your script (or just before plotting)
 st_autorefresh(interval=240000, limit=None, key="refresh")
 
-# Now your whole app will auto-refresh every 4 minutes (240000 ms)
+st.title("Nifty 15-min Chart for Selected Date & Previous Day")
 
+# Select date input (default today)
+selected_date = st.date_input("Select date", value=datetime.today())
 
-# Load data (replace this with your data loading logic)
-df = yf.download("^NSEI", period="7d", interval="15m")
-if isinstance(df.index, pd.DatetimeIndex):
+# Calculate date range to download (7 days before selected_date to day after selected_date)
+start_date = selected_date - timedelta(days=7)
+end_date = selected_date + timedelta(days=1)
+
+# Download data for ^NSEI from start_date to end_date
+df = yf.download("^NSEI", start=start_date.strftime("%Y-%m-%d"), end=end_date.strftime("%Y-%m-%d"), interval="15m")
+
+if df.empty:
+    st.warning("No data downloaded for the selected range.")
+    st.stop()
     df.reset_index(inplace=True)
 
 if 'Datetime_' in df.columns:
