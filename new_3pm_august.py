@@ -320,21 +320,7 @@ def condition_1_trade_signal_for_candle(nifty_df, candle_time):
 #####################################################################################################################################
 open_3pm, close_3pm = display_3pm_candle_info(df_plot, last_day)
 
-# Now you have values to use in plotting or other logic
 
-#display_current_candle(df)
-display_current_trend(df)
-
-# Prepare nifty_df with required columns: Datetime, Open, High, Low, Close
-# Make sure Datetime is timezone-aware and in India time or UTC converted to IST.
-
-result = condition_1_trade_signal(df)
-
-if result['buy_signal']:
-     st.write(f"BUY @ {result['buy_price']} at {result['entry_time']}")
-     st.write(f"Set trailing SL at {result['stoploss']} and TP at {result['take_profit']}")
-else:
-     st.write(result['message'])
 ##########################################################################################################
 
 import pandas as pd
