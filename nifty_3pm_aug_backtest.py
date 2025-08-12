@@ -893,83 +893,7 @@ def generate_trade_log_from_option(result, trade_signal):
 #import pandas as pd
 #import matplotlib.pyplot as plt
 
-def trade_with_signal(result_chain, signal, price_data):
-    """
-    result_chain : DataFrame of option chain at entry time
-    signal       : dict from trading_signal_all_conditions
-    price_data   : DataFrame of option price series from entry to exit
-    """
-    
-    # Map CALL/PUT to CE/PE
-    ot = "CE" if signal["option_type"].upper() == "CALL" else "PE"
-    
-    # Find nearest strike option
-    spot_price = signal["spot_price"]
-    nearest_strike = min(result_chain['strikePrice'], key=lambda x: abs(x - spot_price))
-    
-    # Filter for matching option
-    traded_option = result_chain[
-        (result_chain['strikePrice'] == nearest_strike) &
-        (result_chain['optionType'] == ot) &
-        (result_chain['expiryDate'] == signal['expiry'].date())
-    ]
-    
-    if traded_option.empty:
-        raise ValueError(f"No options found for expiry {signal['expiry'].date()} and type {ot}")
-    
-    option_symbol = traded_option.iloc[0]['symbol']
-    
-    # Simulate trade
-    entry_price = signal['buy_price']
-    stoploss = signal['stoploss']
-    take_profit = signal['take_profit']
-    qty = signal['quantity']
-    
-    exit_reason = None
-    exit_price = None
-    
-    for ts, row in price_data.iterrows():
-        price = row[option_symbol]
-        if price <= stoploss:
-            exit_price = stoploss
-            exit_reason = "Stoploss hit"
-            break
-        elif price >= take_profit:
-            exit_price = take_profit
-            exit_reason = "Target hit"
-            break
-    
-    # If neither SL nor TP hit, exit at last available price (expiry/end of day)
-    if exit_price is None:
-        exit_price = price_data.iloc[-1][option_symbol]
-        exit_reason = "Time/expiry exit"
-    
-    # Calculate P&L
-    pnl = (exit_price - entry_price) * qty
-    
-    # Create trade log
-    trade_log = {
-        "option": option_symbol,
-        "entry_price": entry_price,
-        "exit_price": exit_price,
-        "exit_reason": exit_reason,
-        "quantity": qty,
-        "pnl": pnl
-    }
-    
-    # Equity curve
-    equity_curve = pd.Series([0, pnl]).cumsum()
-    
-    # Plot P&L curve
-    plt.figure(figsize=(6,4))
-    plt.plot(equity_curve, marker='o')
-    plt.title(f"P&L Curve for {option_symbol}")
-    plt.xlabel("Trade step")
-    plt.ylabel("Cumulative P&L")
-    plt.grid(True)
-    plt.show()
-    
-    return trade_log, equity_curve
+
 
 
 
@@ -993,8 +917,8 @@ if signal:
     ot = "CE" if signal["option_type"].upper() == "CALL" else "PE"
     # Find nearest ITM option to buy
     result = option_chain_finder(result_chain, spot_price, option_type=ot, lots=10, lot_size=75)
-    st.write("###  find_nearest_itm_option")
-    st.write(result)
+   # st.write("###  find_nearest_itm_option")
+    #st.write(result)
     st.write("Nearest ITM Call option to BUY:")
     st.table(pd.DataFrame([result['option_data']]))
 
@@ -1008,20 +932,4 @@ else:
 
 #st.write(result_chain.tail())
 #################################################
-# 2. Get option chain for that expiry
-#result_chain = option_chain_finder(symbol="NIFTY", expiry=signal["expiry"])
 
-# 3. Get historical minute-by-minute (or tick) prices for that expiry's options
-price_data = get_option_price_data(symbols=result_chain['symbol'].tolist(), 
-                                   start_time=entry_time, 
-                                   end_time=exit_time)
-
-# 4. Run the trade simulation
-trade_log, equity_curve = trade_with_signal(result_chain, signal, price_data)
-
-# 5. Print the results
-print("Trade Log:")
-print(trade_log)
-
-print("\nEquity Curve:")
-print(equity_curve)
