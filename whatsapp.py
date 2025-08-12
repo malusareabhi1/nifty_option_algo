@@ -1,8 +1,11 @@
 from twilio.rest import Client
 
 # Your Twilio Account SID and Auth Token
-account_sid = "AC0ab7d53d5c46e69e2e766441b6ba7de1"
-auth_token = "91a4377397a2a6341a72a257bf597b1b"
+#account_sid = "AC0ab7d53d5c46e69e2e766441b6ba7de1"
+#auth_token = "91a4377397a2a6341a72a257bf597b1b"
+import os
+account_sid = os.getenv("TWILIO_ACCOUNT_SID")
+auth_token = os.getenv("TWILIO_AUTH_TOKEN")
 
 # Initialize the Twilio client
 client = Client(account_sid, auth_token)
