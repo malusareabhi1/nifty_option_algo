@@ -702,31 +702,31 @@ st.write(option_chain_df.head())
 
 ################################################################################################
 def find_nearest_itm_option(option_chain_df, spot_price, option_type, lots=10, lot_size=75):
-    from nsepython import *
+    import nsepython
 
-option_chain = nse_optionchain_scrapper('NIFTY')
-df = []
-
-for item in option_chain['records']['data']:
-    strike = item['strikePrice']
-    expiry = item['expiryDate']
-    if 'CE' in item:
-        ce = item['CE']
-        ce['strikePrice'] = strike
-        ce['expiryDate'] = expiry
-        ce['optionType'] = 'CE'
-        df.append(ce)
-    if 'PE' in item:
-        pe = item['PE']
-        pe['strikePrice'] = strike
-        pe['expiryDate'] = expiry
-        pe['optionType'] = 'PE'
-        df.append(pe)
-
-import pandas as pd
-option_chain_df = pd.DataFrame(df)
-option_chain_df['expiryDate'] = pd.to_datetime(option_chain_df['expiryDate'])
-st.write(option_chain_df.head())
+    option_chain = nse_optionchain_scrapper('NIFTY')
+    df = []
+    
+    for item in option_chain['records']['data']:
+        strike = item['strikePrice']
+        expiry = item['expiryDate']
+        if 'CE' in item:
+            ce = item['CE']
+            ce['strikePrice'] = strike
+            ce['expiryDate'] = expiry
+            ce['optionType'] = 'CE'
+            df.append(ce)
+        if 'PE' in item:
+            pe = item['PE']
+            pe['strikePrice'] = strike
+            pe['expiryDate'] = expiry
+            pe['optionType'] = 'PE'
+            df.append(pe)
+    
+    import pandas as pd
+    option_chain_df = pd.DataFrame(df)
+    option_chain_df['expiryDate'] = pd.to_datetime(option_chain_df['expiryDate'])
+    st.write(option_chain_df.head())
 
 
 # Example usage:
