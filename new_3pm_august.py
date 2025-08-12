@@ -116,6 +116,8 @@ def display_3pm_candle_info(df, day):
     close_price = candle.iloc[0]['Close_^NSEI']
     
     st.info(f"3:00 PM Candle for {day}: Open = {open_price}, Close = {close_price}")
+    st.write(f"🔵 3:00 PM Open for {day}: {open_price}")
+    st.write(f"🔴 3:00 PM Close for {day}: {close_price}")
     
     return open_price, close_price
 
