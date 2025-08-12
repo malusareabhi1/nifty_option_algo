@@ -870,9 +870,9 @@ def generate_trade_log_from_option(result, trade_signal):
         "Expiry Date": expiry.strftime('%Y-%m-%d') if hasattr(expiry, 'strftime') else expiry,
         "Entry Time": entry_time.strftime('%Y-%m-%d %H:%M:%S') if hasattr(entry_time, 'strftime') else entry_time,
         "Time Exit (16 mins after entry)": time_exit.strftime('%Y-%m-%d %H:%M:%S'),
-        "Trade Message": message,
-        "Trade Details": row["Trade Details"],
-        "Exit Reason": reason
+        "Trade Message": message
+        #"Trade Details": row["Trade Details"],
+        #"Exit Reason": reason
     }
 
     # Add condition-specific details
