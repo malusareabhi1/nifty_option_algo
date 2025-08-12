@@ -23,8 +23,12 @@ if df.empty:
 # Reset index to get Datetime as column
 df = df.reset_index()
 
-# Convert to India timezone
-df['Datetime'] = pd.to_datetime(df['Datetime']).dt.tz_localize('UTC').dt.tz_convert('Asia/Kolkata')
+#df['Datetime'] = pd.to_datetime(df['Datetime'])
+if df['Datetime_'].dt.tz is None:
+    df['Datetime'] = df['Datetime_'].dt.tz_localize('UTC').dt.tz_convert('Asia/Kolkata')
+else:
+    df['Datetime'] = df['Datetime_'].dt.tz_convert('Asia/Kolkata')
+
 
 # Get unique sorted trading dates in data
 unique_dates = sorted(df['Datetime'].dt.date.unique())
