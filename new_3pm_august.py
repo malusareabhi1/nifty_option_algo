@@ -810,48 +810,34 @@ def option_chain_finder(option_chain_df, spot_price, option_type, lots=10, lot_s
 import pandas as pd
 from datetime import timedelta
 
-def generate_trade_log(trade_signal):
-    """
-    trade_signal: dict returned from trading_signal_all_conditions()
-    Expected keys:
-        - condition (int 1-4)
-        - option_type ('CALL' or 'PUT')
-        - buy_price (float premium at buy)
-        - stoploss (float, trailing 10% below buy_price)
-        - take_profit (float, 10% above buy_price)
-        - quantity (int)
-        - expiry (datetime.date)
-        - entry_time (pd.Timestamp)
-        - message (str)
-        - spot_price (float)
-    """
-    if trade_signal is None:
-        print("No trade signal to log.")
+def generate_trade_log_from_option(result, trade_signal):
+    if result is None or trade_signal is None:
         return None
-    
+
+    option = result['option_data']
+    qty = result['total_quantity']
+
     condition = trade_signal['condition']
-    option_type = trade_signal['option_type']
-    buy_price = trade_signal['buy_price']
-    stoploss = trade_signal['stoploss']
-    take_profit = trade_signal['take_profit']
-    quantity = trade_signal['quantity']
-    expiry = trade_signal['expiry']
     entry_time = trade_signal['entry_time']
     message = trade_signal['message']
 
-    partial_qty = quantity // 2  # 50% position size to book profit
-    full_qty = quantity
+    buy_price = option.get('lastPrice', trade_signal.get('buy_price'))
+    expiry = option.get('expiryDate', trade_signal.get('expiry'))
+    option_type = option.get('optionType', trade_signal.get('option_type'))
 
+    stoploss = buy_price * 0.9
+    take_profit = buy_price * 1.10
+    partial_qty = qty // 2
     time_exit = entry_time + timedelta(minutes=16)
 
-    # Prepare trade log as dict (or DataFrame)
     trade_log = {
         "Condition": condition,
         "Option Type": option_type,
+        "Strike Price": option.get('strikePrice'),
         "Buy Premium": buy_price,
         "Stoploss (Trailing 10%)": stoploss,
         "Take Profit (10% rise)": take_profit,
-        "Quantity (10 lots)": quantity,
+        "Quantity": qty,
         "Partial Profit Booking Qty (50%)": partial_qty,
         "Expiry Date": expiry.strftime('%Y-%m-%d') if hasattr(expiry, 'strftime') else expiry,
         "Entry Time": entry_time.strftime('%Y-%m-%d %H:%M:%S') if hasattr(entry_time, 'strftime') else entry_time,
@@ -859,7 +845,7 @@ def generate_trade_log(trade_signal):
         "Trade Message": message
     }
 
-    # Condition specific notes:
+    # Add condition-specific details
     if condition == 1:
         trade_log["Trade Details"] = (
             "Buy nearest ITM CALL option. Stoploss trailing 10% below buy premium. "
@@ -886,7 +872,6 @@ def generate_trade_log(trade_signal):
     else:
         trade_log["Trade Details"] = "No specific trade details available."
 
-    # Display using pandas DataFrame for nicer tabular output
     trade_log_df = pd.DataFrame([trade_log])
     return trade_log_df
 
