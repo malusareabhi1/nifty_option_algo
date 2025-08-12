@@ -7,6 +7,8 @@ import plotly.graph_objects as go
 df = yf.download("^NSEI", period="7d", interval="15m")
 df.reset_index(inplace=True)
 
+st.write(df.columns)
+
 # Flatten columns if MultiIndex
 if isinstance(df.columns, pd.MultiIndex):
     df.columns = ['_'.join(col).strip() if isinstance(col, tuple) else col for col in df.columns]
