@@ -982,6 +982,9 @@ trade_log_df["Option Symbol"] = trade_log_df.apply(
     lambda row: f"NIFTY{row['Expiry Date'].strftime('%d%b%y').upper()}{int(row['Strike Price'])}{row['Option Type']}",
     axis=1
 )
+trade_log_df = trade_log_df.rename(columns={"Time Exit (16 mins after entry)": "Exit Time"})
+exit_time = pd.to_datetime(trade_log_df.loc[0, 'Exit Time'])
+
 # Example: pulling details from trade log
 option_symbol = trade_log_df.loc[0, 'Option Symbol']
 entry_time = pd.to_datetime(trade_log_df.loc[0, 'Entry Time'])
