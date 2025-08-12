@@ -30,6 +30,9 @@ if df['Datetime'].dt.tz is None:
 else:
     df['Datetime'] = df['Datetime'].dt.tz_convert('Asia/Kolkata')
 
+st.write(df.columns)
+st.write(df.head(10))
+
 # Filter for last two trading days to plot
 unique_days = df['Datetime'].dt.date.unique()
 if len(unique_days) < 2:
