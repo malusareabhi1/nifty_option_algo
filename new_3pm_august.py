@@ -277,10 +277,10 @@ display_current_trend(df)
 result = condition_1_trade_signal(df)
 
 if result['buy_signal']:
-    print(f"BUY @ {result['buy_price']} at {result['entry_time']}")
-    print(f"Set trailing SL at {result['stoploss']} and TP at {result['take_profit']}")
+     st.write(f"BUY @ {result['buy_price']} at {result['entry_time']}")
+     st.write(f"Set trailing SL at {result['stoploss']} and TP at {result['take_profit']}")
 else:
-    print(result['message'])
+     st.write(result['message'])
 
 
 
