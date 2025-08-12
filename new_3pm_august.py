@@ -28,7 +28,7 @@ if 'Datetime' not in df.columns and 'datetime' in df.columns:
 st.write(df.columns)
 # Convert to datetime & timezone aware
 #df['Datetime'] = pd.to_datetime(df['Datetime'])
-if df['Datetime'].dt.tz is None:
+if df['Datetime_'].dt.tz is None:
     df['Datetime'] = df['Datetime'].dt.tz_localize('UTC').dt.tz_convert('Asia/Kolkata')
 else:
     df['Datetime'] = df['Datetime'].dt.tz_convert('Asia/Kolkata')
