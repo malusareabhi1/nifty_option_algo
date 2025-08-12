@@ -817,6 +817,7 @@ signal = trading_signal_all_conditions(df)
 if signal:
     st.write(f"Trade signal detected:\n{signal['message']}")
     st.table(pd.DataFrame([signal]))
+    spot_price = signal['spot_price']
     # Find nearest ITM option to buy
     result = option_chain_finder(result_chain, spot_price, option_type='CE', lots=10, lot_size=75)
 
