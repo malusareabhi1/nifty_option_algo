@@ -893,6 +893,44 @@ def generate_trade_log_from_option(result, trade_signal):
 #import pandas as pd
 #import matplotlib.pyplot as plt
 
+#import matplotlib.pyplot as plt
+
+def plot_option_trade(option_symbol, entry_time, exit_time, entry_price, exit_price, reason_exit, pnl):
+    """
+    Plot option price movement with entry/exit markers and P&L.
+    """
+    #import yfinance as yf
+    #import pandas as pd
+
+    # Fetch historical intraday data for the option
+    data = yf.download(option_symbol, start=entry_time.date(), end=exit_time.date() + pd.Timedelta(days=1), interval="5m")
+
+    if data.empty:
+        st.warning(f"No historical data found for {option_symbol}")
+        return
+
+    # Plot price movement
+    fig, ax = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+
+    # Price chart
+    ax[0].plot(data.index, data['Close'], label='Option Price', color='blue')
+    ax[0].axvline(entry_time, color='green', linestyle='--', label='Entry')
+    ax[0].axvline(exit_time, color='red', linestyle='--', label='Exit')
+    ax[0].scatter(entry_time, entry_price, color='green', s=80, zorder=5)
+    ax[0].scatter(exit_time, exit_price, color='red', s=80, zorder=5)
+    ax[0].set_ylabel("Price")
+    ax[0].legend()
+    ax[0].set_title(f"Trade on {option_symbol} | Exit Reason: {reason_exit}")
+
+    # P&L curve
+    data['P&L'] = (data['Close'] - entry_price) * (1 if exit_price > entry_price else -1)
+    ax[1].plot(data.index, data['P&L'], label="P&L", color='orange')
+    ax[1].axhline(0, color='black', linestyle='--')
+    ax[1].set_ylabel("P&L")
+    ax[1].legend()
+
+    plt.tight_layout()
+    st.pyplot(fig)
 
 
 
@@ -932,4 +970,17 @@ else:
 
 #st.write(result_chain.tail())
 #################################################
+#trade_log_df = generate_trade_log_from_option(result, signal)
+#st.table(trade_log_df)
+
+# Example: pulling details from trade log
+option_symbol = trade_log_df.loc[0, 'Option Symbol']
+entry_time = pd.to_datetime(trade_log_df.loc[0, 'Entry Time'])
+exit_time = pd.to_datetime(trade_log_df.loc[0, 'Exit Time'])
+entry_price = trade_log_df.loc[0, 'Entry Price']
+exit_price = trade_log_df.loc[0, 'Exit Price']
+reason_exit = trade_log_df.loc[0, 'Exit Reason']
+pnl = trade_log_df.loc[0, 'P&L']
+
+plot_option_trade(option_symbol, entry_time, exit_time, entry_price, exit_price, reason_exit, pnl)
 
