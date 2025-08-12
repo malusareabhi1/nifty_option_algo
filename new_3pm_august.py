@@ -274,7 +274,7 @@ display_current_trend(df)
 # Prepare nifty_df with required columns: Datetime, Open, High, Low, Close
 # Make sure Datetime is timezone-aware and in India time or UTC converted to IST.
 
-result = condition_1_trade_signal(nifty_df)
+result = condition_1_trade_signal(df)
 
 if result['buy_signal']:
     print(f"BUY @ {result['buy_price']} at {result['entry_time']}")
