@@ -963,7 +963,7 @@ result_chain=find_nearest_itm_option()
 #calling all condition in one function
 signal = trading_signal_all_conditions(df)
 #st.write("###  Signal")
-st.write(signal)
+#st.write(signal)
 if signal:
     st.write(f"Trade signal detected:\n{signal['message']}")
     st.table(pd.DataFrame([signal]))
@@ -973,7 +973,7 @@ if signal:
     # Find nearest ITM option to buy
     result = option_chain_finder(result_chain, spot_price, option_type=ot, lots=10, lot_size=75)
    # st.write("###  find_nearest_itm_option")
-    st.write(result)
+    #st.write(result)
     st.write("Nearest ITM Call option to BUY:")
     st.table(pd.DataFrame([result['option_data']]))
 
@@ -993,27 +993,3 @@ st.write("Columns:", trade_log_df.columns.tolist())
 #trade_log_df = generate_trade_log_from_option(result, signal)
 #st.table(trade_log_df)
 # Ensure Expiry Date is a datetime
-trade_log_df["Expiry Date"] = pd.to_datetime(trade_log_df["Expiry Date"], errors="coerce")
-
-trade_log_df["Option Symbol"] = trade_log_df.apply(
-    lambda row: f"NIFTY{row['Expiry Date'].strftime('%d%b%y').upper()}{int(row['Strike Price'])}{row['Option Type']}",
-    axis=1
-)
-trade_log_df = trade_log_df.rename(columns={"Time Exit (16 mins after entry)": "Exit Time"})
-exit_time = pd.to_datetime(trade_log_df.loc[0, 'Exit Time'])
-trade_log_df.rename(columns={
-    "Buy Premium": "Entry Price",
-    "Time Exit (16 mins after entry)": "Exit Time"
-}, inplace=True)
-
-# Example: pulling details from trade log
-option_symbol = trade_log_df.loc[0, 'Option Symbol']
-entry_time = pd.to_datetime(trade_log_df.loc[0, 'Entry Time'])
-exit_time = pd.to_datetime(trade_log_df.loc[0, 'Exit Time'])
-entry_price = trade_log_df.loc[0, 'Entry Price']
-exit_price = trade_log_df.loc[0, 'Exit Price']
-reason_exit = trade_log_df.loc[0, 'Exit Reason']
-pnl = trade_log_df.loc[0, 'P&L']
-
-plot_option_trade(option_symbol, entry_time, exit_time, entry_price, exit_price, reason_exit, pnl)
-
