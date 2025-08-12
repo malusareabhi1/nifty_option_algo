@@ -139,13 +139,22 @@ def display_current_candle(df):
     Parameters:
     - df: DataFrame with columns ['Open_^NSEI', 'High_^NSEI', 'Low_^NSEI', 'Close_^NSEI', 'Datetime']
     """
+    # Ensure datetime is timezone-aware and converted to Asia/Kolkata
+    local_dt = current_candle['Datetime']
+    if local_dt.tzinfo is None:
+        local_dt = local_dt.tz_localize('UTC').tz_convert('Asia/Kolkata')
+    else:
+        local_dt = local_dt.tz_convert('Asia/Kolkata')
+    
+    st.info(f"Current Candle @ {local_dt.strftime('%Y-%m-%d %H:%M')} (Asia/Kolkata)")
+
     if df.empty:
         st.warning("No candle data available.")
         return
     
     current_candle = df.iloc[-1]
     
-    st.info(f"Current Candle @ {current_candle['Datetime']}")
+    #st.info(f"Current Candle @ {current_candle['Datetime']}")
     st.write(f"Open: {current_candle['Open_^NSEI']}")
     st.write(f"High: {current_candle['High_^NSEI']}")
     st.write(f"Low: {current_candle['Low_^NSEI']}")
