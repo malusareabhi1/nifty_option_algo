@@ -157,11 +157,42 @@ def display_current_candle(df):
     st.write(f"Close: {current_candle['Close_^NSEI']}")
 
 # After you get last_day and df_plot
+#import pandas as pd
+#import streamlit as st
+
+def display_current_trend(df):
+    """
+    Display only the trend (Bullish/Bearish/Doji) of the latest candle.
+
+    Parameters:
+    - df: DataFrame with columns ['Open_^NSEI', 'Close_^NSEI']
+    """
+    if df.empty:
+        st.warning("No candle data available.")
+        return
+    
+    current_candle = df.iloc[-1]
+    open_price = current_candle['Open_^NSEI']
+    close_price = current_candle['Close_^NSEI']
+    
+    if close_price > open_price:
+        trend_text = "Bullish 🔥"
+        trend_color = "green"
+    elif close_price < open_price:
+        trend_text = "Bearish ❄️"
+        trend_color = "red"
+    else:
+        trend_text = "Doji / Neutral ⚪"
+        trend_color = "gray"
+    
+    st.markdown(f"<span style='color:{trend_color}; font-weight:bold; font-size:20px;'>Trend: {trend_text}</span>", unsafe_allow_html=True)
+
 
 open_3pm, close_3pm = display_3pm_candle_info(df_plot, last_day)
 
 # Now you have values to use in plotting or other logic
 
 #display_current_candle(df)
+display_current_trend(df)
 
 
