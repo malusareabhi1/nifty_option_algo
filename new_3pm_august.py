@@ -805,7 +805,92 @@ def option_chain_finder(option_chain_df, spot_price, option_type, lots=10, lot_s
         'option_data': option_row
     }
 
-############################################################################################################
+###########################################################
+
+import pandas as pd
+from datetime import timedelta
+
+def generate_trade_log(trade_signal):
+    """
+    trade_signal: dict returned from trading_signal_all_conditions()
+    Expected keys:
+        - condition (int 1-4)
+        - option_type ('CALL' or 'PUT')
+        - buy_price (float premium at buy)
+        - stoploss (float, trailing 10% below buy_price)
+        - take_profit (float, 10% above buy_price)
+        - quantity (int)
+        - expiry (datetime.date)
+        - entry_time (pd.Timestamp)
+        - message (str)
+        - spot_price (float)
+    """
+    if trade_signal is None:
+        print("No trade signal to log.")
+        return None
+    
+    condition = trade_signal['condition']
+    option_type = trade_signal['option_type']
+    buy_price = trade_signal['buy_price']
+    stoploss = trade_signal['stoploss']
+    take_profit = trade_signal['take_profit']
+    quantity = trade_signal['quantity']
+    expiry = trade_signal['expiry']
+    entry_time = trade_signal['entry_time']
+    message = trade_signal['message']
+
+    partial_qty = quantity // 2  # 50% position size to book profit
+    full_qty = quantity
+
+    time_exit = entry_time + timedelta(minutes=16)
+
+    # Prepare trade log as dict (or DataFrame)
+    trade_log = {
+        "Condition": condition,
+        "Option Type": option_type,
+        "Buy Premium": buy_price,
+        "Stoploss (Trailing 10%)": stoploss,
+        "Take Profit (10% rise)": take_profit,
+        "Quantity (10 lots)": quantity,
+        "Partial Profit Booking Qty (50%)": partial_qty,
+        "Expiry Date": expiry.strftime('%Y-%m-%d') if hasattr(expiry, 'strftime') else expiry,
+        "Entry Time": entry_time.strftime('%Y-%m-%d %H:%M:%S') if hasattr(entry_time, 'strftime') else entry_time,
+        "Time Exit (16 mins after entry)": time_exit.strftime('%Y-%m-%d %H:%M:%S'),
+        "Trade Message": message
+    }
+
+    # Condition specific notes:
+    if condition == 1:
+        trade_log["Trade Details"] = (
+            "Buy nearest ITM CALL option. Stoploss trailing 10% below buy premium. "
+            "Book 50% qty profit when premium rises 10%. "
+            "Time exit after 16 minutes if no target hit."
+        )
+    elif condition == 2:
+        trade_log["Trade Details"] = (
+            "Major gap down. Buy nearest ITM PUT option when next candle crosses low of 9:30 candle. "
+            "Stoploss trailing 10% below buy premium."
+        )
+    elif condition == 3:
+        trade_log["Trade Details"] = (
+            "Major gap up. Buy nearest ITM CALL option. Stoploss trailing 10% below buy premium. "
+            "Book 50% qty profit when premium rises 10%. "
+            "Time exit after 16 minutes if no target hit."
+        )
+    elif condition == 4:
+        trade_log["Trade Details"] = (
+            "Buy nearest ITM PUT option. Stoploss trailing 10% below buy premium. "
+            "Book 50% qty profit when premium rises 10%. "
+            "Time exit after 16 minutes if no target hit."
+        )
+    else:
+        trade_log["Trade Details"] = "No specific trade details available."
+
+    # Display using pandas DataFrame for nicer tabular output
+    trade_log_df = pd.DataFrame([trade_log])
+    return trade_log_df
+
+################################################################################################################
 #run_check_for_all_candles(df)  # df = your full OHLC DataFrame
 
 #display_todays_candles_with_trend(df)
@@ -825,6 +910,9 @@ if signal:
     st.table(pd.DataFrame([result['option_data']]))
 
     st.write(f"Total Quantity: {result['total_quantity']}")
+    trade_log_df = generate_trade_log(trade_signal)
+    st.write("### Trade Log for Current Signal")
+    st.table(trade_log_df)
 else:
     st.write("No trade signal for today based on conditions.")
 
