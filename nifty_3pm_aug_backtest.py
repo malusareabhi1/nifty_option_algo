@@ -20,14 +20,15 @@ df = yf.download("^NSEI", start=start_date.strftime("%Y-%m-%d"), end=end_date.st
 if isinstance(df.index, pd.DatetimeIndex):
     df.reset_index(inplace=True)
 
-# Rename datetime column if needed
-if 'Datetime_' in df.columns:
-    df.rename(columns={'Datetime_': 'Datetime'}, inplace=True)
-elif 'Date' in df.columns:
-    df.rename(columns={'Date': 'Datetime'}, inplace=True)
+df['Datetime'] = pd.to_datetime(df['Datetime'])
 
-# Convert to datetime and localize timezone to Asia/Kolkata
-df['Datetime'] = pd.to_datetime(df['Datetime']).dt.tz_localize('UTC').dt.tz_convert('Asia/Kolkata')
+if df['Datetime'].dt.tz is None:
+    # If naive, localize to UTC then convert to Asia/Kolkata
+    df['Datetime'] = df['Datetime'].dt.tz_localize('UTC').dt.tz_convert('Asia/Kolkata')
+else:
+    # Already tz-aware, just convert timezone
+    df['Datetime'] = df['Datetime'].dt.tz_convert('Asia/Kolkata')
+
 
 # Extract unique trading days from downloaded data
 unique_days = sorted(df['Datetime'].dt.date.unique())
