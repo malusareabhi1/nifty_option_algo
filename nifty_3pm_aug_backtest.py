@@ -840,17 +840,7 @@ def generate_trade_log_from_option(result, trade_signal):
         nearest_idx = result.index.get_indexer([exit_time], method="nearest")[0]
         price_at_exit = result.iloc[nearest_idx]["Close"]
     
-    if price_at_exit <= stoploss_price:
-        stoploss_hit = True
-        exit_price = stoploss_price
-        reason = "Stoploss hit"
-    elif price_at_exit >= target_price:
-        target_hit = True
-        exit_price = target_price
-        reason = "Target hit"
-    else:
-        exit_price = price_at_exit
-        reason = "Time exit"
+    
 
     option = result['option_data']
     qty = result['total_quantity']
@@ -868,12 +858,7 @@ def generate_trade_log_from_option(result, trade_signal):
     partial_qty = qty // 2
     time_exit = entry_time + timedelta(minutes=16)
 
-    if stoploss_hit:
-        exit_price = stoploss_price
-    elif target_hit:
-        exit_price = take_profit_price
-    else:
-        exit_price = market_price_at_exit_time
+    
 
     
 
