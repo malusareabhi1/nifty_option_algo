@@ -980,9 +980,10 @@ def trade_with_signal(result_chain, signal, price_data):
 display_todays_candles_with_trend_and_signal(df)
 ########################
 result_chain=find_nearest_itm_option()
-st.write(result_chain)
+#st.write(result_chain)
 #calling all condition in one function
 signal = trading_signal_all_conditions(df)
+st.write("###  Signal")
 st.write(signal)
 if signal:
     st.write(f"Trade signal detected:\n{signal['message']}")
@@ -992,7 +993,8 @@ if signal:
     ot = "CE" if signal["option_type"].upper() == "CALL" else "PE"
     # Find nearest ITM option to buy
     result = option_chain_finder(result_chain, spot_price, option_type=ot, lots=10, lot_size=75)
-
+    st.write("###  find_nearest_itm_option")
+    st.write(result)
     st.write("Nearest ITM Call option to BUY:")
     st.table(pd.DataFrame([result['option_data']]))
 
