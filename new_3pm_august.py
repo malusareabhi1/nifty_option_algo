@@ -547,7 +547,8 @@ def trading_signal_all_conditions(df, quantity=10*750):
             'quantity': quantity,
             'expiry': expiry,
             'entry_time': entry_time,
-            'message': 'Condition 1 met: Buy nearest ITM CALL option.'
+            'message': 'Condition 1 met: Buy nearest ITM CALL option.',
+            'spot_price': spot_price
         }
 
     # Condition 2: Major gap down + 9:30 candle closes below 3PM open & close lines
@@ -574,7 +575,8 @@ def trading_signal_all_conditions(df, quantity=10*750):
                     'quantity': quantity,
                     'expiry': expiry,
                     'entry_time': next_candle['Datetime'],
-                    'message': 'Condition 2 met: Gap down + next candle crosses low of 9:30 candle, buy nearest ITM PUT.'
+                    'message': 'Condition 2 met: Gap down + next candle crosses low of 9:30 candle, buy nearest ITM PUT.',
+                    'spot_price': spot_price
                 }
         # If no such candle crossed, no trade yet
     
@@ -600,7 +602,8 @@ def trading_signal_all_conditions(df, quantity=10*750):
                     'quantity': quantity,
                     'expiry': expiry,
                     'entry_time': next_candle['Datetime'],
-                    'message': 'Condition 3 met: Gap up + next candle crosses high of 9:30 candle, buy nearest ITM CALL.'
+                    'message': 'Condition 3 met: Gap up + next candle crosses high of 9:30 candle, buy nearest ITM CALL.',
+                    'spot_price': spot_price
                 }
         # No trade if not crossed yet
     
@@ -620,8 +623,9 @@ def trading_signal_all_conditions(df, quantity=10*750):
             'quantity': quantity,
             'expiry': expiry,
             'entry_time': entry_time,
-            'message': 'Condition 4 met: Buy nearest ITM PUT option.'
-        },spot_price
+            'message': 'Condition 4 met: Buy nearest ITM PUT option.',
+            'spot_price': spot_price
+        }
     # No condition met
     return None
 
