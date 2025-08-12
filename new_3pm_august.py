@@ -121,3 +121,10 @@ def display_3pm_candle_info(df, day):
     
     return open_price, close_price
 
+
+# After you get last_day and df_plot
+
+open_3pm, close_3pm = display_3pm_candle_info(df_plot, last_day)
+
+# Now you have values to use in plotting or other logic
+
