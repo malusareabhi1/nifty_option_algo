@@ -702,73 +702,32 @@ st.write(option_chain_df.head())
 
 ################################################################################################
 def find_nearest_itm_option(option_chain_df, spot_price, option_type, lots=10, lot_size=75):
-    """
-    Finds the nearest ITM option for nearest weekly expiry.
+    from nsepython import *
 
-    Parameters:
-        option_chain_df (pd.DataFrame): Option chain data with columns
-            ['strikePrice', 'expiryDate', 'optionType', ...].
-        spot_price (float): Current underlying spot price.
-        option_type (str): 'CE' for Call, 'PE' for Put.
-        lots (int): Number of lots to trade. Default 10.
-        lot_size (int): Lot size per contract. Default 75.
+option_chain = nse_optionchain_scrapper('NIFTY')
+df = []
 
-    Returns:
-        dict: Contains 'strikePrice', 'expiryDate', 'optionType',
-              'total_quantity', and 'option_data' (full row as Series).
-    """
-    # Convert expiryDate to datetime if not already
-    if not pd.api.types.is_datetime64_any_dtype(option_chain_df['expiryDate']):
-        option_chain_df['expiryDate'] = pd.to_datetime(option_chain_df['expiryDate'])
+for item in option_chain['records']['data']:
+    strike = item['strikePrice']
+    expiry = item['expiryDate']
+    if 'CE' in item:
+        ce = item['CE']
+        ce['strikePrice'] = strike
+        ce['expiryDate'] = expiry
+        ce['optionType'] = 'CE'
+        df.append(ce)
+    if 'PE' in item:
+        pe = item['PE']
+        pe['strikePrice'] = strike
+        pe['expiryDate'] = expiry
+        pe['optionType'] = 'PE'
+        df.append(pe)
 
-    today = pd.Timestamp.today().normalize()
+import pandas as pd
+option_chain_df = pd.DataFrame(df)
+option_chain_df['expiryDate'] = pd.to_datetime(option_chain_df['expiryDate'])
+st.write(option_chain_df.head())
 
-    # Filter weekly expiries >= today
-    weekly_expiries = option_chain_df['expiryDate'].unique()
-    weekly_expiries = [d for d in weekly_expiries if d >= today]
-    if not weekly_expiries:
-        raise ValueError("No valid expiry dates found in option chain after today.")
-    nearest_expiry = min(weekly_expiries)
-
-    # Filter option chain for nearest expiry and option type
-    df_expiry = option_chain_df[
-        (option_chain_df['expiryDate'] == nearest_expiry) &
-        (option_chain_df['optionType'] == option_type)
-    ]
-
-    if df_expiry.empty:
-        raise ValueError(f"No options found for expiry {nearest_expiry} and type {option_type}")
-
-    # Find nearest ITM strike
-    if option_type == 'CE':
-        itm_strikes = df_expiry[df_expiry['strikePrice'] <= spot_price]
-        if itm_strikes.empty:
-            # If no strike <= spot, pick minimum strike available (OTM fallback)
-            nearest_itm_strike = df_expiry['strikePrice'].min()
-        else:
-            nearest_itm_strike = itm_strikes['strikePrice'].max()
-    elif option_type == 'PE':
-        itm_strikes = df_expiry[df_expiry['strikePrice'] >= spot_price]
-        if itm_strikes.empty:
-            # If no strike >= spot, pick max strike available (OTM fallback)
-            nearest_itm_strike = df_expiry['strikePrice'].max()
-        else:
-            nearest_itm_strike = itm_strikes['strikePrice'].min()
-    else:
-        raise ValueError("option_type must be 'CE' or 'PE'")
-
-    # Get option data row for nearest ITM strike
-    option_data = df_expiry[df_expiry['strikePrice'] == nearest_itm_strike].iloc[0]
-
-    total_quantity = lots * lot_size
-
-    return {
-        'strikePrice': nearest_itm_strike,
-        'expiryDate': nearest_expiry,
-        'optionType': option_type,
-        'total_quantity': total_quantity,
-        'option_data': option_data,
-    }
 
 # Example usage:
 # result = find_nearest_itm_option(option_chain_df, spot_price=18250, option_type='CE', lots=10, lot_size=75)
