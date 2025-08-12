@@ -831,7 +831,7 @@ def generate_trade_log_from_option(result, trade_signal):
     target_hit = False
     
     #exit_time = pd.to_datetime(exit_time)
-    result.index = pd.to_datetime(result.index)
+    #result.index = pd.to_datetime(result.index)
 
     try:
         price_at_exit = result.loc[exit_time, "Close"]
