@@ -139,6 +139,7 @@ def display_current_candle(df):
     Parameters:
     - df: DataFrame with columns ['Open_^NSEI', 'High_^NSEI', 'Low_^NSEI', 'Close_^NSEI', 'Datetime']
     """
+    st.write(df.columns)
     # Ensure datetime is timezone-aware and converted to Asia/Kolkata
     local_dt = current_candle['Datetime']
     if local_dt.tzinfo is None:
