@@ -2,6 +2,13 @@ import streamlit as st
 import pandas as pd
 import yfinance as yf
 import plotly.graph_objects as go
+from streamlit_autorefresh import st_autorefresh
+
+# Place at the very top of your script (or just before plotting)
+st_autorefresh(interval=240000, limit=None, key="refresh")
+
+# Now your whole app will auto-refresh every 4 minutes (240000 ms)
+
 
 # Load data (replace this with your data loading logic)
 df = yf.download("^NSEI", period="7d", interval="15m")
