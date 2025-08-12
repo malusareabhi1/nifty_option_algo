@@ -18,6 +18,12 @@ if df['Datetime'].dt.tz is None:
 else:
     df['Datetime'] = df['Datetime'].dt.tz_convert('Asia/Kolkata')
 
+# If df.columns is a MultiIndex (like shown in your data), flatten it:
+if isinstance(df.columns, pd.MultiIndex):
+    df.columns = ['_'.join(col).strip() if isinstance(col, tuple) else col for col in df.columns]
+
+# Now your columns will be like: 'Datetime', 'Close_^NSEI', 'High_^NSEI', etc.
+
 # Filter to trading days and times if needed (optional)
 df = df[df['Datetime'].dt.weekday < 5]
 
