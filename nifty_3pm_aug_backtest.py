@@ -975,7 +975,13 @@ st.write("Columns:", trade_log_df.columns.tolist())
 #################################################
 #trade_log_df = generate_trade_log_from_option(result, signal)
 #st.table(trade_log_df)
+# Ensure Expiry Date is a datetime
+trade_log_df["Expiry Date"] = pd.to_datetime(trade_log_df["Expiry Date"], errors="coerce")
 
+trade_log_df["Option Symbol"] = trade_log_df.apply(
+    lambda row: f"NIFTY{row['Expiry Date'].strftime('%d%b%y').upper()}{int(row['Strike Price'])}{row['Option Type']}",
+    axis=1
+)
 # Example: pulling details from trade log
 option_symbol = trade_log_df.loc[0, 'Option Symbol']
 entry_time = pd.to_datetime(trade_log_df.loc[0, 'Entry Time'])
