@@ -731,9 +731,76 @@ def find_nearest_itm_option():
     #st.write(option_chain_df.head())
     return  option_chain_df
 
-# Example usage:
-# result = find_nearest_itm_option(option_chain_df, spot_price=18250, option_type='CE', lots=10, lot_size=75)
-# print(result)
+
+
+##################################################################################
+import pandas as pd
+
+def option_chain_finder(option_chain_df, spot_price, option_type, lots=10, lot_size=75):
+    """
+    Find nearest ITM option in option chain DataFrame.
+
+    Parameters:
+    - option_chain_df: pd.DataFrame with columns including ['strikePrice', 'expiryDate', 'optionType', ...]
+    - spot_price: float, current underlying price
+    - option_type: str, 'CE' for Call or 'PE' for Put
+    - lots: int, number of lots to trade (default 10)
+    - lot_size: int, lot size per option contract (default 75)
+
+    Returns:
+    - dict with keys:
+        'strikePrice', 'expiryDate', 'optionType', 'total_quantity', 'option_data' (pd.Series row)
+    """
+
+    # Ensure expiryDate is datetime
+    if not pd.api.types.is_datetime64_any_dtype(option_chain_df['expiryDate']):
+        option_chain_df['expiryDate'] = pd.to_datetime(option_chain_df['expiryDate'])
+
+    today = pd.Timestamp.today().normalize()
+
+    # Find nearest expiry on or after today
+    expiries = option_chain_df.loc[option_chain_df['expiryDate'] >= today, 'expiryDate'].unique()
+    if len(expiries) == 0:
+        raise ValueError("No expiry dates found on or after today.")
+    nearest_expiry = min(expiries)
+
+    # Filter for nearest expiry and option type
+    df_expiry = option_chain_df[
+        (option_chain_df['expiryDate'] == nearest_expiry) &
+        (option_chain_df['optionType'] == option_type)
+    ]
+
+    if df_expiry.empty:
+        raise ValueError(f"No options found for expiry {nearest_expiry.date()} and type {option_type}")
+
+    # Find nearest ITM strike
+    if option_type == 'CE':
+        itm_strikes = df_expiry[df_expiry['strikePrice'] <= spot_price]
+        if itm_strikes.empty:
+            # fallback to minimum strike (OTM)
+            nearest_strike = df_expiry['strikePrice'].min()
+        else:
+            nearest_strike = itm_strikes['strikePrice'].max()
+    else:  # 'PE'
+        itm_strikes = df_expiry[df_expiry['strikePrice'] >= spot_price]
+        if itm_strikes.empty:
+            # fallback to maximum strike (OTM)
+            nearest_strike = df_expiry['strikePrice'].max()
+        else:
+            nearest_strike = itm_strikes['strikePrice'].min()
+
+    # Get option row
+    option_row = df_expiry[df_expiry['strikePrice'] == nearest_strike].iloc[0]
+
+    total_qty = lots * lot_size
+
+    return {
+        'strikePrice': nearest_strike,
+        'expiryDate': nearest_expiry,
+        'optionType': option_type,
+        'total_quantity': total_qty,
+        'option_data': option_row
+    }
 
 ############################################################################################################
 #run_check_for_all_candles(df)  # df = your full OHLC DataFrame
@@ -746,6 +813,13 @@ signal = trading_signal_all_conditions(df)
 if signal:
     st.write(f"Trade signal detected:\n{signal['message']}")
     st.table(pd.DataFrame([signal]))
+    # Find nearest ITM option to buy
+    result = option_chain_finder(option_chain_df, spot_price, option_type='CE', lots=10, lot_size=75)
+
+    st.write("Nearest ITM Call option to BUY:")
+    st.table(pd.DataFrame([result['option_data']]))
+
+    st.write(f"Total Quantity: {result['total_quantity']}")
 else:
     st.write("No trade signal for today based on conditions.")
 
