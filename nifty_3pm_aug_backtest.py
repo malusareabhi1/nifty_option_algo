@@ -830,7 +830,7 @@ def generate_trade_log_from_option(result, trade_signal):
     stoploss_hit = False
     target_hit = False
     
-    exit_time = pd.to_datetime(exit_time)
+    #exit_time = pd.to_datetime(exit_time)
     result.index = pd.to_datetime(result.index)
 
     try:
