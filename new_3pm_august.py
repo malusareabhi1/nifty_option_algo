@@ -453,8 +453,190 @@ def display_todays_candles_with_trend_and_signal(df):
 
 
 ###################################################################################################
+
+import pandas as pd
+
+def get_nearest_weekly_expiry(today):
+    """
+    Placeholder: implement your own logic to find nearest weekly expiry date
+    For demo, returns today + 7 days (Saturday)
+    """
+    return today + pd.Timedelta(days=7)
+
+def trading_signal_all_conditions(df, quantity=10*750):
+    """
+    Evaluate all 4 conditions and return trade signals if any triggered.
+
+    Returns:
+    dict with keys:
+    - 'condition': 1/2/3/4
+    - 'option_type': 'CALL' or 'PUT'
+    - 'buy_price': float (price from 9:30 candle close for now)
+    - 'stoploss': float (10% trailing SL below buy price)
+    - 'take_profit': float (10% above buy price)
+    - 'quantity': int (10 lots = 7500 assumed)
+    - 'expiry': datetime.date
+    - 'entry_time': pd.Timestamp
+    - 'message': explanation string
+    Or None if no signal.
+    """
+
+    df = df.copy()
+    df['Date'] = df['Datetime'].dt.date
+    unique_days = sorted(df['Date'].unique())
+    if len(unique_days) < 2:
+        return None  # not enough data
+    
+    day0 = unique_days[-2]
+    day1 = unique_days[-1]
+    
+    # 1) Get day0 3PM candle (15:00 - 15:15)
+    candle_3pm = df[(df['Date'] == day0) & 
+                    (df['Datetime'].dt.hour == 15) & 
+                    (df['Datetime'].dt.minute == 0)]
+    if candle_3pm.empty:
+        return None
+    
+    open_3pm = candle_3pm.iloc[0]['Open_^NSEI']
+    close_3pm = candle_3pm.iloc[0]['Close_^NSEI']
+
+    # 2) Day1 first 15-min candle (9:15 - 9:30)
+    candle_930 = df[(df['Date'] == day1) & 
+                    (df['Datetime'].dt.hour == 9) & 
+                    (df['Datetime'].dt.minute == 15)]
+    if candle_930.empty:
+        return None
+    
+    open_930 = candle_930.iloc[0]['Open_^NSEI']
+    close_930 = candle_930.iloc[0]['Close_^NSEI']
+    high_930 = candle_930.iloc[0]['High_^NSEI']
+    low_930 = candle_930.iloc[0]['Low_^NSEI']
+    entry_time = candle_930.iloc[0]['Datetime']
+    
+    # 3) Day1 open price = first tick open or 9:15 candle open assumed here
+    day1_open_price = open_930
+
+    # Calculate nearest weekly expiry (example, user replace with correct method)
+    expiry = get_nearest_weekly_expiry(pd.to_datetime(day1))
+
+    # Helper values
+    buy_price = close_930
+    stoploss = buy_price * 0.9
+    take_profit = buy_price * 1.10
+
+    # Detect gap up / gap down vs day0 close
+    gap_up = day1_open_price > close_3pm
+    gap_down = day1_open_price < close_3pm
+    within_range = (day1_open_price >= open_3pm) and (day1_open_price <= close_3pm)
+
+    # Condition 1
+    # Candle cuts the 3PM open & close lines from below upwards and closes above both
+    cond1_cuts_open = (low_930 < open_3pm) and (close_930 > open_3pm)
+    cond1_cuts_close = (low_930 < close_3pm) and (close_930 > close_3pm)
+    cond1_closes_above_both = (close_930 > open_3pm) and (close_930 > close_3pm)
+
+    if cond1_cuts_open and cond1_cuts_close and cond1_closes_above_both:
+        return {
+            'condition': 1,
+            'option_type': 'CALL',
+            'buy_price': buy_price,
+            'stoploss': stoploss,
+            'take_profit': take_profit,
+            'quantity': quantity,
+            'expiry': expiry,
+            'entry_time': entry_time,
+            'message': 'Condition 1 met: Buy nearest ITM CALL option.'
+        }
+
+    # Condition 2: Major gap down + 9:30 candle closes below 3PM open & close lines
+    if gap_down and (close_930 < open_3pm) and (close_930 < close_3pm):
+        # Reference candle 2 = first 9:30 candle
+        ref_high = high_930
+        ref_low = low_930
+        
+        # Look for next candle after 9:30 to cross below low of ref candle 2
+        # We'll scan candles after 9:30 for this signal:
+        day1_after_930 = df[(df['Date'] == day1) & (df['Datetime'] > entry_time)].sort_values('Datetime')
+        for _, next_candle in day1_after_930.iterrows():
+            if next_candle['Low_^NSEI'] < ref_low:
+                # Signal to buy PUT option
+                buy_price_put = next_candle['Close_^NSEI']
+                stoploss_put = buy_price_put * 0.9
+                take_profit_put = buy_price_put * 1.10
+                return {
+                    'condition': 2,
+                    'option_type': 'PUT',
+                    'buy_price': buy_price_put,
+                    'stoploss': stoploss_put,
+                    'take_profit': take_profit_put,
+                    'quantity': quantity,
+                    'expiry': expiry,
+                    'entry_time': next_candle['Datetime'],
+                    'message': 'Condition 2 met: Gap down + next candle crosses low of 9:30 candle, buy nearest ITM PUT.'
+                }
+        # If no such candle crossed, no trade yet
+    
+    # Condition 3: Major gap up + 9:30 candle closes above 3PM open & close lines
+    if gap_up and (close_930 > open_3pm) and (close_930 > close_3pm):
+        # Reference candle 2 = first 9:30 candle
+        ref_high = high_930
+        ref_low = low_930
+        
+        # Look for next candle after 9:30 to cross above high of ref candle 2
+        day1_after_930 = df[(df['Date'] == day1) & (df['Datetime'] > entry_time)].sort_values('Datetime')
+        for _, next_candle in day1_after_930.iterrows():
+            if next_candle['High_^NSEI'] > ref_high:
+                buy_price_call = next_candle['Close_^NSEI']
+                stoploss_call = buy_price_call * 0.9
+                take_profit_call = buy_price_call * 1.10
+                return {
+                    'condition': 3,
+                    'option_type': 'CALL',
+                    'buy_price': buy_price_call,
+                    'stoploss': stoploss_call,
+                    'take_profit': take_profit_call,
+                    'quantity': quantity,
+                    'expiry': expiry,
+                    'entry_time': next_candle['Datetime'],
+                    'message': 'Condition 3 met: Gap up + next candle crosses high of 9:30 candle, buy nearest ITM CALL.'
+                }
+        # No trade if not crossed yet
+    
+    # Condition 4:
+    # Candle cuts the 3PM open & close lines from above downwards and closes below both
+    cond4_cuts_open = (high_930 > open_3pm) and (close_930 < open_3pm)
+    cond4_cuts_close = (high_930 > close_3pm) and (close_930 < close_3pm)
+    cond4_closes_below_both = (close_930 < open_3pm) and (close_930 < close_3pm)
+
+    if cond4_cuts_open and cond4_cuts_close and cond4_closes_below_both:
+        return {
+            'condition': 4,
+            'option_type': 'PUT',
+            'buy_price': buy_price,
+            'stoploss': stoploss,
+            'take_profit': take_profit,
+            'quantity': quantity,
+            'expiry': expiry,
+            'entry_time': entry_time,
+            'message': 'Condition 4 met: Buy nearest ITM PUT option.'
+        }
+    
+    # No condition met
+    return None
+
+
+
+###########################################################################################################
 #run_check_for_all_candles(df)  # df = your full OHLC DataFrame
 
 #display_todays_candles_with_trend(df)
 display_todays_candles_with_trend_and_signal(df)
+
+#calling all condition in one function
+signal = trading_signal_all_conditions(df)
+if signal:
+    st.write(f"Trade signal detected:\n{signal['message']}")
+    st.table(pd.DataFrame([signal]))
+else:
+    st.write("No trade signal for today based on conditions.")
 
