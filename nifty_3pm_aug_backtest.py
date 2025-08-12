@@ -984,6 +984,10 @@ trade_log_df["Option Symbol"] = trade_log_df.apply(
 )
 trade_log_df = trade_log_df.rename(columns={"Time Exit (16 mins after entry)": "Exit Time"})
 exit_time = pd.to_datetime(trade_log_df.loc[0, 'Exit Time'])
+trade_log_df.rename(columns={
+    "Buy Premium": "Entry Price",
+    "Time Exit (16 mins after entry)": "Exit Time"
+}, inplace=True)
 
 # Example: pulling details from trade log
 option_symbol = trade_log_df.loc[0, 'Option Symbol']
