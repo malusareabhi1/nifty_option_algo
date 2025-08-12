@@ -15,8 +15,8 @@ elif 'Date' in df.columns:
 # Add any other detected name if needed
 
 
-st.write(df.columns)
-st.write(df.head(10))
+#st.write(df.columns)
+#st.write(df.head(10))
 # Flatten columns if MultiIndex
 if isinstance(df.columns, pd.MultiIndex):
     df.columns = ['_'.join(col).strip() if isinstance(col, tuple) else col for col in df.columns]
@@ -34,7 +34,7 @@ else:
     df['Datetime'] = df['Datetime_'].dt.tz_convert('Asia/Kolkata')
 
 #st.write(df.columns)
-st.write(df.head(10))
+#st.write(df.head(10))
 
 # Filter for last two trading days to plot
 unique_days = df['Datetime'].dt.date.unique()
