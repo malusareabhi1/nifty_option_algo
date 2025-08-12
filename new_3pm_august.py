@@ -751,5 +751,5 @@ else:
 
 ########################
 result_chain=find_nearest_itm_option()
-st.write(result_chain.tail())
+#st.write(result_chain.tail())
 #################################################
