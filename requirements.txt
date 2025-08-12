@@ -6,3 +6,4 @@ plotly
 streamlit-autorefresh
 twilio
 requests
+nsepython
