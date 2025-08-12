@@ -3,7 +3,7 @@ import pandas as pd
 import yfinance as yf
 import plotly.graph_objects as go
 from streamlit_autorefresh import st_autorefresh
-
+st.set_page_config(layout="wide")
 # Place at the very top of your script (or just before plotting)
 st_autorefresh(interval=240000, limit=None, key="refresh")
 
