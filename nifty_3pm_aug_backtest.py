@@ -904,7 +904,7 @@ if signal:
     spot_price = signal['spot_price']
     option_type = signal['option_type']
     # Find nearest ITM option to buy
-    result = option_chain_finder(result_chain, spot_price, option_type=option_type, lots=10, lot_size=75)
+    result = option_chain_finder(result_chain, spot_price, option_type, lots=10, lot_size=75)
 
     st.write("Nearest ITM Call option to BUY:")
     st.table(pd.DataFrame([result['option_data']]))
