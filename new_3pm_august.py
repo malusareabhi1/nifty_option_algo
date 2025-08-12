@@ -748,6 +748,6 @@ else:
     st.write("No trade signal for today based on conditions.")
 
 ########################
-find_nearest_itm_option( )
+find_nearest_itm_option()
 
 #################################################
