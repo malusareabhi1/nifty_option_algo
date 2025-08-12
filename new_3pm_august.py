@@ -482,7 +482,7 @@ def trading_signal_all_conditions(df, quantity=10*750):
     - 'message': explanation string
     Or None if no signal.
     """
-
+    spot_price = df['Close'].iloc[-1]  # last close price
     df = df.copy()
     df['Date'] = df['Datetime'].dt.date
     unique_days = sorted(df['Date'].unique())
@@ -621,8 +621,7 @@ def trading_signal_all_conditions(df, quantity=10*750):
             'expiry': expiry,
             'entry_time': entry_time,
             'message': 'Condition 4 met: Buy nearest ITM PUT option.'
-        }
-    
+        },spot_price
     # No condition met
     return None
 
