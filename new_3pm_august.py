@@ -92,3 +92,30 @@ else:
 
 
     st.plotly_chart(fig, use_container_width=True)
+
+def display_3pm_candle_info(df, day):
+    """
+    Display the 3PM candle Open and Close prices for a given day (datetime.date).
+    
+    Parameters:
+    - df: DataFrame with 'Datetime' column (timezone-aware datetime)
+    - day: datetime.date object representing the trading day
+    
+    Returns:
+    - (open_price, close_price) tuple or (None, None) if candle not found
+    """
+    candle = df[(df['Datetime'].dt.date == day) &
+                (df['Datetime'].dt.hour == 15) &
+                (df['Datetime'].dt.minute == 0)]
+    
+    if candle.empty:
+        st.warning(f"No 3:00 PM candle found for {day}")
+        return None, None
+    
+    open_price = candle.iloc[0]['Open_^NSEI']
+    close_price = candle.iloc[0]['Close_^NSEI']
+    
+    st.info(f"3:00 PM Candle for {day}: Open = {open_price}, Close = {close_price}")
+    
+    return open_price, close_price
+
