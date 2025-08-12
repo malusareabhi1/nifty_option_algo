@@ -987,7 +987,7 @@ else:
 
 st.write("Trade log DataFrame:")
 st.write(trade_log_df)
-st.write("Columns:", trade_log_df.columns.tolist())
+#st.write("Columns:", trade_log_df.columns.tolist())
 #st.write(result_chain.tail())
 #################################################
 #trade_log_df = generate_trade_log_from_option(result, signal)
