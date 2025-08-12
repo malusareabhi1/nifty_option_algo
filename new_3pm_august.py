@@ -73,5 +73,16 @@ else:
         fig.add_hline(y=close_3pm, line_dash="dot", line_color="red", annotation_text="3PM Close")
 
     fig.update_layout(title="Nifty 15-min candles - Last Day & Today", xaxis_rangeslider_visible=False)
+    fig.update_layout(
+    xaxis=dict(
+        rangebreaks=[
+            # Hide weekends (Saturday and Sunday)
+            dict(bounds=["sat", "mon"]),
+            # Hide hours outside of trading hours (NSE trading hours 9:15 to 15:30)
+            dict(bounds=[15.5, 9.25], pattern="hour"),
+        ]
+    )
+)
+
 
     st.plotly_chart(fig, use_container_width=True)
