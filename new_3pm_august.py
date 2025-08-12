@@ -703,6 +703,8 @@ def get_live_nifty_option_chain():
 ################################################################################################
 def find_nearest_itm_option():
     import nsepython
+    from nsepython import nse_optionchain_scrapper
+
 
     option_chain = nse_optionchain_scrapper('NIFTY')
     df = []
