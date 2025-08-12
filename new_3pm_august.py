@@ -338,6 +338,9 @@ else:
 ##########################################################################################################
 #import streamlit as st
 
+import streamlit as st
+import pandas as pd
+
 def run_check_for_all_candles(nifty_df):
     unique_days = sorted(nifty_df['Datetime'].dt.date.unique())
     if len(unique_days) < 2:
@@ -345,7 +348,6 @@ def run_check_for_all_candles(nifty_df):
         return
     
     day1 = unique_days[-1]
-    # Filter all day1 candles at or after 9:30 AM (assuming 15-min intervals)
     day1_candles = nifty_df[
         (nifty_df['Datetime'].dt.date == day1) & 
         ( (nifty_df['Datetime'].dt.hour > 9) | 
@@ -353,21 +355,28 @@ def run_check_for_all_candles(nifty_df):
         )
     ].sort_values('Datetime')
     
+    buy_signals = []
+    
     for idx, row in day1_candles.iterrows():
         candle_time = row['Datetime']
         result = condition_1_trade_signal_for_candle(nifty_df, candle_time)
         if result['buy_signal']:
-            st.write(f"Buy signal at {candle_time}")
-            st.table({
-                'Entry Time': [result['entry_time']],
-                'Buy Price': [result['buy_price']],
-                'Stoploss': [result['stoploss']],
-                'Take Profit': [result['take_profit']]
+            buy_signals.append({
+                'Entry Time': result['entry_time'],
+                'Buy Price': result['buy_price'],
+                'Stoploss': result['stoploss'],
+                'Take Profit': result['take_profit'],
             })
-            # You may want to break here if only first buy signal matters
-            break
-        else:
-            st.write(f"No buy signal at {candle_time}")
+            # If you want to stop at first buy signal, uncomment break
+            # break
+    
+    if buy_signals:
+        df_signals = pd.DataFrame(buy_signals)
+        st.write("Buy signals found:")
+        st.table(df_signals)
+    else:
+        st.info("No buy signals found after 9:30 AM on the next trading day.")
+
 
 ###########################################################################################
 run_check_for_all_candles(df)  # df = your full OHLC DataFrame
