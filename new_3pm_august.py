@@ -14,7 +14,7 @@ if 'Date' in df.columns:
     df.rename(columns={'Date': 'Datetime'}, inplace=True)
 
 st.write(df.columns)
-
+st.write(df.head(10))
 # Flatten columns if MultiIndex
 if isinstance(df.columns, pd.MultiIndex):
     df.columns = ['_'.join(col).strip() if isinstance(col, tuple) else col for col in df.columns]
