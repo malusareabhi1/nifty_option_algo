@@ -24,7 +24,7 @@ if df.empty:
 df = df.reset_index()
 st.write(df.columns)
 #df['Datetime'] = pd.to_datetime(df['Datetime'])
-if df['Datetime_'].dt.tz is None:
+if df['Datetime'].dt.tz is None:
     df['Datetime'] = df['Datetime_'].dt.tz_localize('UTC').dt.tz_convert('Asia/Kolkata')
 else:
     df['Datetime'] = df['Datetime_'].dt.tz_convert('Asia/Kolkata')
