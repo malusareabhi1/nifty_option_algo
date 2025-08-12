@@ -294,7 +294,7 @@ def condition_1_trade_signal_for_candle(nifty_df, candle_time):
     return {'buy_signal': False, 'message': 'Condition not met.'}
 
 #####################################################################################################################################
-open_3pm, close_3pm = display_3pm_candle_info(df_plot, last_day)
+open_3pm, close_3pm = display_3pm_candle_info(df_plot, selected_date)
 
 
 ##########################################################################################################
