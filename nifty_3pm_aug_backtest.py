@@ -19,7 +19,10 @@ df = yf.download("^NSEI", start=start_date.strftime("%Y-%m-%d"), end=end_date.st
 if df.empty:
     st.warning("No data downloaded for the selected range.")
     st.stop()
-
+if 'Datetime_' in df.columns:
+    df.rename(columns={'Datetime_': 'Datetime'}, inplace=True)
+elif 'Date' in df.columns:
+    df.rename(columns={'Date': 'Datetime'}, inplace=True)
 # Reset index to get Datetime as column
 df = df.reset_index()
 st.write(df.columns)
