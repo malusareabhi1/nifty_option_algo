@@ -897,7 +897,7 @@ display_todays_candles_with_trend_and_signal(df)
 result_chain=find_nearest_itm_option()
 #calling all condition in one function
 signal = trading_signal_all_conditions(df)
-st.write(signal)
+#st.write(signal)
 if signal:
     st.write(f"Trade signal detected:\n{signal['message']}")
     st.table(pd.DataFrame([signal]))
