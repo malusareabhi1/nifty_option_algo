@@ -910,7 +910,7 @@ if signal:
     st.table(pd.DataFrame([result['option_data']]))
 
     st.write(f"Total Quantity: {result['total_quantity']}")
-    trade_log_df = generate_trade_log(signal)
+    trade_log_df = generate_trade_log(result)
     st.write("### Trade Log for Current Signal")
     st.table(trade_log_df)
 else:
