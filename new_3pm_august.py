@@ -336,48 +336,61 @@ if result['buy_signal']:
 else:
      st.write(result['message'])
 ##########################################################################################################
-#import streamlit as st
 
-import streamlit as st
 import pandas as pd
+import streamlit as st
 
-def run_check_for_all_candles(nifty_df):
-    unique_days = sorted(nifty_df['Datetime'].dt.date.unique())
-    if len(unique_days) < 2:
-        st.warning("Not enough data for two trading days.")
+def display_todays_candles_with_trend(df):
+    """
+    Display all today's candles with OHLC + Trend column in Streamlit.
+
+    Args:
+    - df: DataFrame with columns ['Datetime', 'Open_^NSEI', 'High_^NSEI', 'Low_^NSEI', 'Close_^NSEI']
+          'Datetime' must be timezone-aware or convertible to datetime.
+
+    Output:
+    - Shows table in Streamlit with added Trend column.
+    """
+    if df.empty:
+        st.warning("No candle data available.")
         return
     
-    day1 = unique_days[-1]
-    day1_candles = nifty_df[
-        (nifty_df['Datetime'].dt.date == day1) & 
-        ( (nifty_df['Datetime'].dt.hour > 9) | 
-          ((nifty_df['Datetime'].dt.hour == 9) & (nifty_df['Datetime'].dt.minute >= 30))
-        )
-    ].sort_values('Datetime')
+    # Get today date from last datetime in df (assumes df sorted)
+    today_date = df['Datetime'].dt.date.max()
     
-    buy_signals = []
+    # Filter today's data
+    todays_df = df[df['Datetime'].dt.date == today_date].copy()
+    if todays_df.empty:
+        st.warning(f"No data for today: {today_date}")
+        return
     
-    for idx, row in day1_candles.iterrows():
-        candle_time = row['Datetime']
-        result = condition_1_trade_signal_for_candle(nifty_df, candle_time)
-        if result['buy_signal']:
-            buy_signals.append({
-                'Entry Time': result['entry_time'],
-                'Buy Price': result['buy_price'],
-                'Stoploss': result['stoploss'],
-                'Take Profit': result['take_profit'],
-            })
-            # If you want to stop at first buy signal, uncomment break
-            # break
+    # Calculate Trend column
+    def calc_trend(row):
+        if row['Close_^NSEI'] > row['Open_^NSEI']:
+            return "Bullish 🔥"
+        elif row['Close_^NSEI'] < row['Open_^NSEI']:
+            return "Bearish ❄️"
+        else:
+            return "Doji ⚪"
     
-    if buy_signals:
-        df_signals = pd.DataFrame(buy_signals)
-        st.write("Buy signals found:")
-        st.table(df_signals)
-    else:
-        st.info("No buy signals found after 9:30 AM on the next trading day.")
-
+    todays_df['Trend'] = todays_df.apply(calc_trend, axis=1)
+    
+    # Format datetime for display
+    todays_df['Time'] = todays_df['Datetime'].dt.strftime('%H:%M')
+    
+    # Select and reorder columns to display
+    display_df = todays_df[['Time', 'Open_^NSEI', 'High_^NSEI', 'Low_^NSEI', 'Close_^NSEI', 'Trend']].copy()
+    display_df.rename(columns={
+        'Open_^NSEI': 'Open',
+        'High_^NSEI': 'High',
+        'Low_^NSEI': 'Low',
+        'Close_^NSEI': 'Close'
+    }, inplace=True)
+    
+    st.write(f"All 15-min candles for today ({today_date}):")
+    st.table(display_df)
 
 ###########################################################################################
-run_check_for_all_candles(df)  # df = your full OHLC DataFrame
+#run_check_for_all_candles(df)  # df = your full OHLC DataFrame
 
+display_todays_candles_with_trend(df)
