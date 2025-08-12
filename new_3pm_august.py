@@ -25,7 +25,7 @@ if isinstance(df.columns, pd.MultiIndex):
 if 'Datetime' not in df.columns and 'datetime' in df.columns:
     df.rename(columns={'datetime': 'Datetime'}, inplace=True)
 
-st.write(df.columns)
+#st.write(df.columns)
 # Convert to datetime & timezone aware
 #df['Datetime'] = pd.to_datetime(df['Datetime'])
 if df['Datetime_'].dt.tz is None:
