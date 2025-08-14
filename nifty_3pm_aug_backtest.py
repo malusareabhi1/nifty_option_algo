@@ -448,6 +448,14 @@ def display_todays_candles_with_trend_and_signal(df):
                 signals.append("Sell")
             else:
                 signals.append("-")
+
+            # Sound alert for reference levels
+            if ref_high is not None and curr_close > ref_high:
+                st.warning(f"⚠️ Close price {curr_close} crossed reference HIGH {ref_high}")
+                playsound(sound_file)
+            elif ref_low is not None and curr_close < ref_low:
+                st.warning(f"⚠️ Close price {curr_close} crossed reference LOW {ref_low}")
+                playsound(sound_file)
     
     todays_df['Signal'] = signals
     
@@ -948,7 +956,44 @@ def plot_option_trade(option_symbol, entry_time, exit_time, entry_price, exit_pr
 
     plt.tight_layout()
     st.pyplot(fig)
+###################################################################################
 
+#import streamlit as st
+from playsound import playsound
+import time
+
+def price_alert(current_price, high, low, sound_file="alert.mp3"):
+    """
+    Play alert if price crosses high or low.
+
+    Parameters:
+    - current_price: float, current market price
+    - high: float, high threshold
+    - low: float, low threshold
+    - sound_file: str, path to alert sound
+    """
+    if current_price > high:
+        st.warning(f"⚠️ Price above HIGH! Current: {current_price}, High: {high}")
+        playsound(sound_file)
+    elif current_price < low:
+        st.warning(f"⚠️ Price below LOW! Current: {current_price}, Low: {low}")
+        playsound(sound_file)
+    else:
+        st.write(f"Current Price: {current_price}")
+
+# -----------------------------
+# Example usage in Streamlit
+# -----------------------------
+st.title("Price Alert Function Example")
+
+high = st.number_input("Set High Price", value=200)
+low = st.number_input("Set Low Price", value=180)
+
+# Simulate live price (replace with real API later)
+current_price = st.number_input("Current Price", value=190)
+
+if st.button("Check Alert"):
+    price_alert(current_price, high, low)
 
 
 
@@ -957,6 +1002,7 @@ def plot_option_trade(option_symbol, entry_time, exit_time, entry_price, exit_pr
 
 #display_todays_candles_with_trend(df)
 display_todays_candles_with_trend_and_signal(df)
+
 ########################
 result_chain=find_nearest_itm_option()
 #st.write(result_chain)
