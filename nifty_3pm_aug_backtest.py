@@ -959,7 +959,7 @@ def plot_option_trade(option_symbol, entry_time, exit_time, entry_price, exit_pr
 ###################################################################################
 
 #import streamlit as st
-from playsound import playsound
+#from playsound import playsound
 import time
 
 def price_alert(current_price, high, low, sound_file="alert.mp3"):
