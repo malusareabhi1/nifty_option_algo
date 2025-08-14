@@ -7,4 +7,3 @@ streamlit-autorefresh
 twilio
 requests
 nsepython
-io
