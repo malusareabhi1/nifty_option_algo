@@ -449,13 +449,7 @@ def display_todays_candles_with_trend_and_signal(df):
             else:
                 signals.append("-")
 
-            # Sound alert for reference levels
-            if ref_high is not None and curr_close > ref_high:
-                st.warning(f"⚠️ Close price {curr_close} crossed reference HIGH {ref_high}")
-                playsound(sound_file)
-            elif ref_low is not None and curr_close < ref_low:
-                st.warning(f"⚠️ Close price {curr_close} crossed reference LOW {ref_low}")
-                playsound(sound_file)
+          
     
     todays_df['Signal'] = signals
     
