@@ -986,7 +986,11 @@ else:
 
 
 st.write("Trade log DataFrame:")
-st.write(trade_log_df)
+#st.write(trade_log_df)
+if 'trade_log_df' in locals():
+    st.write(trade_log_df)
+else:
+    st.write("No trade log data available.")
 #st.write("Columns:", trade_log_df.columns.tolist())
 #st.write(result_chain.tail())
 #################################################
