@@ -4,7 +4,7 @@ import yfinance as yf
 import plotly.graph_objects as go
 from streamlit_autorefresh import st_autorefresh
 import requests
-
+from playsound import playsound
 from datetime import datetime, timedelta
 
 
