@@ -153,7 +153,9 @@ def plot_with_3pm_levels(df):
         name="Nifty 15m"
     ))
 
-    df['date'] = df['datetime'].dt.date
+    df['Datetime_'] = pd.to_datetime(df['Datetime_'])
+    df['date'] = df['Datetime_'].dt.date
+    df.set_index('Datetime_', inplace=True)
     unique_days = sorted(df['date'].unique())
 
     for i, day in enumerate(unique_days):
