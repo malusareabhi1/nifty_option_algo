@@ -137,7 +137,66 @@ else:
 
     st.plotly_chart(fig, use_container_width=True)
    
+#####################################################################################
 
+
+
+def plot_with_3pm_levels(df):
+    # Ensure datetime index
+    df = df.copy()
+    df.index = pd.to_datetime(df.index)
+
+    # Extract trading days
+    df['date'] = df.index.date
+    unique_days = sorted(df['date'].unique())
+
+    charts = []
+    for i, day in enumerate(unique_days[:-1]):  # skip last day (no next day to extend)
+        day_data = df[df['date'] == day]
+        next_day = unique_days[i+1]
+        next_day_data = df[df['date'] == next_day]
+
+        # Get 3PM candle of current day
+        three_pm = day_data.between_time("15:00", "15:15")
+        if three_pm.empty:
+            continue
+        open_3pm = three_pm['Open'].iloc[0]
+        close_3pm = three_pm['Close'].iloc[0]
+
+        # Combine current + next day for plotting
+        plot_data = pd.concat([day_data, next_day_data])
+
+        # Plot candles
+        fig = go.Figure(data=[go.Candlestick(
+            x=plot_data.index,
+            open=plot_data['Open'],
+            high=plot_data['High'],
+            low=plot_data['Low'],
+            close=plot_data['Close'],
+            name="NIFTY 15m"
+        )])
+
+        # Add horizontal lines for 3PM open and close
+        fig.add_hline(y=open_3pm, line=dict(color="blue", dash="dot"), 
+                      annotation_text=f"3PM Open {open_3pm:.2f}", annotation_position="top left")
+        fig.add_hline(y=close_3pm, line=dict(color="red", dash="dot"), 
+                      annotation_text=f"3PM Close {close_3pm:.2f}", annotation_position="bottom left")
+
+        fig.update_layout(
+            title=f"NIFTY 15-min | {day} + Next Day",
+            xaxis_rangeslider_visible=False,
+            height=600
+        )
+        charts.append(fig)
+    
+    return charts
+
+charts = plot_with_3pm_levels(df)
+for fig in charts:
+    st.plotly_chart(fig, use_container_width=True)
+
+
+#####################################################################################
 def display_3pm_candle_info(df, day):
     """
     Display the 3PM candle Open and Close prices for a given day (datetime.date).
