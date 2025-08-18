@@ -143,7 +143,7 @@ def plot_with_3pm_levels(df):
 
     # Plot candlesticks
     fig.add_trace(go.Candlestick(
-        x=df['datetime'],
+        x=df['Datetime_'],
         open=df['Open_^NSEI'],
         high=df['High_^NSEI'],
         low=df['Low_^NSEI'],
