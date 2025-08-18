@@ -9,25 +9,31 @@ from datetime import datetime, timedelta
 
 
 st.set_page_config(layout="wide")
-# Place at the very top of your script (or just before plotting)
-st_autorefresh(interval=240000, limit=None, key="refresh")
 
-st.title("Nifty 15-min Chart for Selected Date & Previous Day")
+st.title("Nifty 15-min Chart for Date Range")
 
+# Select date range
+from_date = st.date_input("From Date", value=datetime.today() - timedelta(days=7))
+to_date = st.date_input("To Date", value=datetime.today())
 
-# Select date input (default today)
-selected_date = st.date_input("Select date", value=datetime.today())
+# Ensure to_date is after from_date
+if from_date > to_date:
+    st.error("❌ 'From Date' must be earlier than 'To Date'")
+else:
+    # Download data for ^NSEI between from_date and to_date
+    df = yf.download(
+        "^NSEI", 
+        start=from_date.strftime("%Y-%m-%d"), 
+        end=(to_date + timedelta(days=1)).strftime("%Y-%m-%d"),  # include 'to_date'
+        interval="15m"
+    )
 
-# Calculate date range to download (7 days before selected_date to day after selected_date)
-start_date = selected_date - timedelta(days=7)
-end_date = selected_date + timedelta(days=1)
-
-# Download data for ^NSEI from start_date to end_date
-df = yf.download("^NSEI", start=start_date.strftime("%Y-%m-%d"), end=end_date.strftime("%Y-%m-%d"), interval="15m")
-
-if df.empty:
-    st.warning("No data downloaded for the selected range.")
-    st.stop()
+    if not df.empty:
+        st.success(f"Data loaded for NIFTY between {from_date} and {to_date}")
+        st.dataframe(df.tail(20))  # show last 20 rows
+    else:
+        st.warning("No data found for the selected range")
+        
 df.reset_index(inplace=True)
 
 if 'Datetime_' in df.columns:
