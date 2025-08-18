@@ -988,7 +988,86 @@ current_price = st.number_input("Current Price", value=190)
 
 if st.button("Check Alert"):
     price_alert(current_price, high, low)
+########################################################################################################
 
+def trading_signal_all_condition(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Function to generate trading signals based on conditions:
+    - 3PM candle (day 0) open/close marked
+    - Next day first 15-min breakout check
+    - EMA20 crossover + Volume breakout
+    
+    Parameters:
+        df (pd.DataFrame): NIFTY 15-min OHLCV data with columns
+                           ['Datetime','Open','High','Low','Close','Volume']
+    
+    Returns:
+        pd.DataFrame: df with extra columns ['EMA20','Signal']
+    """
+    
+    df = df.copy()
+    
+    # Ensure datetime is in pandas datetime
+    df['Datetime'] = pd.to_datetime(df['Datetime'])
+    df = df.sort_values("Datetime").reset_index(drop=True)
+    
+    # Add EMA20
+    df['EMA20'] = df['Close'].ewm(span=20, adjust=False).mean()
+    
+    # Initialize signal column
+    df['Signal'] = np.nan
+    
+    # Step 1: Find 3:15 PM candle (previous day reference)
+    df['Time'] = df['Datetime'].dt.time
+    df['Date'] = df['Datetime'].dt.date
+    
+    reference_levels = {}  # Store {date: (open, close)}
+    
+    for d in df['Date'].unique():
+        day_data = df[df['Date'] == d]
+        # Find 3:15 PM candle (close at 15:15)
+        ref_candle = day_data[day_data['Time'] == pd.to_datetime("15:15").time()]
+        if not ref_candle.empty:
+            o = ref_candle['Open'].values[0]
+            c = ref_candle['Close'].values[0]
+            reference_levels[d] = (o, c)
+    
+    # Step 2: Next day 9:30 AM breakout
+    for d in reference_levels.keys():
+        next_days = [x for x in df['Date'].unique() if x > d]
+        if not next_days:
+            continue
+        next_day = next_days[0]
+        
+        first_candle = df[(df['Date'] == next_day) & (df['Time'] == pd.to_datetime("09:30").time())]
+        if not first_candle.empty:
+            open_val = reference_levels[d][0]
+            close_val = reference_levels[d][1]
+            fc = first_candle.iloc[0]
+            
+            if fc['High'] > max(open_val, close_val):  # Breakout above
+                df.loc[first_candle.index, 'Signal'] = "Breakout_Up"
+            elif fc['Low'] < min(open_val, close_val):  # Breakdown below
+                df.loc[first_candle.index, 'Signal'] = "Breakout_Down"
+    
+    # Step 3: EMA20 + Volume condition
+    df['Prev_Close'] = df['Close'].shift(1)
+    df['Prev_EMA20'] = df['EMA20'].shift(1)
+    df['Prev_Volume'] = df['Volume'].shift(1)
+    
+    for i in range(1, len(df)):
+        if df.loc[i, 'Close'] > df.loc[i, 'EMA20'] and df.loc[i-1, 'Prev_Close'] <= df.loc[i-1, 'Prev_EMA20']:
+            if df.loc[i, 'Volume'] > df['Volume'].rolling(20).mean().iloc[i]:
+                df.loc[i, 'Signal'] = "EMA20_Buy"
+        
+        elif df.loc[i, 'Close'] < df.loc[i, 'EMA20'] and df.loc[i-1, 'Prev_Close'] >= df.loc[i-1, 'Prev_EMA20']:
+            if df.loc[i, 'Volume'] > df['Volume'].rolling(20).mean().iloc[i]:
+                df.loc[i, 'Signal'] = "EMA20_Sell"
+    
+    # Clean up temp cols
+    df = df.drop(columns=['Prev_Close','Prev_EMA20','Prev_Volume','Time','Date'])
+    
+    return df
 
 
 ###############################################################################################################
@@ -1001,7 +1080,8 @@ display_todays_candles_with_trend_and_signal(df)
 result_chain=find_nearest_itm_option()
 #st.write(result_chain)
 #calling all condition in one function
-signal = trading_signal_all_conditions(df)
+#signal = trading_signal_all_conditions(df)
+signal = trading_signal_all_condition(df)
 #st.write("###  Signal")
 #st.write(signal)
 if signal:
