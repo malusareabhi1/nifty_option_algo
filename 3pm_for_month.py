@@ -62,12 +62,12 @@ else:
     df['Datetime'] = df['Datetime_'].dt.tz_convert('Asia/Kolkata')
 
 df = df.rename(columns={
-    "Datetime_": "datetime",
-    "Open_^NSEI": "open",
-    "High_^NSEI": "high",
-    "Low_^NSEI": "low",
-    "Close_^NSEI": "close",
-    "Volume_^NSEI": "volume"
+    "Datetime_": "Datetime",
+    "Open_^NSEI": "Open",
+    "High_^NSEI": "High",
+    "Low_^NSEI": "Low",
+    "Close_^NSEI": "Close",
+    "Volume_^NSEI": "Volume"
 })
 
 st.write(df.columns)
