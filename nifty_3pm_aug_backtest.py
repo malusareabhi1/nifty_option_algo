@@ -1272,7 +1272,7 @@ result_chain=find_nearest_itm_option()
 #st.write(result_chain)
 #calling all condition in one function
 #signal = trading_signal_all_conditions(df)
-signal = trading_signal_all_condition1(df)
+signal = trading_signal_all_conditions1(df)
 #st.write("###  Signal")
 #st.write(signal)
 if signal:
