@@ -86,6 +86,25 @@ else:
     open_3pm = None
     close_3pm = None
 
+# Add horizontal lines across the entire chart
+if open_3pm is not None:
+    fig.add_hline(
+        y=open_3pm,
+        line_dash="dot",
+        line_color="blue",
+        annotation_text="3PM Open",
+        annotation_position="top left"
+    )
+
+if close_3pm is not None:
+    fig.add_hline(
+        y=close_3pm,
+        line_dash="dot",
+        line_color="red",
+        annotation_text="3PM Close",
+        annotation_position="bottom left"
+    )
+
 # Plot candlestick
 fig = go.Figure(data=[go.Candlestick(
     x=df_plot['Datetime'],
