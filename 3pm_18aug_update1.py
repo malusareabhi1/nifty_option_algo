@@ -1,8 +1,11 @@
 import streamlit as st
 import pandas as pd
 import yfinance as yf
+import plotly.graph_objects as go
+from streamlit_autorefresh import st_autorefresh
+import requests
+
 from datetime import datetime, timedelta
-import time
 
 # ----------------- LOAD DATA FUNCTION -----------------
 def load_nifty_data_15min(days_back=7):
