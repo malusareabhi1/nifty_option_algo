@@ -129,7 +129,7 @@ else:
 
 
     st.plotly_chart(fig, use_container_width=True)
-    display_current_trend(df)
+   
 
 def display_3pm_candle_info(df, day):
     """
@@ -191,7 +191,7 @@ def display_current_trend(df):
     st.markdown(f"<span style='color:{trend_color}; font-weight:bold; font-size:20px;'>Trend: {trend_text}</span>", unsafe_allow_html=True)
 
 
-
+display_current_trend(df)
 #import pandas as pd
 
 def condition_1_trade_signal(nifty_df):
