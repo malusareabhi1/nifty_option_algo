@@ -36,49 +36,58 @@ def load_nifty_data_15min(days_back=7):
     return df
 
 # ----------------- PLOT FUNCTION -----------------
-def plot_new_candle(df):
-    if 'last_candle_time' not in st.session_state:
-        st.session_state.last_candle_time = df['Datetime'].max() - pd.Timedelta(minutes=15)
-        df_to_plot = df[df['Datetime'] == st.session_state.last_candle_time + pd.Timedelta(minutes=15)]
+def plot_all_candles(df):
+    # Add previous day 3PM open/close lines
+    unique_days = sorted(df['Datetime'].dt.date.unique())
+    if len(unique_days) < 2:
+        last_day = unique_days[-1]
+        prev_day = last_day - timedelta(days=1)
     else:
-        last_time = st.session_state.last_candle_time
-        df_to_plot = df[df['Datetime'] > last_time]
+        prev_day = unique_days[-2]
+        last_day = unique_days[-1]
 
-    if df_to_plot.empty:
-        st.info("No new candle yet")
-        return None
-
-    # Update last plotted candle time
-    st.session_state.last_candle_time = df_to_plot['Datetime'].max()
-
-    fig = go.Figure(data=[go.Candlestick(
-        x=df_to_plot['Datetime'],
-        open=df_to_plot['Open_^NSEI'],
-        high=df_to_plot['High_^NSEI'],
-        low=df_to_plot['Low_^NSEI'],
-        close=df_to_plot['Close_^NSEI'],
-        name="Nifty"
-    )])
-
-    # Add 3PM Base Zone lines from previous day
-    prev_day = df_to_plot['Datetime'].dt.date.min() - pd.Timedelta(days=1)
     candle_3pm = df[(df['Datetime'].dt.date == prev_day) &
                      (df['Datetime'].dt.hour == 15) &
                      (df['Datetime'].dt.minute == 0)]
     if not candle_3pm.empty:
         open_3pm = candle_3pm.iloc[0]['Open_^NSEI']
         close_3pm = candle_3pm.iloc[0]['Close_^NSEI']
-        fig.add_hline(y=open_3pm, line_dash="dot", line_color="blue", annotation_text="3PM Open", annotation_position="top left")
-        fig.add_hline(y=close_3pm, line_dash="dot", line_color="red", annotation_text="3PM Close", annotation_position="bottom left")
+    else:
+        open_3pm = None
+        close_3pm = None
+
+    fig = go.Figure(data=[go.Candlestick(
+        x=df['Datetime'],
+        open=df['Open_^NSEI'],
+        high=df['High_^NSEI'],
+        low=df['Low_^NSEI'],
+        close=df['Close_^NSEI'],
+        name="Nifty"
+    )])
+
+    if open_3pm is not None:
+        fig.add_hline(y=open_3pm, line_dash="dot", line_color="blue", annotation_text="Prev 3PM Open", annotation_position="top left")
+    if close_3pm is not None:
+        fig.add_hline(y=close_3pm, line_dash="dot", line_color="red", annotation_text="Prev 3PM Close", annotation_position="bottom left")
 
     fig.update_layout(
-        title=f"Nifty 15-min new candle - {df_to_plot['Datetime'].max()}",
-        xaxis_rangeslider_visible=False
+        title="Nifty 15-min Candles - Last Day & Today",
+        xaxis_rangeslider_visible=False,
+        xaxis=dict(
+            rangebreaks=[
+                dict(bounds=["sat", "mon"]),  # Hide weekends
+                dict(bounds=[15.5, 9.25], pattern="hour"),  # Hide hours outside NSE trading
+            ]
+        )
     )
     return fig
 
 # ----------------- STREAMLIT APP -----------------
-st.title("Nifty 50 15-min Live Candle Plot")
+st.title("Nifty 50 15-min Live Candlestick Chart")
+
+# Initialize session_state for all candles
+if 'df_plot' not in st.session_state:
+    st.session_state.df_plot = pd.DataFrame()
 
 # Load latest Nifty data
 df_nifty = load_nifty_data_15min(days_back=7)
@@ -86,10 +95,18 @@ if df_nifty is None or df_nifty.empty:
     st.warning("No data available")
     st.stop()
 
-# Plot only the new candle
-fig = plot_new_candle(df_nifty)
-if fig:
-    st.plotly_chart(fig, use_container_width=True)
+# Append only new candles
+if st.session_state.df_plot.empty:
+    st.session_state.df_plot = df_nifty
+else:
+    last_time = st.session_state.df_plot['Datetime'].max()
+    new_candles = df_nifty[df_nifty['Datetime'] > last_time]
+    if not new_candles.empty:
+        st.session_state.df_plot = pd.concat([st.session_state.df_plot, new_candles], ignore_index=True)
+
+# Plot all candles
+fig = plot_all_candles(st.session_state.df_plot)
+st.plotly_chart(fig, use_container_width=True)
 
 # Auto-refresh every 15 minutes
 st_autorefresh(interval=900000, key="nifty_refresh")  # 15 min
