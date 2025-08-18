@@ -899,7 +899,7 @@ candle_time_only = latest_candle_time.time()
 
 # Define trading window
 start_time = pd.to_datetime("09:30").time()
-end_time = pd.to_datetime("15:00").time()
+end_time = pd.to_datetime("14:00").time()
 
 # Get option chain and signals
 result_chain = find_nearest_itm_option()
@@ -937,7 +937,7 @@ if start_time <= candle_time_only <= end_time:
     else:
         st.write("No trade signal for today based on conditions.")
 else:
-    st.write(f"No trades: Outside trading window (9:30 AM – 2:00 PM). Latest candle: {latest_candle_time}")
+    st.write(f"No trades: Outside trading window (9:30 AM – 3:00 PM). Latest candle: {latest_candle_time}")
 
 
 # Display cumulative trade log
