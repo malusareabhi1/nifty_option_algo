@@ -476,8 +476,8 @@ def display_todays_candles_with_trend_and_signal(df):
         'Close_^NSEI': 'Close'
     }, inplace=True)
     
-    st.write(f"All 15-min candles for today ({today_date}):")
-    st.table(display_df)
+    #st.write(f"All 15-min candles for today ({today_date}):")
+    #st.table(display_df)
 
 
 ###################################################################################################
