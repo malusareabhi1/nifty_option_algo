@@ -84,7 +84,10 @@ else:
     df_plot['Datetime'] = pd.to_datetime(df_plot['Datetime'])
     df_plot = df_plot[(df_plot['Datetime'].dt.time >= pd.to_datetime("09:15").time()) &
                       (df_plot['Datetime'].dt.time <= pd.to_datetime("15:30").time())]
-    
+
+        # Exclude specific dates
+    exclude_dates = [pd.to_datetime("2025-08-15").date()]
+    df_plot = df_plot[~df_plot['Datetime'].dt.date.isin(exclude_dates)]
     # --- Plot Candlestick ---
     fig = go.Figure(data=[go.Candlestick(
         x=df_plot['Datetime'],
