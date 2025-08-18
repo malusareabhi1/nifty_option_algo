@@ -938,10 +938,11 @@ else:
 #st.write(f"No trades: Outside trading window (9:30 AM – 3:00 PM). Latest candle: {latest_candle_time}")
 
 
-st.write(trade_log_df.columns)
+
 st.subheader("Cumulative Trade Log")
 if not st.session_state.trade_log_df.empty:
     st.table(st.session_state.trade_log_df)
+    st.write(trade_log_df.columns)
     # Convert DataFrame to CSV
     # csv_data = st.session_state.trade_log_df.to_csv(index=False)
     
