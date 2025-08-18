@@ -70,54 +70,67 @@ else:
 
 
 def plot_with_3pm_levels(df):
-    # Ensure datetime index
-    df = df.copy()
-    df.index = pd.to_datetime(df.index)
-
-    # Extract trading days
-    df['date'] = df.index.date
-    unique_days = sorted(df['date'].unique())
-
     charts = []
-    for i, day in enumerate(unique_days[:-1]):  # skip last day (no next day to extend)
-        day_data = df[df['date'] == day]
-        next_day = unique_days[i+1]
-        next_day_data = df[df['date'] == next_day]
+    df = df.copy()
+    df["Datetime"] = pd.to_datetime(df["Datetime"])
+    df["date_only"] = df["Datetime"].dt.date
 
-        # Get 3PM candle of current day
-        three_pm = day_data.between_time("15:00", "15:15")
+    # Loop through each unique day
+    for d in df["date_only"].unique():
+        day_data = df[df["date_only"] == d]
+
+        # Find 3:00 PM candle (15:00 to 15:15)
+        three_pm = day_data[
+            (day_data["Datetime"].dt.hour == 15) & (day_data["Datetime"].dt.minute == 0)
+        ]
         if three_pm.empty:
             continue
-        open_3pm = three_pm['Open'].iloc[0]
-        close_3pm = three_pm['Close'].iloc[0]
 
-        # Combine current + next day for plotting
-        plot_data = pd.concat([day_data, next_day_data])
+        three_pm_open = three_pm.iloc[0]["Open"]
+        three_pm_close = three_pm.iloc[0]["Close"]
 
-        # Plot candles
+        # Get data until next day's 09:30
+        next_day = d + timedelta(days=1)
+        next_day_930 = df[
+            (df["date_only"] == next_day) &
+            (df["Datetime"].dt.hour == 9) &
+            (df["Datetime"].dt.minute == 30)
+        ]
+        if not next_day_930.empty:
+            cutoff_time = next_day_930.iloc[0]["Datetime"]
+            day_range = df[(df["Datetime"] >= day_data.iloc[0]["Datetime"]) &
+                           (df["Datetime"] <= cutoff_time)]
+        else:
+            day_range = day_data
+
+        # Plot
         fig = go.Figure(data=[go.Candlestick(
-            x=plot_data.index,
-            open=plot_data['Open'],
-            high=plot_data['High'],
-            low=plot_data['Low'],
-            close=plot_data['Close'],
-            name="NIFTY 15m"
+            x=day_range["Datetime"],
+            open=day_range["Open"],
+            high=day_range["High"],
+            low=day_range["Low"],
+            close=day_range["Close"],
+            name="Price"
         )])
 
-        # Add horizontal lines for 3PM open and close
-        fig.add_hline(y=open_3pm, line=dict(color="blue", dash="dot"), 
-                      annotation_text=f"3PM Open {open_3pm:.2f}", annotation_position="top left")
-        fig.add_hline(y=close_3pm, line=dict(color="red", dash="dot"), 
-                      annotation_text=f"3PM Close {close_3pm:.2f}", annotation_position="bottom left")
+        # Add horizontal lines for 3PM open/close
+        fig.add_hline(y=three_pm_open, line_dash="dot",
+                      line_color="green", annotation_text="3PM Open")
+        fig.add_hline(y=three_pm_close, line_dash="dot",
+                      line_color="red", annotation_text="3PM Close")
 
         fig.update_layout(
-            title=f"NIFTY 15-min | {day} + Next Day",
+            title=f"Nifty 15-min Chart with 3PM Levels: {d}",
+            xaxis_title="Time",
+            yaxis_title="Price",
             xaxis_rangeslider_visible=False,
+            template="plotly_white",
             height=600
         )
         charts.append(fig)
-    
+
     return charts
+
 
 charts = plot_with_3pm_levels(df)
 for fig in charts:
