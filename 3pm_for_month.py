@@ -76,9 +76,11 @@ st.write(df.columns)
 
 def plot_with_3pm_levels0(df):
     charts = []
+    
     df = df.copy()
-    df["Datetime"] = pd.to_datetime(df["Datetime"])
-    df["date_only"] = df["Datetime"].dt.date
+    df['Datetime_'] = pd.to_datetime(df['Datetime_'])
+    df['date'] = df['Datetime_'].dt.date
+    df.set_index('Datetime_', inplace=True)
 
     # Loop through each unique day
     for d in df["date_only"].unique():
