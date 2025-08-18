@@ -14,12 +14,7 @@ st_autorefresh(interval=240000, limit=None, key="refresh")
 
 st.title("Nifty 15-min Chart for Selected Date & Previous Day")
 
-# Initialize trade log in session state
-if 'trade_log_df' not in st.session_state:
-    st.session_state.trade_log_df = pd.DataFrame(columns=[
-        "entry_time", "option_type", "buy_price", "stoploss", 
-        "take_profit", "quantity", "expiry", "message", "spot_price"
-    ])
+
 # Select date input (default today)
 selected_date = st.date_input("Select date", value=datetime.today())
 
