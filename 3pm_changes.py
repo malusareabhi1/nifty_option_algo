@@ -266,20 +266,7 @@ def trading_signal_all_conditions1(df, quantity=10*750, return_all_signals=False
 
 
 # ----------------- STREAMLIT APP -----------------
-st.title("Nifty 50 15-min Chart - Last Day & Today")
 
-# Load latest Nifty data
-df_nifty = load_nifty_data_15min(days_back=7)
-if df_nifty is None or df_nifty.empty:
-    st.warning("No data available")
-    st.stop()
-
-# Plot last two days
-fig = plot_last_two_days(df_nifty)
-st.plotly_chart(fig, use_container_width=True)
-
-# Auto-refresh every 15 minutes
-st_autorefresh(interval=900000, key="nifty_refresh")  # 15 min
 ###############################################################################
 
 
