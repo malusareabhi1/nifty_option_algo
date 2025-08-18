@@ -978,16 +978,16 @@ def price_alert(current_price, high, low, sound_file="alert.mp3"):
 # -----------------------------
 # Example usage in Streamlit
 # -----------------------------
-st.title("Price Alert Function Example")
+#st.title("Price Alert Function Example")
 
-high = st.number_input("Set High Price", value=200)
-low = st.number_input("Set Low Price", value=180)
+#high = st.number_input("Set High Price", value=200)
+#low = st.number_input("Set Low Price", value=180)
 
 # Simulate live price (replace with real API later)
-current_price = st.number_input("Current Price", value=190)
+#current_price = st.number_input("Current Price", value=190)
 
-if st.button("Check Alert"):
-    price_alert(current_price, high, low)
+#if st.button("Check Alert"):
+    #price_alert(current_price, high, low)
 ########################################################################################################
 
 import pandas as pd
