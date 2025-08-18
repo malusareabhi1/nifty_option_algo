@@ -6,7 +6,7 @@ from streamlit_autorefresh import st_autorefresh
 from datetime import datetime, timedelta
 
 # ----------------- LOAD DATA FUNCTION -----------------
-def load_nifty_data_15min(days_back=2):
+def load_nifty_data_15min(days_back=3):
     end_date = datetime.today().date() + timedelta(days=1)
     start_date = end_date - timedelta(days=days_back)
     df = yf.download("^NSEI", start=start_date, end=end_date, interval="15m")
