@@ -144,3 +144,56 @@ st.plotly_chart(fig, use_container_width=True)
 
 # Auto-refresh every 15 minutes
 st_autorefresh(interval=900000, key="nifty_refresh")  # 15 min
+###############################################################################
+
+
+# ----------------- STREAMLIT APP -----------------
+st.title("Nifty 50 15-min Live Trade Logger")
+
+# Initialize session state
+if 'signal_log' not in st.session_state:
+    st.session_state.signal_log = pd.DataFrame()
+if 'last_candle' not in st.session_state:
+    st.session_state.last_candle = None
+
+# Load latest Nifty data
+df_nifty = load_nifty_data_15min(days_back=7)
+if df_nifty is None or df_nifty.empty:
+    st.warning("No data available")
+    st.stop()
+
+# Get the last candle
+latest_candle_time = df_nifty['Datetime'].max()
+if st.session_state.last_candle != latest_candle_time:
+    # Only run for new candle
+    new_candles_df = df_nifty[df_nifty['Datetime'] > st.session_state.last_candle] if st.session_state.last_candle else df_nifty
+    new_signals = trading_signal_all_conditions1(new_candles_df, return_all_signals=True)
+    if new_signals:
+        st.session_state.signal_log = pd.concat([st.session_state.signal_log, pd.DataFrame(new_signals)], ignore_index=True)
+    st.session_state.last_candle = latest_candle_time
+
+# Display trade signals
+st.subheader("Trade Signals / Logs")
+st.dataframe(st.session_state.signal_log)
+
+# Plot last two days of candles
+def plot_last_two_days(df):
+    unique_days = sorted(df['Datetime'].dt.date.unique())
+    if len(unique_days) < 2:
+        return None
+    last_day, today = unique_days[-2], unique_days[-1]
+    df_plot = df[df['Datetime'].dt.date.isin([last_day, today])]
+    fig = go.Figure(data=[go.Candlestick(
+        x=df_plot['Datetime'],
+        open=df_plot['Open'],
+        high=df_plot['High'],
+        low=df_plot['Low'],
+        close=df_plot['Close']
+    )])
+    fig.update_layout(xaxis_rangeslider_visible=False)
+    return fig
+
+st.plotly_chart(plot_last_two_days(df_nifty), use_container_width=True)
+
+# Auto-refresh every 15 min
+st_autorefresh(interval=900000, key="nifty_refresh")
