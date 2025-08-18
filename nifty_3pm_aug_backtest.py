@@ -892,39 +892,49 @@ if 'trade_log_df' not in st.session_state:
 # Display today's candles with trend and signals
 display_todays_candles_with_trend_and_signal(df)
 
+# Get current time of latest candle
+latest_candle_time = df['Datetime'].max()
+candle_time_only = latest_candle_time.time()
+
+# Define trading window
+start_time = pd.to_datetime("09:30").time()
+end_time = pd.to_datetime("14:00").time()
+
 # Get option chain and signals
 result_chain = find_nearest_itm_option()
 signal = trading_signal_all_conditions1(df)
 
-if signal:
-    st.write(f"Trade signal detected:\n{signal['message']}")
-    st.table(pd.DataFrame([signal]))
-
-    spot_price = signal['spot_price']
-    ot = "CE" if signal["option_type"].upper() == "CALL" else "PE"
-
-    # Find nearest ITM option to buy
-    result = option_chain_finder(result_chain, spot_price, option_type=ot, lots=10, lot_size=75)
-
-    st.write("Nearest ITM Call option to BUY:")
-    st.table(pd.DataFrame([result['option_data']]))
-    st.write(f"Total Quantity: {result['total_quantity']}")
-
-   # Generate trade log for current signal
-    trade_log_entry = generate_trade_log_from_option(result, signal)
+# Only take trade if within the window
+if start_time <= candle_time_only <= end_time:    
+    if signal:
+        st.write(f"Trade signal detected:\n{signal['message']}")
+        st.table(pd.DataFrame([signal]))
     
-    # Only convert 'expiry' if the column exists
-    if 'expiry' in trade_log_entry.columns:
-        trade_log_entry['expiry'] = pd.to_datetime(trade_log_entry['expiry'])
+        spot_price = signal['spot_price']
+        ot = "CE" if signal["option_type"].upper() == "CALL" else "PE"
     
-   
-    # Append to session state log
-    st.session_state.trade_log_df = pd.concat(
-        [st.session_state.trade_log_df, trade_log_entry], ignore_index=True
-    )
-
-else:
-    st.write("No trade signal for today based on conditions.")
+        # Find nearest ITM option to buy
+        result = option_chain_finder(result_chain, spot_price, option_type=ot, lots=10, lot_size=75)
+    
+        st.write("Nearest ITM Call option to BUY:")
+        st.table(pd.DataFrame([result['option_data']]))
+        st.write(f"Total Quantity: {result['total_quantity']}")
+    
+       # Generate trade log for current signal
+        trade_log_entry = generate_trade_log_from_option(result, signal)
+        
+        # Only convert 'expiry' if the column exists
+        if 'expiry' in trade_log_entry.columns:
+            trade_log_entry['expiry'] = pd.to_datetime(trade_log_entry['expiry'])
+        
+       
+        # Append to session state log
+        st.session_state.trade_log_df = pd.concat(
+            [st.session_state.trade_log_df, trade_log_entry], ignore_index=True
+        )
+    
+    else:
+        st.write("No trade signal for today based on conditions.")
 
 # Display cumulative trade log
 st.subheader("Cumulative Trade Log")
