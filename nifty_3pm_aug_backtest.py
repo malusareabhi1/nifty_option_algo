@@ -934,8 +934,8 @@ if signal:
             [st.session_state.trade_log_df, trade_log_entry], ignore_index=True
         )
     
-    else:
-        st.write("No trade signal for today based on conditions.")   
+        else:
+            st.write("No trade signal for today based on conditions.")   
 #else:
     #st.write(f"No trades: Outside trading window (9:30 AM – 3:00 PM). Latest candle: {latest_candle_time}")
 
