@@ -904,7 +904,7 @@ candle_time_only = latest_candle_time.time()
 
 # Define trading window
 start_time = pd.to_datetime("09:30").time()
-end_time = pd.to_datetime("14:00").time()
+end_time = pd.to_datetime("15:00").time()
 
 # Get option chain and signals
 result_chain = find_nearest_itm_option()
