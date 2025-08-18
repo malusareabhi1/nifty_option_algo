@@ -162,7 +162,7 @@ def plot_with_3pm_levels(df):
         day_data = df[df['date'] == day]
 
         # find 3PM candle
-        three_pm = day_data[day_data['datetime'].dt.time == pd.to_datetime("15:00").time()]
+        three_pm = day_data[day_data['Datetime_'].dt.time == pd.to_datetime("15:00").time()]
         if three_pm.empty:
             continue
 
