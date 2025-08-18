@@ -109,6 +109,18 @@ fig.update_layout(
     )
 )
 
+# Hide weekends and outside trading hours using rangebreaks
+fig.update_layout(
+    xaxis=dict(
+        rangebreaks=[
+            # Hide weekends
+            dict(bounds=["sat", "mon"]),
+            # Hide hours outside NSE trading hours (15:30–09:15)
+            dict(bounds=[15.5, 9.25], pattern="hour"),
+        ]
+    ),
+    xaxis_rangeslider_visible=False,
+)
 st.plotly_chart(fig, use_container_width=True)
 
 
