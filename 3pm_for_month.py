@@ -81,7 +81,7 @@ st.write(df.columns)
 
 
 
-def plot_with_3pm_levels(df):
+def plot_with_3pm_levels0(df):
     charts = []
     df = df.copy()
     df["Datetime"] = pd.to_datetime(df["Datetime"])
@@ -142,6 +142,68 @@ def plot_with_3pm_levels(df):
         charts.append(fig)
 
     return charts
+
+###############################################################
+
+def plot_with_3pm_levels(df):
+    fig = go.Figure()
+
+    # Plot candlesticks
+    fig.add_trace(go.Candlestick(
+        x=df['datetime'],
+        open=df['Open_^NSEI'],
+        high=df['High_^NSEI'],
+        low=df['Low_^NSEI'],
+        close=df['Close_^NSEI'],
+        name="Nifty 15m"
+    ))
+
+    df['date'] = df['datetime'].dt.date
+    unique_days = sorted(df['date'].unique())
+
+    for i, day in enumerate(unique_days):
+        day_data = df[df['date'] == day]
+
+        # find 3PM candle
+        three_pm = day_data[day_data['datetime'].dt.time == pd.to_datetime("15:00").time()]
+        if three_pm.empty:
+            continue
+
+        three_pm_open = three_pm['Open_^NSEI'].iloc[0]
+        three_pm_close = three_pm['Close_^NSEI'].iloc[0]
+
+        # end date = either next day start or last timestamp
+        if i < len(unique_days) - 1:
+            next_day = unique_days[i + 1]
+            end_time = df[df['date'] == next_day]['datetime'].iloc[-1]
+        else:
+            end_time = day_data['datetime'].iloc[-1]
+
+        start_time = three_pm['datetime'].iloc[0]
+
+        # Draw horizontal lines (open and close levels)
+        fig.add_shape(type="line",
+            x0=start_time, y0=three_pm_open,
+            x1=end_time, y1=three_pm_open,
+            line=dict(color="blue", width=1, dash="dot"),
+            name=f"{day} 3PM Open"
+        )
+        fig.add_shape(type="line",
+            x0=start_time, y0=three_pm_close,
+            x1=end_time, y1=three_pm_close,
+            line=dict(color="red", width=1, dash="dot"),
+            name=f"{day} 3PM Close"
+        )
+
+    fig.update_layout(
+        title="Nifty 15-min with Daily 3PM Levels",
+        xaxis_title="Time",
+        yaxis_title="Price",
+        xaxis_rangeslider_visible=False,
+        template="plotly_dark"
+    )
+
+    return fig
 
 
 charts = plot_with_3pm_levels(df)
