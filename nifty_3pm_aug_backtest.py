@@ -906,53 +906,50 @@ result_chain = find_nearest_itm_option()
 signal = trading_signal_all_conditions1(df)
 
 # Only take trade if within the window
-#if start_time <= candle_time_only <= end_time:    
+# if start_time <= candle_time_only <= end_time:    
 if signal:
-        st.write(f"Trade signal detected:\n{signal['message']}")
-        st.table(pd.DataFrame([signal]))
+    st.write(f"Trade signal detected:\n{signal['message']}")
+    st.table(pd.DataFrame([signal]))
     
-        spot_price = signal['spot_price']
-        ot = "CE" if signal["option_type"].upper() == "CALL" else "PE"
+    spot_price = signal['spot_price']
+    ot = "CE" if signal["option_type"].upper() == "CALL" else "PE"
     
-        # Find nearest ITM option to buy
-        result = option_chain_finder(result_chain, spot_price, option_type=ot, lots=10, lot_size=75)
+    # Find nearest ITM option to buy
+    result = option_chain_finder(result_chain, spot_price, option_type=ot, lots=10, lot_size=75)
     
-        st.write("Nearest ITM Call option to BUY:")
-        st.table(pd.DataFrame([result['option_data']]))
-        st.write(f"Total Quantity: {result['total_quantity']}")
+    st.write("Nearest ITM Call option to BUY:")
+    st.table(pd.DataFrame([result['option_data']]))
+    st.write(f"Total Quantity: {result['total_quantity']}")
     
-       # Generate trade log for current signal
-        trade_log_entry = generate_trade_log_from_option(result, signal)
+    # Generate trade log for current signal
+    trade_log_entry = generate_trade_log_from_option(result, signal)
         
-        # Only convert 'expiry' if the column exists
-        if 'expiry' in trade_log_entry.columns:
-            trade_log_entry['expiry'] = pd.to_datetime(trade_log_entry['expiry'])
+    # Only convert 'expiry' if the column exists
+    if 'expiry' in trade_log_entry.columns:
+        trade_log_entry['expiry'] = pd.to_datetime(trade_log_entry['expiry'])
         
-       
-        # Append to session state log
-        st.session_state.trade_log_df = pd.concat(
-            [st.session_state.trade_log_df, trade_log_entry], ignore_index=True
-        )
-    
-        else:
-            st.write("No trade signal for today based on conditions.")   
-#else:
-    #st.write(f"No trades: Outside trading window (9:30 AM – 3:00 PM). Latest candle: {latest_candle_time}")
-
+    # Append to session state log
+    st.session_state.trade_log_df = pd.concat(
+        [st.session_state.trade_log_df, trade_log_entry], ignore_index=True
+    )
+else:
+    st.write("No trade signal for today based on conditions.")   
+# else:
+#     st.write(f"No trades: Outside trading window (9:30 AM – 3:00 PM). Latest candle: {latest_candle_time}")
 
 # Display cumulative trade log
 st.subheader("Cumulative Trade Log")
 if not st.session_state.trade_log_df.empty:
     st.table(st.session_state.trade_log_df)
-     # Convert DataFrame to CSV
-    #csv_data = st.session_state.trade_log_df.to_csv(index=False)
+    # Convert DataFrame to CSV
+    # csv_data = st.session_state.trade_log_df.to_csv(index=False)
     
     # Add download button
-    #st.download_button(
-        #label="Download Trade Log as CSV",
-        #data=csv_data,
-        #file_name="trade_log.csv",
-       # mime="text/csv"
-    #)
+    # st.download_button(
+    #     label="Download Trade Log as CSV",
+    #     data=csv_data,
+    #     file_name="trade_log.csv",
+    #     mime="text/csv"
+    # )
 else:
     st.write("No trade log data available yet.")
