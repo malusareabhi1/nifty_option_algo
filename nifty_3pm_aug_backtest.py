@@ -910,12 +910,14 @@ if signal:
     st.table(pd.DataFrame([result['option_data']]))
     st.write(f"Total Quantity: {result['total_quantity']}")
 
-    # Generate trade log for current signal
+   # Generate trade log for current signal
     trade_log_entry = generate_trade_log_from_option(result, signal)
-
-    # Ensure Expiry is datetime type
-    trade_log_entry['expiry'] = pd.to_datetime(trade_log_entry['expiry'])
-
+    
+    # Only convert 'expiry' if the column exists
+    if 'expiry' in trade_log_entry.columns:
+        trade_log_entry['expiry'] = pd.to_datetime(trade_log_entry['expiry'])
+    
+   
     # Append to session state log
     st.session_state.trade_log_df = pd.concat(
         [st.session_state.trade_log_df, trade_log_entry], ignore_index=True
