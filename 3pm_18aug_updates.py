@@ -86,24 +86,7 @@ else:
     open_3pm = None
     close_3pm = None
 
-# Add horizontal lines across the entire chart
-if open_3pm is not None:
-    fig.add_hline(
-        y=open_3pm,
-        line_dash="dot",
-        line_color="blue",
-        annotation_text="3PM Open",
-        annotation_position="top left"
-    )
 
-if close_3pm is not None:
-    fig.add_hline(
-        y=close_3pm,
-        line_dash="dot",
-        line_color="red",
-        annotation_text="3PM Close",
-        annotation_position="bottom left"
-    )
 
 # Plot candlestick
 fig = go.Figure(data=[go.Candlestick(
@@ -134,6 +117,24 @@ if open_3pm and close_3pm:
         line=dict(color="red", width=1, dash="dot"),
     )
 
+# Add horizontal lines across the entire chart
+if open_3pm is not None:
+    fig.add_hline(
+        y=open_3pm,
+        line_dash="dot",
+        line_color="blue",
+        annotation_text="3PM Open",
+        annotation_position="top left"
+    )
+
+if close_3pm is not None:
+    fig.add_hline(
+        y=close_3pm,
+        line_dash="dot",
+        line_color="red",
+        annotation_text="3PM Close",
+        annotation_position="bottom left"
+    )
 # Hide weekends
 fig.update_layout(
     title="Nifty 15-min candles - Last Day & Today",
