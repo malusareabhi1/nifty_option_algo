@@ -90,7 +90,7 @@ if 'df_plot' not in st.session_state:
     st.session_state.df_plot = pd.DataFrame()
 
 # Load latest Nifty data
-df_nifty = load_nifty_data_15min(days_back=7)
+df_nifty = load_nifty_data_15min(days_back=2)
 if df_nifty is None or df_nifty.empty:
     st.warning("No data available")
     st.stop()
