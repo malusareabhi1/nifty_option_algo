@@ -388,8 +388,8 @@ def display_todays_candles_with_trend(df):
         'Close_^NSEI': 'Close'
     }, inplace=True)
     
-    st.write(f"All 15-min candles for today ({today_date}):")
-    st.table(display_df.tail(5))
+    #st.write(f"All 15-min candles for today ({today_date}):")
+    #st.table(display_df.tail(5))
 
 ###########################################################################################
 import pandas as pd
