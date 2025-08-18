@@ -881,47 +881,52 @@ def trading_signal_all_conditions1(df, quantity=10*750, return_all_signals=False
 ###############################################################################################################
 #run_check_for_all_candles(df)  # df = your full OHLC DataFrame
 
-#display_todays_candles_with_trend(df)
+
+#st.write(result_chain.tail())
+#################################################
+
+# Initialize session state for trade logs
+if 'trade_log_df' not in st.session_state:
+    st.session_state.trade_log_df = pd.DataFrame()
+
+# Display today's candles with trend and signals
 display_todays_candles_with_trend_and_signal(df)
 
-########################
-result_chain=find_nearest_itm_option()
-#st.write(result_chain)
-#calling all condition in one function
-#signal = trading_signal_all_conditions(df)
+# Get option chain and signals
+result_chain = find_nearest_itm_option()
 signal = trading_signal_all_conditions1(df)
-#st.write("###  Signal")
-#st.write(signal)
+
 if signal:
     st.write(f"Trade signal detected:\n{signal['message']}")
     st.table(pd.DataFrame([signal]))
+
     spot_price = signal['spot_price']
-    #option_type = signal['option_type']
     ot = "CE" if signal["option_type"].upper() == "CALL" else "PE"
+
     # Find nearest ITM option to buy
     result = option_chain_finder(result_chain, spot_price, option_type=ot, lots=10, lot_size=75)
-   # st.write("###  find_nearest_itm_option")
-    #st.write(result)
+
     st.write("Nearest ITM Call option to BUY:")
     st.table(pd.DataFrame([result['option_data']]))
-
     st.write(f"Total Quantity: {result['total_quantity']}")
-    trade_log_df = generate_trade_log_from_option(result, signal)
-    st.write("### Trade Log for Current Signal")
-    st.table(trade_log_df)
+
+    # Generate trade log for current signal
+    trade_log_entry = generate_trade_log_from_option(result, signal)
+
+    # Ensure Expiry is datetime type
+    trade_log_entry['expiry'] = pd.to_datetime(trade_log_entry['expiry'])
+
+    # Append to session state log
+    st.session_state.trade_log_df = pd.concat(
+        [st.session_state.trade_log_df, trade_log_entry], ignore_index=True
+    )
+
 else:
     st.write("No trade signal for today based on conditions.")
 
-
-st.write("Trade log DataFrame:")
-#st.write(trade_log_df)
-if 'trade_log_df' in locals():
-    st.write(trade_log_df)
+# Display cumulative trade log
+st.subheader("Cumulative Trade Log")
+if not st.session_state.trade_log_df.empty:
+    st.table(st.session_state.trade_log_df)
 else:
-    st.write("No trade log data available.")
-#st.write("Columns:", trade_log_df.columns.tolist())
-#st.write(result_chain.tail())
-#################################################
-#trade_log_df = generate_trade_log_from_option(result, signal)
-#st.table(trade_log_df)
-# Ensure Expiry Date is a datetime
+    st.write("No trade log data available yet.")
