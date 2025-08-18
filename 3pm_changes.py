@@ -299,22 +299,7 @@ if st.session_state.last_candle != latest_candle_time:
 st.subheader("Trade Signals / Logs")
 st.dataframe(st.session_state.signal_log)
 
-# Plot last two days of candles
-def plot_last_two_days(df):
-    unique_days = sorted(df['Datetime'].dt.date.unique())
-    if len(unique_days) < 2:
-        return None
-    last_day, today = unique_days[-2], unique_days[-1]
-    df_plot = df[df['Datetime'].dt.date.isin([last_day, today])]
-    fig = go.Figure(data=[go.Candlestick(
-        x=df_plot['Datetime'],
-        open=df_plot['Open'],
-        high=df_plot['High'],
-        low=df_plot['Low'],
-        close=df_plot['Close']
-    )])
-    fig.update_layout(xaxis_rangeslider_visible=False)
-    return fig
+
 
 st.plotly_chart(plot_last_two_days(df_nifty), use_container_width=True)
 
