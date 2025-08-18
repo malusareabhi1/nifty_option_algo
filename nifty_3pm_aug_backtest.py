@@ -942,7 +942,7 @@ else:
 st.subheader("Cumulative Trade Log")
 if not st.session_state.trade_log_df.empty:
     st.table(st.session_state.trade_log_df)
-    st.write(st.session_state.trade_log_df.columns)
+    #st.write(st.session_state.trade_log_df.columns)
     # Convert DataFrame to CSV
     # csv_data = st.session_state.trade_log_df.to_csv(index=False)
     
