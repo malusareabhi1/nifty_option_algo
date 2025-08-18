@@ -110,7 +110,7 @@ def plot_with_3pm_levels0(df):
 
         # Plot
         fig = go.Figure(data=[go.Candlestick(
-            x=day_range["Datetime"],
+            x=day_range["datetime"],
             open=day_range["Open"],
             high=day_range["High"],
             low=day_range["Low"],
