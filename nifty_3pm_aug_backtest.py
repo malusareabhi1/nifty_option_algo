@@ -942,16 +942,12 @@ else:
 st.subheader("Cumulative Trade Log")
 if not st.session_state.trade_log_df.empty:
     st.table(st.session_state.trade_log_df)
-    #st.write(st.session_state.trade_log_df.columns)
-    # Convert DataFrame to CSV
-    # csv_data = st.session_state.trade_log_df.to_csv(index=False)
-    
-    # Add download button
-    # st.download_button(
-    #     label="Download Trade Log as CSV",
-    #     data=csv_data,
-    #     file_name="trade_log.csv",
-    #     mime="text/csv"
-    # )
+    csv = st.session_state.trade_log_df.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="📥 Download Trade Log as CSV",
+        data=csv,
+        file_name="trade_log.csv",
+        mime="text/csv",
+    )
 else:
     st.write("No trade log data available yet.")
