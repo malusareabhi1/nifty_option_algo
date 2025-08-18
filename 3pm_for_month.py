@@ -64,79 +64,7 @@ else:
 #st.write(df.columns)
 #st.write(df.head(10))
 
-# Filter for last two trading days to plot
-unique_days = df['Datetime'].dt.date.unique()
-if len(unique_days) < 2:
-    st.warning("Not enough data for two trading days")
-else:
-    last_day = unique_days[-2]
-    today = unique_days[-1]
 
-    df_plot = df[df['Datetime'].dt.date.isin([last_day, today])]
-
-    # Get last day 3PM candle open and close
-    candle_3pm = df_plot[(df_plot['Datetime'].dt.date == last_day) &
-                         (df_plot['Datetime'].dt.hour == 15) &
-                         (df_plot['Datetime'].dt.minute == 0)]
-
-    if not candle_3pm.empty:
-        open_3pm = candle_3pm.iloc[0]['Open_^NSEI']
-        close_3pm = candle_3pm.iloc[0]['Close_^NSEI']
-    else:
-        open_3pm = None
-        close_3pm = None
-        st.warning("No 3:00 PM candle found for last trading day.")
-    # --- Filter DataFrame to working hours ---
-    # NSE Trading hours: 9:15 to 15:30
-    df_plot['Datetime'] = pd.to_datetime(df_plot['Datetime'])
-    df_plot = df_plot[(df_plot['Datetime'].dt.time >= pd.to_datetime("09:15").time()) &
-                      (df_plot['Datetime'].dt.time <= pd.to_datetime("15:30").time())]
-
-        # Exclude specific dates
-    exclude_dates = [pd.to_datetime("2025-08-15").date()]
-    df_plot = df_plot[~df_plot['Datetime'].dt.date.isin(exclude_dates)]
-    # --- Plot Candlestick ---
-    fig = go.Figure(data=[go.Candlestick(
-        x=df_plot['Datetime'],
-        open=df_plot['Open_^NSEI'],
-        high=df_plot['High_^NSEI'],
-        low=df_plot['Low_^NSEI'],
-        close=df_plot['Close_^NSEI']
-    )])
-    
-    # Add 3PM Open/Close horizontal lines if available
-    if open_3pm and close_3pm:
-        fig.add_hline(y=open_3pm, line_dash="dot", line_color="blue", annotation_text="3PM Open")
-        fig.add_hline(y=close_3pm, line_dash="dot", line_color="red", annotation_text="3PM Close")
-    # Exclude specific dates
-    exclude_dates = [pd.to_datetime("2025-08-15").date()]
-    df_plot = df_plot[~df_plot['Datetime'].dt.date.isin(exclude_dates)]
-    # --- Hide weekends in x-axis ---
-    fig.update_layout(
-        title="Nifty 15-min candles - Last Day & Today",
-        xaxis_rangeslider_visible=False,
-        xaxis=dict(
-            rangebreaks=[
-                # Hide weekends (Saturday & Sunday)
-                dict(bounds=["sat", "mon"]),
-            ]
-        )
-    )
-    
-    fig.update_layout(
-        title="Nifty 15-min candles - Last Day & Today",
-        xaxis_rangeslider_visible=False,
-        xaxis=dict(
-            rangebreaks=[
-                dict(bounds=["sat", "mon"]),
-                dict(bounds=[15.5, 9.25], pattern="hour"),
-            ]
-        )
-    )
-
-
-    st.plotly_chart(fig, use_container_width=True)
-   
 #####################################################################################
 
 
