@@ -10,7 +10,131 @@ from datetime import datetime, timedelta
 
 st.set_page_config(layout="wide")
 st_autorefresh(interval=240000, limit=None, key="refresh")
+#####################################################################################################
 
+
+
+import streamlit as st
+import pandas as pd
+import yfinance as yf
+import plotly.graph_objects as go
+from datetime import datetime, timedelta
+
+# ---------------- FUNCTION 1: LOAD NIFTY DATA ----------------
+def load_nifty_data(symbol="^NSEI", selected_date=None):
+    if selected_date is None:
+        selected_date = datetime.today().date()
+
+    start_date = selected_date - timedelta(days=7)
+    end_date = selected_date + timedelta(days=1)
+
+    df = yf.download(symbol, start=start_date, end=end_date, interval="15m")
+    if df.empty:
+        st.warning("No data downloaded for the selected range.")
+        return None
+
+    df.reset_index(inplace=True)
+
+    # Fix column names
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = ['_'.join(col).strip() if isinstance(col, tuple) else col for col in df.columns]
+
+    if 'Datetime' not in df.columns:
+        if 'Datetime_' in df.columns:
+            df.rename(columns={'Datetime_': 'Datetime'}, inplace=True)
+        elif 'Date' in df.columns:
+            df.rename(columns={'Date': 'Datetime'}, inplace=True)
+
+    df['Datetime'] = pd.to_datetime(df['Datetime'])
+    if df['Datetime'].dt.tz is None:
+        df['Datetime'] = df['Datetime'].dt.tz_localize('UTC').dt.tz_convert('Asia/Kolkata')
+    else:
+        df['Datetime'] = df['Datetime'].dt.tz_convert('Asia/Kolkata')
+
+    # NSE holidays for 2025
+    nse_holidays = [
+        "2025-01-26", "2025-02-26", "2025-03-14", "2025-03-31", "2025-04-10",
+        "2025-04-14", "2025-04-18", "2025-05-01", "2025-08-15", "2025-08-27",
+        "2025-10-02", "2025-10-21", "2025-10-22", "2025-11-05", "2025-12-25"
+    ]
+    nse_holidays = pd.to_datetime(nse_holidays).date
+    df = df[~df['Datetime'].dt.date.isin(nse_holidays)]
+
+    # Filter trading hours: 9:15–15:30
+    df = df[(df['Datetime'].dt.time >= datetime.strptime("09:15", "%H:%M").time()) &
+            (df['Datetime'].dt.time <= datetime.strptime("15:30", "%H:%M").time())]
+
+    if df.empty:
+        st.warning("No trading data available after filtering holidays and trading hours.")
+        return None
+
+    return df
+
+
+# ---------------- FUNCTION 2: PLOT NIFTY DATA ----------------
+def plot_nifty_candles(df, last_day=None):
+    if df is None or df.empty:
+        st.warning("No data to plot.")
+        return
+
+    unique_days = df['Datetime'].dt.date.unique()
+    if len(unique_days) < 2:
+        st.warning("Not enough data for two trading days")
+        return
+
+    if last_day is None:
+        last_day, today = unique_days[-2], unique_days[-1]
+    else:
+        today = unique_days[-1]
+
+    df_plot = df[df['Datetime'].dt.date.isin([last_day, today])]
+
+    # Get last day 3PM candle
+    candle_3pm = df_plot[(df_plot['Datetime'].dt.date == last_day) &
+                         (df_plot['Datetime'].dt.hour == 15) &
+                         (df_plot['Datetime'].dt.minute == 0)]
+    if not candle_3pm.empty:
+        open_3pm = candle_3pm.iloc[0]['Open_^NSEI']
+        close_3pm = candle_3pm.iloc[0]['Close_^NSEI']
+    else:
+        open_3pm = None
+        close_3pm = None
+
+    # Plot candlestick
+    fig = go.Figure(data=[go.Candlestick(
+        x=df_plot['Datetime'],
+        open=df_plot['Open_^NSEI'],
+        high=df_plot['High_^NSEI'],
+        low=df_plot['Low_^NSEI'],
+        close=df_plot['Close_^NSEI'],
+        name="Nifty"
+    )])
+
+    # Add horizontal 3PM lines
+    if open_3pm is not None:
+        fig.add_hline(y=open_3pm, line_dash="dot", line_color="blue",
+                      annotation_text="3PM Open", annotation_position="top left")
+    if close_3pm is not None:
+        fig.add_hline(y=close_3pm, line_dash="dot", line_color="red",
+                      annotation_text="3PM Close", annotation_position="bottom left")
+
+    # Hide weekends and outside trading hours
+    fig.update_layout(
+        title="Nifty 15-min Candles - Last Day & Today",
+        xaxis_rangeslider_visible=False,
+        xaxis=dict(
+            rangebreaks=[
+                dict(bounds=["sat", "mon"]),  # weekends
+                dict(bounds=[15.5, 9.25], pattern="hour"),  # outside trading hours
+            ]
+        )
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+
+
+#####################################################################################################
 st.title("Nifty 15-min Chart for Selected Date & Previous Day")
 
 # Select date input
@@ -1309,6 +1433,11 @@ def trading_signal_all_conditions1(df, quantity=10*750, return_all_signals=False
 
 ###############################################################################################################
 #run_check_for_all_candles(df)  # df = your full OHLC DataFrame
+# ---------------- MAIN STREAMLIT APP ----------------
+st.title("Nifty 15-min Chart for Selected Date & Previous Day")
+selected_date = st.date_input("Select date", value=datetime.today())
+nifty_df = load_nifty_data(selected_date=selected_date)
+plot_nifty_candles(nifty_df)
 
 #display_todays_candles_with_trend(df)
 display_todays_candles_with_trend_and_signal(df)
