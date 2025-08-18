@@ -276,7 +276,7 @@ def condition_1_trade_signal(nifty_df):
 
 
 #####################################################################################################################################
-open_3pm, close_3pm = display_3pm_candle_info(df_plot, selected_date)
+#open_3pm, close_3pm = display_3pm_candle_info(df_plot, selected_date)
 
 
 ##########################################################################################################
