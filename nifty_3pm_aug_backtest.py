@@ -162,34 +162,6 @@ def display_3pm_candle_info(df, day):
 
 #import streamlit as st
 
-def display_current_candle(df):
-    """
-    Display the latest candle OHLC prices from a DataFrame with a 'Datetime' column.
-    Assumes df is sorted by datetime ascending.
-    
-    Parameters:
-    - df: DataFrame with columns ['Open_^NSEI', 'High_^NSEI', 'Low_^NSEI', 'Close_^NSEI', 'Datetime']
-    """
-    st.write(df.columns)
-    
-    
-    st.info(f"Current Candle @ {local_dt.strftime('%Y-%m-%d %H:%M')} (Asia/Kolkata)")
-
-    if df.empty:
-        st.warning("No candle data available.")
-        return
-    
-    current_candle = df.iloc[-1]
-    
-    #st.info(f"Current Candle @ {current_candle['Datetime']}")
-    st.write(f"Open: {current_candle['Open_^NSEI']}")
-    st.write(f"High: {current_candle['High_^NSEI']}")
-    st.write(f"Low: {current_candle['Low_^NSEI']}")
-    st.write(f"Close: {current_candle['Close_^NSEI']}")
-
-# After you get last_day and df_plot
-#import pandas as pd
-#import streamlit as st
 
 def display_current_trend(df):
     """
