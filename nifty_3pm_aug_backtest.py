@@ -110,6 +110,16 @@ else:
             ]
         )
     )
+     fig.update_layout(
+        title="Nifty 15-min candles - Last Day & Today",
+        xaxis_rangeslider_visible=False,
+        xaxis=dict(
+            rangebreaks=[
+                dict(bounds=["sat", "mon"]),
+                dict(bounds=[15.5, 9.25], pattern="hour"),
+            ]
+        )
+    )
 
 
     st.plotly_chart(fig, use_container_width=True)
