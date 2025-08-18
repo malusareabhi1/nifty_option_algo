@@ -20,119 +20,154 @@ import yfinance as yf
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 
-# ---------------- FUNCTION 1: LOAD NIFTY DATA ----------------
-def load_nifty_data(symbol="^NSEI", selected_date=None):
-    if selected_date is None:
-        selected_date = datetime.today().date()
+st.title("Nifty 15-min Chart for Selected Date & Previous Day")
 
-    start_date = selected_date - timedelta(days=7)
-    end_date = selected_date + timedelta(days=1)
+# Select date input
+selected_date = st.date_input("Select date", value=datetime.today())
 
-    df = yf.download(symbol, start=start_date, end=end_date, interval="15m")
-    if df.empty:
-        st.warning("No data downloaded for the selected range.")
-        return None
+# Date range for 7 days before to 1 day after
+start_date = selected_date - timedelta(days=7)
+end_date = selected_date + timedelta(days=1)
 
-    df.reset_index(inplace=True)
+# Download Nifty 15-min data
+df = yf.download("^NSEI", start=start_date, end=end_date, interval="15m")
+if df.empty:
+    st.warning("No data downloaded for the selected range.")
+    st.stop()
 
-    # Fix column names
-    if isinstance(df.columns, pd.MultiIndex):
-        df.columns = ['_'.join(col).strip() if isinstance(col, tuple) else col for col in df.columns]
+df.reset_index(inplace=True)
 
-    if 'Datetime' not in df.columns:
-        if 'Datetime_' in df.columns:
-            df.rename(columns={'Datetime_': 'Datetime'}, inplace=True)
-        elif 'Date' in df.columns:
-            df.rename(columns={'Date': 'Datetime'}, inplace=True)
+# Fix column names if multiindex or different names
+if isinstance(df.columns, pd.MultiIndex):
+    df.columns = ['_'.join(col).strip() if isinstance(col, tuple) else col for col in df.columns]
 
-    df['Datetime'] = pd.to_datetime(df['Datetime'])
-    if df['Datetime'].dt.tz is None:
-        df['Datetime'] = df['Datetime'].dt.tz_localize('UTC').dt.tz_convert('Asia/Kolkata')
-    else:
-        df['Datetime'] = df['Datetime'].dt.tz_convert('Asia/Kolkata')
+if 'Datetime' not in df.columns:
+    if 'Datetime_' in df.columns:
+        df.rename(columns={'Datetime_': 'Datetime'}, inplace=True)
+    elif 'Date' in df.columns:
+        df.rename(columns={'Date': 'Datetime'}, inplace=True)
 
-    # NSE holidays for 2025
-    nse_holidays = [
-        "2025-01-26", "2025-02-26", "2025-03-14", "2025-03-31", "2025-04-10",
-        "2025-04-14", "2025-04-18", "2025-05-01", "2025-08-15", "2025-08-27",
-        "2025-10-02", "2025-10-21", "2025-10-22", "2025-11-05", "2025-12-25"
-    ]
-    nse_holidays = pd.to_datetime(nse_holidays).date
-    df = df[~df['Datetime'].dt.date.isin(nse_holidays)]
+# Convert to datetime and set timezone to Asia/Kolkata
+df['Datetime'] = pd.to_datetime(df['Datetime'])
+if df['Datetime'].dt.tz is None:
+    df['Datetime'] = df['Datetime'].dt.tz_localize('UTC').dt.tz_convert('Asia/Kolkata')
+else:
+    df['Datetime'] = df['Datetime'].dt.tz_convert('Asia/Kolkata')
 
-    # Filter trading hours: 9:15–15:30
-    df = df[(df['Datetime'].dt.time >= datetime.strptime("09:15", "%H:%M").time()) &
-            (df['Datetime'].dt.time <= datetime.strptime("15:30", "%H:%M").time())]
+# Filter last two trading days
+unique_days = df['Datetime'].dt.date.unique()
+if len(unique_days) < 2:
+    st.warning("Not enough data for two trading days")
+    st.stop()
 
-    if df.empty:
-        st.warning("No trading data available after filtering holidays and trading hours.")
-        return None
-
-    return df
+last_day, today = unique_days[-2], unique_days[-1]
+df_plot = df[df['Datetime'].dt.date.isin([last_day, today])]
 
 
-# ---------------- FUNCTION 2: PLOT NIFTY DATA ----------------
-def plot_nifty_candles(df, last_day=None):
-    if df is None or df.empty:
-        st.warning("No data to plot.")
-        return
+# 1️⃣ Define NSE holidays for 2025 (you can update year-wise)
+nse_holidays = [
+    "2025-01-26", "2025-02-26", "2025-03-14", "2025-03-31", "2025-04-10",
+    "2025-04-14", "2025-04-18", "2025-05-01", "2025-08-15", "2025-08-27",
+    "2025-10-02", "2025-10-21", "2025-10-22", "2025-11-05", "2025-12-25"
+]
+nse_holidays = pd.to_datetime(nse_holidays).date
 
-    unique_days = df['Datetime'].dt.date.unique()
-    if len(unique_days) < 2:
-        st.warning("Not enough data for two trading days")
-        return
+# 2️⃣ Filter df_plot to exclude holidays
+df_plot = df_plot[~df_plot['Datetime'].dt.date.isin(nse_holidays)]
 
-    if last_day is None:
-        last_day, today = unique_days[-2], unique_days[-1]
-    else:
-        today = unique_days[-1]
+# 3️⃣ After filtering, check if any data remains
+if df_plot.empty:
+    st.warning("Selected date(s) fall on NSE holiday(s). No trading data available.")
+    st.stop()
 
-    df_plot = df[df['Datetime'].dt.date.isin([last_day, today])]
+# Filter for NSE trading hours: 9:15–15:30
+df_plot = df_plot[(df_plot['Datetime'].dt.time >= datetime.strptime("09:15", "%H:%M").time()) &
+                  (df_plot['Datetime'].dt.time <= datetime.strptime("15:30", "%H:%M").time())]
 
-    # Get last day 3PM candle
-    candle_3pm = df_plot[(df_plot['Datetime'].dt.date == last_day) &
-                         (df_plot['Datetime'].dt.hour == 15) &
-                         (df_plot['Datetime'].dt.minute == 0)]
-    if not candle_3pm.empty:
-        open_3pm = candle_3pm.iloc[0]['Open_^NSEI']
-        close_3pm = candle_3pm.iloc[0]['Close_^NSEI']
-    else:
-        open_3pm = None
-        close_3pm = None
+# Get last day 3PM candle
+candle_3pm = df_plot[(df_plot['Datetime'].dt.date == last_day) &
+                     (df_plot['Datetime'].dt.hour == 15) &
+                     (df_plot['Datetime'].dt.minute == 0)]
+if not candle_3pm.empty:
+    open_3pm = candle_3pm.iloc[0]['Open_^NSEI']
+    close_3pm = candle_3pm.iloc[0]['Close_^NSEI']
+else:
+    open_3pm = None
+    close_3pm = None
 
-    # Plot candlestick
-    fig = go.Figure(data=[go.Candlestick(
-        x=df_plot['Datetime'],
-        open=df_plot['Open_^NSEI'],
-        high=df_plot['High_^NSEI'],
-        low=df_plot['Low_^NSEI'],
-        close=df_plot['Close_^NSEI'],
-        name="Nifty"
-    )])
 
-    # Add horizontal 3PM lines
-    if open_3pm is not None:
-        fig.add_hline(y=open_3pm, line_dash="dot", line_color="blue",
-                      annotation_text="3PM Open", annotation_position="top left")
-    if close_3pm is not None:
-        fig.add_hline(y=close_3pm, line_dash="dot", line_color="red",
-                      annotation_text="3PM Close", annotation_position="bottom left")
 
-    # Hide weekends and outside trading hours
-    fig.update_layout(
-        title="Nifty 15-min Candles - Last Day & Today",
-        xaxis_rangeslider_visible=False,
-        xaxis=dict(
-            rangebreaks=[
-                dict(bounds=["sat", "mon"]),  # weekends
-                dict(bounds=[15.5, 9.25], pattern="hour"),  # outside trading hours
-            ]
-        )
+# Plot candlestick
+fig = go.Figure(data=[go.Candlestick(
+    x=df_plot['Datetime'],
+    open=df_plot['Open_^NSEI'],
+    high=df_plot['High_^NSEI'],
+    low=df_plot['Low_^NSEI'],
+    close=df_plot['Close_^NSEI'],
+    name="Nifty"
+)])
+
+# Add 3PM Open/Close lines only for last day
+if open_3pm and close_3pm:
+    fig.add_shape(
+        type="line",
+        x0=df_plot[df_plot['Datetime'].dt.date == last_day]['Datetime'].min(),
+        x1=df_plot[df_plot['Datetime'].dt.date == today]['Datetime'].min(),
+        y0=open_3pm,
+        y1=open_3pm,
+        line=dict(color="blue", width=1, dash="dot"),
+    )
+    fig.add_shape(
+        type="line",
+        x0=df_plot[df_plot['Datetime'].dt.date == last_day]['Datetime'].min(),
+        x1=df_plot[df_plot['Datetime'].dt.date == today]['Datetime'].min(),
+        y0=close_3pm,
+        y1=close_3pm,
+        line=dict(color="red", width=1, dash="dot"),
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+# Add horizontal lines across the entire chart
+if open_3pm is not None:
+    fig.add_hline(
+        y=open_3pm,
+        line_dash="dot",
+        line_color="blue",
+        annotation_text="3PM Open",
+        annotation_position="top left"
+    )
 
+if close_3pm is not None:
+    fig.add_hline(
+        y=close_3pm,
+        line_dash="dot",
+        line_color="red",
+        annotation_text="3PM Close",
+        annotation_position="bottom left"
+    )
+# Hide weekends
+fig.update_layout(
+    title="Nifty 15-min candles - Last Day & Today",
+    xaxis_rangeslider_visible=False,
+    xaxis=dict(
+        rangebreaks=[
+            dict(bounds=["sat", "mon"]),
+        ]
+    )
+)
 
+# Hide weekends and outside trading hours using rangebreaks
+fig.update_layout(
+    xaxis=dict(
+        rangebreaks=[
+            # Hide weekends
+            dict(bounds=["sat", "mon"]),
+            # Hide hours outside NSE trading hours (15:30–09:15)
+            dict(bounds=[15.5, 9.25], pattern="hour"),
+        ]
+    ),
+    xaxis_rangeslider_visible=False,
+)
+st.plotly_chart(fig, use_container_width=True)
 
 #####################################################################################################
 
