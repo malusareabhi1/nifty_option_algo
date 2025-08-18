@@ -101,7 +101,9 @@ else:
     if open_3pm and close_3pm:
         fig.add_hline(y=open_3pm, line_dash="dot", line_color="blue", annotation_text="3PM Open")
         fig.add_hline(y=close_3pm, line_dash="dot", line_color="red", annotation_text="3PM Close")
-    
+    # Exclude specific dates
+    exclude_dates = [pd.to_datetime("2025-08-15").date()]
+    df_plot = df_plot[~df_plot['Datetime'].dt.date.isin(exclude_dates)]
     # --- Hide weekends in x-axis ---
     fig.update_layout(
         title="Nifty 15-min candles - Last Day & Today",
