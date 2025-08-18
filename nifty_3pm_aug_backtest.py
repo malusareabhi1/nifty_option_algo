@@ -79,12 +79,13 @@ else:
         open_3pm = None
         close_3pm = None
         st.warning("No 3:00 PM candle found for last trading day.")
+    # --- Filter DataFrame to working hours ---
     # NSE Trading hours: 9:15 to 15:30
     df_plot['Datetime'] = pd.to_datetime(df_plot['Datetime'])
     df_plot = df_plot[(df_plot['Datetime'].dt.time >= pd.to_datetime("09:15").time()) &
                       (df_plot['Datetime'].dt.time <= pd.to_datetime("15:30").time())]
-
-    # Plot candlestick chart
+    
+    # --- Plot Candlestick ---
     fig = go.Figure(data=[go.Candlestick(
         x=df_plot['Datetime'],
         open=df_plot['Open_^NSEI'],
@@ -92,28 +93,23 @@ else:
         low=df_plot['Low_^NSEI'],
         close=df_plot['Close_^NSEI']
     )])
-
+    
+    # Add 3PM Open/Close horizontal lines if available
     if open_3pm and close_3pm:
         fig.add_hline(y=open_3pm, line_dash="dot", line_color="blue", annotation_text="3PM Open")
         fig.add_hline(y=close_3pm, line_dash="dot", line_color="red", annotation_text="3PM Close")
-
-
-
-
-    # Draw horizontal lines as line segments only between 3PM last day and 3PM next day
-
     
-    fig.update_layout(title="Nifty 15-min candles - Last Day & Today", xaxis_rangeslider_visible=False)
+    # --- Hide weekends in x-axis ---
     fig.update_layout(
-    xaxis=dict(
-        rangebreaks=[
-            # Hide weekends (Saturday and Sunday)
-            dict(bounds=["sat", "mon"]),
-            # Hide hours outside of trading hours (NSE trading hours 9:15 to 15:30)
-            dict(bounds=[15.5, 9.25], pattern="hour"),
-        ]
+        title="Nifty 15-min candles - Last Day & Today",
+        xaxis_rangeslider_visible=False,
+        xaxis=dict(
+            rangebreaks=[
+                # Hide weekends (Saturday & Sunday)
+                dict(bounds=["sat", "mon"]),
+            ]
+        )
     )
-)
 
 
     st.plotly_chart(fig, use_container_width=True)
