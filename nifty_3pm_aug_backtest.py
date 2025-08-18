@@ -990,17 +990,21 @@ if st.button("Check Alert"):
     price_alert(current_price, high, low)
 ########################################################################################################
 
+import pandas as pd
+import numpy as np
+
 def trading_signal_all_condition(df: pd.DataFrame) -> pd.DataFrame:
     """
     Function to generate trading signals based on conditions:
     - 3PM candle (day 0) open/close marked
     - Next day first 15-min breakout check
-    - EMA20 crossover + Volume breakout
-    
+    - EMA20 crossover + Volume breakout (if volume available)
+
     Parameters:
-        df (pd.DataFrame): NIFTY 15-min OHLCV data with columns
-                           ['Datetime','Open','High','Low','Close','Volume']
-    
+        df (pd.DataFrame): NIFTY 15-min OHLC data with columns
+                           ['Datetime','Open_^NSEI','High_^NSEI','Low_^NSEI','Close_^NSEI']
+                           (optional 'Volume')
+
     Returns:
         pd.DataFrame: df with extra columns ['EMA20','Signal']
     """
@@ -1010,6 +1014,14 @@ def trading_signal_all_condition(df: pd.DataFrame) -> pd.DataFrame:
     # Ensure datetime is in pandas datetime
     df['Datetime'] = pd.to_datetime(df['Datetime'])
     df = df.sort_values("Datetime").reset_index(drop=True)
+    
+    # Rename columns to generic OHLC
+    df = df.rename(columns={
+        'Open_^NSEI': 'Open',
+        'High_^NSEI': 'High',
+        'Low_^NSEI': 'Low',
+        'Close_^NSEI': 'Close'
+    })
     
     # Add EMA20
     df['EMA20'] = df['Close'].ewm(span=20, adjust=False).mean()
@@ -1050,22 +1062,32 @@ def trading_signal_all_condition(df: pd.DataFrame) -> pd.DataFrame:
             elif fc['Low'] < min(open_val, close_val):  # Breakdown below
                 df.loc[first_candle.index, 'Signal'] = "Breakout_Down"
     
-    # Step 3: EMA20 + Volume condition
-    df['Prev_Close'] = df['Close'].shift(1)
-    df['Prev_EMA20'] = df['EMA20'].shift(1)
-    df['Prev_Volume'] = df['Volume'].shift(1)
-    
-    for i in range(1, len(df)):
-        if df.loc[i, 'Close'] > df.loc[i, 'EMA20'] and df.loc[i-1, 'Prev_Close'] <= df.loc[i-1, 'Prev_EMA20']:
-            if df.loc[i, 'Volume'] > df['Volume'].rolling(20).mean().iloc[i]:
-                df.loc[i, 'Signal'] = "EMA20_Buy"
+    # Step 3: EMA20 + Volume condition (if volume exists)
+    if 'Volume' in df.columns:
+        df['Prev_Close'] = df['Close'].shift(1)
+        df['Prev_EMA20'] = df['EMA20'].shift(1)
         
-        elif df.loc[i, 'Close'] < df.loc[i, 'EMA20'] and df.loc[i-1, 'Prev_Close'] >= df.loc[i-1, 'Prev_EMA20']:
-            if df.loc[i, 'Volume'] > df['Volume'].rolling(20).mean().iloc[i]:
-                df.loc[i, 'Signal'] = "EMA20_Sell"
+        vol_ma = df['Volume'].rolling(20).mean()
+        
+        for i in range(1, len(df)):
+            if (
+                df.loc[i, 'Close'] > df.loc[i, 'EMA20'] 
+                and df.loc[i-1, 'Prev_Close'] <= df.loc[i-1, 'Prev_EMA20']
+            ):
+                if df.loc[i, 'Volume'] > vol_ma.iloc[i]:
+                    df.loc[i, 'Signal'] = "EMA20_Buy"
+            
+            elif (
+                df.loc[i, 'Close'] < df.loc[i, 'EMA20'] 
+                and df.loc[i-1, 'Prev_Close'] >= df.loc[i-1, 'Prev_EMA20']
+            ):
+                if df.loc[i, 'Volume'] > vol_ma.iloc[i]:
+                    df.loc[i, 'Signal'] = "EMA20_Sell"
+        
+        df = df.drop(columns=['Prev_Close','Prev_EMA20'])
     
     # Clean up temp cols
-    df = df.drop(columns=['Prev_Close','Prev_EMA20','Prev_Volume','Time','Date'])
+    df = df.drop(columns=['Time','Date'])
     
     return df
 
