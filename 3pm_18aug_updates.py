@@ -54,6 +54,23 @@ if len(unique_days) < 2:
 last_day, today = unique_days[-2], unique_days[-1]
 df_plot = df[df['Datetime'].dt.date.isin([last_day, today])]
 
+
+# 1️⃣ Define NSE holidays for 2025 (you can update year-wise)
+nse_holidays = [
+    "2025-01-26", "2025-02-26", "2025-03-14", "2025-03-31", "2025-04-10",
+    "2025-04-14", "2025-04-18", "2025-05-01", "2025-08-15", "2025-08-27",
+    "2025-10-02", "2025-10-21", "2025-10-22", "2025-11-05", "2025-12-25"
+]
+nse_holidays = pd.to_datetime(nse_holidays).date
+
+# 2️⃣ Filter df_plot to exclude holidays
+df_plot = df_plot[~df_plot['Datetime'].dt.date.isin(nse_holidays)]
+
+# 3️⃣ After filtering, check if any data remains
+if df_plot.empty:
+    st.warning("Selected date(s) fall on NSE holiday(s). No trading data available.")
+    st.stop()
+
 # Filter for NSE trading hours: 9:15–15:30
 df_plot = df_plot[(df_plot['Datetime'].dt.time >= datetime.strptime("09:15", "%H:%M").time()) &
                   (df_plot['Datetime'].dt.time <= datetime.strptime("15:30", "%H:%M").time())]
