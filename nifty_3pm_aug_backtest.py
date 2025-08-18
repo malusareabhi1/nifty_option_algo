@@ -129,7 +129,7 @@ else:
 
 
     st.plotly_chart(fig, use_container_width=True)
-
+    display_current_trend(df)
 
 def display_3pm_candle_info(df, day):
     """
