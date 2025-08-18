@@ -30,7 +30,7 @@ else:
 
     if not df.empty:
         st.success(f"Data loaded for NIFTY between {from_date} and {to_date}")
-        st.dataframe(df.tail(20))  # show last 20 rows
+        #st.dataframe(df.tail(20))  # show last 20 rows
     else:
         st.warning("No data found for the selected range")
         
