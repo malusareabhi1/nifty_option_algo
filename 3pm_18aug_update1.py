@@ -212,4 +212,54 @@ def plot_nifty_15min_chart(df, last_day=None, today=None):
         close_3pm = None
 
     fig = go.Figure(data=[go.Candlestick(
-       
+        x=df_plot['Datetime'],
+        open=df_plot['Open_^NSEI'],
+        high=df_plot['High_^NSEI'],
+        low=df_plot['Low_^NSEI'],
+        close=df_plot['Close_^NSEI'],
+        name="Nifty"
+    )])
+
+    if open_3pm is not None:
+        fig.add_hline(y=open_3pm, line_dash="dot", line_color="blue", annotation_text="3PM Open", annotation_position="top left")
+    if close_3pm is not None:
+        fig.add_hline(y=close_3pm, line_dash="dot", line_color="red", annotation_text="3PM Close", annotation_position="bottom left")
+
+    fig.update_layout(
+        title="Nifty 15-min candles - Last Day & Today",
+        xaxis_rangeslider_visible=False,
+        xaxis=dict(
+            rangebreaks=[
+                dict(bounds=["sat", "mon"]),
+                dict(bounds=[15.5, 9.25], pattern="hour"),
+            ]
+        )
+    )
+    return fig
+
+# ----------------- STREAMLIT APP -----------------
+st.title("Nifty 50 15-min Live Trade Logger")
+
+# Initialize or load existing signal log
+if 'signal_log' not in st.session_state:
+    st.session_state.signal_log = pd.DataFrame()
+
+# Load latest Nifty data
+df_nifty = load_nifty_data_15min(days_back=7)
+if df_nifty is None or df_nifty.empty:
+    st.warning("No data available")
+    st.stop()
+
+# Run signals for new candles
+st.session_state.signal_log = run_trading_signals_new_candle(df_nifty, st.session_state.signal_log)
+
+# Display logs
+st.subheader("Trade Signals / Logs")
+st.dataframe(st.session_state.signal_log)
+
+# Plot chart
+fig = plot_nifty_15min_chart(df_nifty)
+st.plotly_chart(fig, use_container_width=True)
+
+# Auto-refresh every 15 minutes
+st_autorefresh(interval=900000, key="nifty_refresh")  # 15 min
