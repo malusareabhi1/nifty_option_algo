@@ -79,6 +79,10 @@ else:
         open_3pm = None
         close_3pm = None
         st.warning("No 3:00 PM candle found for last trading day.")
+    # NSE Trading hours: 9:15 to 15:30
+    df_plot['Datetime'] = pd.to_datetime(df_plot['Datetime'])
+    df_plot = df_plot[(df_plot['Datetime'].dt.time >= pd.to_datetime("09:15").time()) &
+                      (df_plot['Datetime'].dt.time <= pd.to_datetime("15:30").time())]
 
     # Plot candlestick chart
     fig = go.Figure(data=[go.Candlestick(
