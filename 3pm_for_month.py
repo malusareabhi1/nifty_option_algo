@@ -275,8 +275,6 @@ open_3pm, close_3pm = display_3pm_candle_info(df_plot, selected_date)
 
 ##########################################################################################################
 
-#import pandas as pd
-#import streamlit as st
 
 def display_todays_candles_with_trend(df):
     """
@@ -325,12 +323,8 @@ def display_todays_candles_with_trend(df):
         'Close_^NSEI': 'Close'
     }, inplace=True)
     
-    #st.write(f"All 15-min candles for today ({today_date}):")
-    #st.table(display_df.tail(5))
-
+  
 ###########################################################################################
-import pandas as pd
-import streamlit as st
 
 def display_todays_candles_with_trend_and_signal(df):
     """
@@ -680,35 +674,11 @@ def generate_trade_log_from_option(result, trade_signal):
     trade_log_df = pd.DataFrame([trade_log])
     return trade_log_df
 
-################################################################################################################
-
-#import pandas as pd
-#import matplotlib.pyplot as plt
-
-#import matplotlib.pyplot as plt
+##############
+###########################################################
 
 
 
-# -----------------------------
-# Example usage in Streamlit
-# -----------------------------
-#st.title("Price Alert Function Example")
-
-#high = st.number_input("Set High Price", value=200)
-#low = st.number_input("Set Low Price", value=180)
-
-# Simulate live price (replace with real API later)
-#current_price = st.number_input("Current Price", value=190)
-
-#if st.button("Check Alert"):
-    #price_alert(current_price, high, low)
-########################################################################################################
-
-import pandas as pd
-import numpy as np
-
-
-##################-------------------------------------------------------------------------#
 
 def trading_signal_all_conditions1(df, quantity=10*750, return_all_signals=False):
     """
@@ -879,11 +849,6 @@ def trading_signal_all_conditions1(df, quantity=10*750, return_all_signals=False
     return signals if signals else None
 
 
-###############################################################################################################
-#run_check_for_all_candles(df)  # df = your full OHLC DataFrame
-
-
-#st.write(result_chain.tail())
 #################################################
 
 # Initialize session state for trade logs
