@@ -110,7 +110,8 @@ else:
             ]
         )
     )
-     fig.update_layout(
+    
+    fig.update_layout(
         title="Nifty 15-min candles - Last Day & Today",
         xaxis_rangeslider_visible=False,
         xaxis=dict(
