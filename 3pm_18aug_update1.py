@@ -104,6 +104,34 @@ def plot_nifty_15min_chart(df, last_day=None, today=None):
     )
 
     return fig
+# ----------------- SIGNAL LOGGING FUNCTION -----------------
+def run_trading_signals_new_candle(df, signal_log=None):
+    if signal_log is None:
+        signal_log = pd.DataFrame()
+
+    # Determine last processed datetime
+    last_processed_time = None
+    if not signal_log.empty:
+        last_processed_time = signal_log['entry_time'].max()
+    
+    # Filter df to only new candles
+    if last_processed_time:
+        df_new = df[df['Datetime'] > pd.to_datetime(last_processed_time)]
+    else:
+        df_new = df.copy()
+    
+    if df_new.empty:
+        return signal_log  # nothing new
+
+    # Call the signal function on new data
+    new_signals = trading_signal_all_conditions1(df_new, return_all_signals=True)
+    if new_signals:
+        df_signals = pd.DataFrame(new_signals)
+        signal_log = pd.concat([signal_log, df_signals], ignore_index=True)
+
+    return signal_log
+
+
 
 # ----------------- SIGNAL LOGGING FUNCTION -----------------
 def run_trading_signals(df, signal_log=None):
@@ -309,7 +337,7 @@ if df_nifty is None or df_nifty.empty:
     st.stop()
 
 # Run signals and store in session state
-st.session_state.signal_log = run_trading_signals(df_nifty, st.session_state.signal_log)
+st.session_state.signal_log = run_trading_signals_new_candle(df_nifty, st.session_state.signal_log)
 fig = plot_nifty_15min_chart(df_nifty)
 if fig:
     st.plotly_chart(fig, use_container_width=True)
