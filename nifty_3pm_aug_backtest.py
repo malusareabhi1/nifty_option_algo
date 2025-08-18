@@ -936,6 +936,9 @@ if start_time <= candle_time_only <= end_time:
     
     else:
         st.write("No trade signal for today based on conditions.")
+else:
+    st.write(f"No trades: Outside trading window (9:30 AM – 2:00 PM). Latest candle: {latest_candle_time}")
+
 
 # Display cumulative trade log
 st.subheader("Cumulative Trade Log")
