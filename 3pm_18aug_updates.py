@@ -1321,10 +1321,10 @@ def trading_signal_all_conditions1(df, quantity=10*750, return_all_signals=False
 ###############################################################################################################
 #run_check_for_all_candles(df)  # df = your full OHLC DataFrame
 # ---------------- MAIN STREAMLIT APP ----------------
-st.title("Nifty 15-min Chart for Selected Date & Previous Day")
-selected_date = st.date_input("Select date", value=datetime.today())
-nifty_df = load_nifty_data(selected_date=selected_date)
-plot_nifty_candles(nifty_df)
+#st.title("Nifty 15-min Chart for Selected Date & Previous Day")
+#selected_date = st.date_input("Select date", value=datetime.today())
+#nifty_df = load_nifty_data(selected_date=selected_date)
+#plot_nifty_candles(nifty_df)
 
 #display_todays_candles_with_trend(df)
 display_todays_candles_with_trend_and_signal(df)
