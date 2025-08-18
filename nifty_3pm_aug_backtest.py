@@ -935,9 +935,10 @@ if signal:
 else:
     st.write("No trade signal for today based on conditions.")   
 # else:
-#     st.write(f"No trades: Outside trading window (9:30 AM – 3:00 PM). Latest candle: {latest_candle_time}")
+#st.write(f"No trades: Outside trading window (9:30 AM – 3:00 PM). Latest candle: {latest_candle_time}")
 
-# Display cumulative trade log
+
+st.write(trade_log_df.columns)
 st.subheader("Cumulative Trade Log")
 if not st.session_state.trade_log_df.empty:
     st.table(st.session_state.trade_log_df)
