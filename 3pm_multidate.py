@@ -1396,6 +1396,107 @@ def compute_performance(signal_df):
     summary_df = pd.DataFrame([summary])
     return summary_df, pnl_per_day
 
+###################################################################################
+
+
+def calculate_trade_cost(buy_price, sell_price, quantity, option_type="CE", brokerage_type="fixed"):
+    """
+    Calculate total cost/charges per trade.
+    
+    Params:
+    - buy_price: Entry price per unit
+    - sell_price: Exit price per unit
+    - quantity: Number of units
+    - option_type: "CE" or "PE"
+    - brokerage_type: "fixed" or "percentage"
+    
+    Returns total charges
+    """
+    turnover = (buy_price + sell_price) * quantity
+
+    # Brokerage
+    if brokerage_type == "fixed":
+        brokerage = 20  # assume ₹20 per trade
+    else:  # percentage
+        brokerage = turnover * 0.0003  # 0.03%
+
+    # Exchange Transaction Charges
+    exchange_charges = turnover * 0.0000325  # 0.00325%
+
+    # GST on brokerage (18%)
+    gst = 0.18 * brokerage
+
+    # SEBI Charges (approx)
+    sebi_charges = turnover * 0.000001
+
+    # Stamp Duty (approx)
+    stamp_duty = turnover * 0.00003
+
+    total_charges = brokerage + exchange_charges + gst + sebi_charges + stamp_duty
+    return total_charges
+
+##################################################################################
+
+def compute_trade_pnl_with_costs(signal_log_df, df):
+    """
+    Compute PnL, exit reason, and capital impact per trade.
+    """
+    trade_results = []
+
+    capital = 0  # running capital (cumulative PnL)
+
+    for _, row in signal_log_df.iterrows():
+        day = row['Date']
+        entry_time = row['Entry Time']
+        exit_time = row['Time Exit (16 mins after entry)']
+        buy_premium = row['Buy Premium']
+        qty = row['Quantity']
+        stoploss = row['Stoploss (Trailing 10%)']
+        take_profit = row['Take Profit (10% rise)']
+        option_type = row['Option Selected']
+
+        day_df = df[df['Datetime'].dt.date == day]
+        day_after_entry = day_df[day_df['Datetime'] >= entry_time].sort_values('Datetime')
+
+        sell_price = None
+        exit_reason = "Time Exit"
+
+        for _, candle in day_after_entry.iterrows():
+            price = candle['Close_^NSEI']  # Option price if available
+            if take_profit and price >= take_profit:
+                sell_price = take_profit
+                exit_reason = "Take Profit"
+                exit_time = candle['Datetime']
+                break
+            elif stoploss and price <= stoploss:
+                sell_price = stoploss
+                exit_reason = "Stoploss"
+                exit_time = candle['Datetime']
+                break
+
+        if sell_price is None:
+            sell_price = day_after_entry['Close_^NSEI'].iloc[0]  # fallback
+
+        raw_pnl = (sell_price - buy_premium) * qty if option_type.upper() == "CE" else (buy_premium - sell_price) * qty
+
+        # Calculate brokerage & charges
+        total_charges = calculate_trade_cost(buy_premium, sell_price, qty, option_type)
+        
+        net_pnl = raw_pnl - total_charges
+        capital += net_pnl
+
+        trade_results.append({
+            **row.to_dict(),
+            "Sell Price": sell_price,
+            "Exit Reason": exit_reason,
+            "Actual Exit Time": exit_time,
+            "Raw PnL": raw_pnl,
+            "Total Charges": total_charges,
+            "Net PnL": net_pnl,
+            "Capital After Trade": capital
+        })
+
+    return pd.DataFrame(trade_results)
 
 
 ##################################################################################
@@ -1520,4 +1621,14 @@ if signal_log_list:
     
     csv_daily = pnl_per_day.to_csv(index=False).encode('utf-8')
     st.download_button(label="Download Daily PnL CSV", data=csv_daily, file_name="pnl_per_day.csv", mime="text/csv")
+
+if signal_log_list:
+    signal_log_df_with_costs = compute_trade_pnl_with_costs(signal_log_df, df)
+    
+    st.write("### Signal Log with PnL, Costs & Capital")
+    st.dataframe(signal_log_df_with_costs)
+
+    # Download CSV
+    csv = signal_log_df_with_costs.to_csv(index=False).encode('utf-8')
+    st.download_button(label="Download Trade Log with Costs CSV", data=csv, file_name="trade_log_with_costs.csv", mime="text/csv")
 
