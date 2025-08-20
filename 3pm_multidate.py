@@ -1222,6 +1222,9 @@ def trading_signal_all_conditions1(df, quantity=10*750, return_all_signals=False
 
 
 #####################################################################################
+
+# Initialize empty list to store signals
+signal_log_list = []
 # ✅ Loop through each day (starting from 2nd day in range)
 for i in range(1, len(unique_days)):
     day0 = unique_days[i-1]
@@ -1232,8 +1235,8 @@ for i in range(1, len(unique_days)):
     # Call your trading signal function
     signal = trading_signal_all_conditions1(day_df)
     if signal:
-        st.write(f"### {day1} → Signal detected: {signal['message']}")
-        st.table(pd.DataFrame([signal]))
+        #st.write(f"### {day1} → Signal detected: {signal['message']}")
+        #st.table(pd.DataFrame([signal]))
 
         # Get option chain and trade log
         result_chain = find_nearest_itm_option()
@@ -1241,6 +1244,31 @@ for i in range(1, len(unique_days)):
         ot = "CE" if signal["option_type"].upper() == "CALL" else "PE"
         result = option_chain_finder(result_chain, spot_price, option_type=ot, lots=10, lot_size=75)
         
+        # Extract the option selected info
+        option_data = result['option_data']
+        strike_price = option_data.get('strikePrice')
+        buy_premium = option_data.get('lastPrice')
+        identifier = option_data.get('identifier')
+
+        # Construct signal log dictionary
+        sig_log = {
+            "Date": day1,  # Add the trading day
+            "Condition Type": signal['condition'],
+            "Entry Time": signal['entry_time'],
+            "Spot Price": spot_price,
+            "Option Selected": ot,
+            "Identifier": identifier,
+            "Strike Price": strike_price,
+            "Buy Premium": buy_premium,
+            "Stoploss (Trailing 10%)": buy_premium * 0.9 if buy_premium else None,
+            "Take Profit (10% rise)": buy_premium * 1.1 if buy_premium else None,
+            "Quantity": signal['quantity'],
+            "Partial Profit Booking Qty (50%)": signal['quantity'] / 2,
+            "Expiry Date": signal['expiry'],
+            "Time Exit (16 mins after entry)": signal['entry_time'] + pd.Timedelta(minutes=16)
+        }
+        # Append to list
+        signal_log_list.append(sig_log)
         trade_log_df = generate_trade_log_from_option(result, signal)
         
         # Drop Trade details column
@@ -1251,7 +1279,18 @@ for i in range(1, len(unique_days)):
 
         # Append to combined trade log
         combined_trade_log.append(trade_log_df)
-
+# Convert to DataFrame
+if signal_log_list:
+    signal_log_df = pd.DataFrame(signal_log_list)
+    st.write("### Signal Log")
+    st.dataframe(signal_log_df)
+    
+    # Optional: download as CSV
+    csv = signal_log_df.to_csv(index=False).encode('utf-8')
+    st.download_button(label="Download Signal Log CSV", data=csv, file_name="signal_log.csv", mime="text/csv")
+else:
+    st.write("No trade signals detected for the selected period.")
+    
 # ✅ Combine all logs into one DataFrame
 if combined_trade_log:
     all_trades = pd.concat(combined_trade_log, ignore_index=True)
