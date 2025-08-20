@@ -51,15 +51,16 @@ def plot_nifty_multiday(df, trading_days):
     
     # Layout adjustments
     fig.update_layout(
-        title="Nifty 15-min Candles with 3PM Open/Close Lines",
-        xaxis_rangeslider_visible=False,
-        xaxis=dict(
-            rangebreaks=[
-                dict(bounds=["sat", "mon"]),  # Hide weekends
-                dict(bounds=[time(15,30), time(9,15)], pattern="hour")  # Hide off-hours
-            ]
-        )
+    title="Nifty 15-min Candles with 3PM Open/Close Lines",
+    xaxis_rangeslider_visible=False,
+    xaxis=dict(
+        rangebreaks=[
+            dict(bounds=["sat", "mon"]),          # Hide weekends
+            dict(bounds=[15.5, 9.25], pattern="hour")  # Hide off-hours
+        ]
     )
+)
+
     
     return fig
 
