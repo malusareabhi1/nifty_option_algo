@@ -23,7 +23,7 @@ if df.empty:
     st.stop()
 
 df.reset_index(inplace=True)
-
+df.rename(columns={'index': 'Datetime'}, inplace=True)  # Ensure proper name
 # ✅ Normalize columns
 if isinstance(df.columns, pd.MultiIndex):
     df.columns = ['_'.join(col).strip() if isinstance(col, tuple) else col for col in df.columns]
