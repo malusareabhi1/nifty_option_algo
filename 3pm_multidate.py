@@ -25,6 +25,8 @@ if df.empty:
 df.reset_index(inplace=True)
 df.rename(columns={'index': 'Datetime'}, inplace=True)  # Ensure proper name
 st.write(df.columns)
+st.write(df.columns.tolist())
+
 # ✅ Normalize columns
 if isinstance(df.columns, pd.MultiIndex):
     df.columns = ['_'.join(col).strip() if isinstance(col, tuple) else col for col in df.columns]
