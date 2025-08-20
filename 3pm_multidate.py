@@ -288,7 +288,7 @@ for i in range(1, len(trading_days)):
     # Now you can use df_plot safely
     open_3pm, close_3pm = display_3pm_candle_info(df_plot, day0)
 
-open_3pm, close_3pm = display_3pm_candle_info(df_plot, selected_date)
+#open_3pm, close_3pm = display_3pm_candle_info(df_plot, selected_date)
 
 
 #open_3pm, close_3pm = display_3pm_candle_info(df_plot, selected_date)
