@@ -1131,13 +1131,13 @@ def trading_signal_all_condition(df: pd.DataFrame) -> pd.DataFrame:
     return df
 ##################-------------------------------------------------------------------------#
 
-def trading_signal_all_conditions1(df, quantity=10*750, return_all_signals=False):
+def trading_signal_all_conditions1(df, quantity=10*75, return_all_signals=False):
     """
     Evaluate trading conditions based on Base Zone strategy.
 
     Parameters:
     - df: pd.DataFrame with columns ['Datetime','Open_^NSEI','High_^NSEI','Low_^NSEI','Close_^NSEI']
-    - quantity: total quantity to trade (default 10 lots = 7500)
+    - quantity: total quantity to trade (default 10 lots = 750)
     - return_all_signals: if True, returns list of all possible signals; else returns first found
 
     Returns:
