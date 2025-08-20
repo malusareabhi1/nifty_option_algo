@@ -1353,7 +1353,16 @@ if signal:
     st.write(f"Total Quantity: {result['total_quantity']}")
     trade_log_df = generate_trade_log_from_option(result, signal)
     st.write("### Trade Log for Current Signal")
-    st.table(trade_log_df)
+    #st.table(trade_log_df)
+    # Remove 'Trade details' column if it exists
+    if 'Trade details' in trade_log_df.columns:
+        display_df = trade_log_df.drop(columns=['Trade details'])
+    else:
+        display_df = trade_log_df
+    
+    # Display without the 'Trade details' column
+    st.table(display_df)
+
 else:
     st.write("No trade signal for today based on conditions.")
 
