@@ -1299,6 +1299,61 @@ def trading_signal_all_conditions1(df, quantity=10*750, return_all_signals=False
 
     return signals if signals else None
 
+#########################################################################################################
+def compute_trade_pnl(signal_log_df, df):
+    """
+    Compute PnL and exit reason for each signal in signal_log_df based on price data in df.
+    Returns updated DataFrame with Sell Price, PnL, and Exit Reason.
+    """
+    trade_results = []
+
+    for _, row in signal_log_df.iterrows():
+        day = row['Date']
+        entry_time = row['Entry Time']
+        exit_time = row['Time Exit (16 mins after entry)']
+        buy_premium = row['Buy Premium']
+        qty = row['Quantity']
+        stoploss = row['Stoploss (Trailing 10%)']
+        take_profit = row['Take Profit (10% rise)']
+        option_type = row['Option Selected']
+
+        # Filter df for the trading day and after entry
+        day_df = df[df['Datetime'].dt.date == day]
+        day_after_entry = day_df[day_df['Datetime'] >= entry_time].sort_values('Datetime')
+
+        sell_price = None
+        exit_reason = "Time Exit"
+
+        for _, candle in day_after_entry.iterrows():
+            price = candle['Close_^NSEI']  # You can use option price if available
+            # Check Take Profit
+            if take_profit and price >= take_profit:
+                sell_price = take_profit
+                exit_reason = "Take Profit"
+                exit_time = candle['Datetime']
+                break
+            # Check Stoploss
+            elif stoploss and price <= stoploss:
+                sell_price = stoploss
+                exit_reason = "Stoploss"
+                exit_time = candle['Datetime']
+                break
+
+        # If neither TP nor SL hit, sell at last available price (time exit)
+        if sell_price is None:
+            sell_price = day_after_entry['Close_^NSEI'].iloc[0]  # fallback
+
+        pnl = (sell_price - buy_premium) * qty if option_type.upper() == "CE" else (buy_premium - sell_price) * qty
+
+        trade_results.append({
+            **row.to_dict(),
+            "Sell Price": sell_price,
+            "Exit Reason": exit_reason,
+            "Actual Exit Time": exit_time,
+            "PnL": pnl
+        })
+
+    return pd.DataFrame(trade_results)
 
 
 
@@ -1392,3 +1447,15 @@ if combined_trade_log:
     st.download_button(label="Download Trade Log CSV", data=csv, file_name="multi_day_trade_log.csv", mime="text/csv")
 else:
     st.write("No trade signals found for the selected period.")
+
+
+if signal_log_list:
+    # Compute PnL and Exit Reason
+    signal_log_df_with_pnl = compute_trade_pnl(signal_log_df, df)
+    
+    st.write("### Signal Log with PnL & Exit Reason")
+    st.dataframe(signal_log_df_with_pnl)
+
+    # Optional: download CSV
+    csv = signal_log_df_with_pnl.to_csv(index=False).encode('utf-8')
+    st.download_button(label="Download Signal Log with PnL CSV", data=csv, file_name="signal_log_pnl.csv", mime="text/csv")
