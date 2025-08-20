@@ -1603,6 +1603,18 @@ if signal_log_list:
 
 
 if signal_log_list:
+    signal_log_df_with_costs = compute_trade_pnl_with_costs(signal_log_df, df)
+    
+    st.write("### Signal Log with PnL, Costs & Capital")
+    st.dataframe(signal_log_df_with_costs)
+
+    # Download CSV
+    csv = signal_log_df_with_costs.to_csv(index=False).encode('utf-8')
+    st.download_button(label="Download Trade Log with Costs CSV", data=csv, file_name="trade_log_with_costs.csv", mime="text/csv")
+
+
+
+if signal_log_list:
     # Compute PnL and Exit Reason first
     signal_log_df_with_pnl = compute_trade_pnl(signal_log_df, df)
     
@@ -1621,14 +1633,4 @@ if signal_log_list:
     
     csv_daily = pnl_per_day.to_csv(index=False).encode('utf-8')
     st.download_button(label="Download Daily PnL CSV", data=csv_daily, file_name="pnl_per_day.csv", mime="text/csv")
-
-if signal_log_list:
-    signal_log_df_with_costs = compute_trade_pnl_with_costs(signal_log_df, df)
-    
-    st.write("### Signal Log with PnL, Costs & Capital")
-    st.dataframe(signal_log_df_with_costs)
-
-    # Download CSV
-    csv = signal_log_df_with_costs.to_csv(index=False).encode('utf-8')
-    st.download_button(label="Download Trade Log with Costs CSV", data=csv, file_name="trade_log_with_costs.csv", mime="text/csv")
 
