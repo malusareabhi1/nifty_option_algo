@@ -1360,6 +1360,46 @@ def compute_trade_pnl(signal_log_df, df):
 #####################################################################################
 
 
+def compute_performance(signal_df):
+    """
+    Compute performance summary from signal log with PnL.
+    
+    Returns a DataFrame with key metrics.
+    """
+    total_trades = len(signal_df)
+    winning_trades = signal_df[signal_df['PnL'] > 0]
+    losing_trades = signal_df[signal_df['PnL'] <= 0]
+    
+    total_pnl = signal_df['PnL'].sum()
+    avg_pnl = signal_df['PnL'].mean() if total_trades > 0 else 0
+    max_pnl = signal_df['PnL'].max() if total_trades > 0 else 0
+    min_pnl = signal_df['PnL'].min() if total_trades > 0 else 0
+    
+    win_pct = len(winning_trades) / total_trades * 100 if total_trades > 0 else 0
+    loss_pct = len(losing_trades) / total_trades * 100 if total_trades > 0 else 0
+    
+    # Optional: PnL per day
+    pnl_per_day = signal_df.groupby('Date')['PnL'].sum().reset_index()
+    
+    summary = {
+        "Total Trades": total_trades,
+        "Winning Trades": len(winning_trades),
+        "Losing Trades": len(losing_trades),
+        "Win %": round(win_pct, 2),
+        "Loss %": round(loss_pct, 2),
+        "Total PnL": round(total_pnl, 2),
+        "Average PnL": round(avg_pnl, 2),
+        "Max PnL": round(max_pnl, 2),
+        "Min PnL": round(min_pnl, 2),
+    }
+    
+    summary_df = pd.DataFrame([summary])
+    return summary_df, pnl_per_day
+
+
+
+##################################################################################
+
 # trading_days = list of unique trading days in selected range
 
 trading_days = sorted([d for d in df['Datetime'].dt.date.unique() if start_date <= d <= end_date])
@@ -1459,3 +1499,25 @@ if signal_log_list:
     # Optional: download CSV
     csv = signal_log_df_with_pnl.to_csv(index=False).encode('utf-8')
     st.download_button(label="Download Signal Log with PnL CSV", data=csv, file_name="signal_log_pnl.csv", mime="text/csv")
+
+
+if signal_log_list:
+    # Compute PnL and Exit Reason first
+    signal_log_df_with_pnl = compute_trade_pnl(signal_log_df, df)
+    
+    # Performance summary
+    perf_summary_df, pnl_per_day = compute_performance(signal_log_df_with_pnl)
+    
+    st.write("### Performance Summary")
+    st.table(perf_summary_df)
+    
+    st.write("### PnL Per Day")
+    st.table(pnl_per_day)
+    
+    # Optional: download CSV
+    csv_perf = perf_summary_df.to_csv(index=False).encode('utf-8')
+    st.download_button(label="Download Performance Summary CSV", data=csv_perf, file_name="performance_summary.csv", mime="text/csv")
+    
+    csv_daily = pnl_per_day.to_csv(index=False).encode('utf-8')
+    st.download_button(label="Download Daily PnL CSV", data=csv_daily, file_name="pnl_per_day.csv", mime="text/csv")
+
