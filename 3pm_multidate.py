@@ -1247,7 +1247,7 @@ for i in range(1, len(unique_days)):
         if 'Trade details' in trade_log_df.columns:
             trade_log_df = trade_log_df.drop(columns=['Trade details'])
         
-        st.table(trade_log_df)
+        #st.table(trade_log_df)
 
         # Append to combined trade log
         combined_trade_log.append(trade_log_df)
