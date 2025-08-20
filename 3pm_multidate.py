@@ -46,8 +46,23 @@ def plot_nifty_multiday(df, trading_days):
             close_3pm = candle_3pm.iloc[0]['Close_^NSEI']
             
             # Add horizontal lines
-            fig.add_hline(y=open_3pm, line_dash="dot", line_color="blue", annotation_text=f"{day0} 3PM Open", annotation_position="top left")
-            fig.add_hline(y=close_3pm, line_dash="dot", line_color="red", annotation_text=f"{day0} 3PM Close", annotation_position="bottom left")
+            #fig.add_hline(y=open_3pm, line_dash="dot", line_color="blue", annotation_text=f"{day0} 3PM Open", annotation_position="top left")
+            #fig.add_hline(y=close_3pm, line_dash="dot", line_color="red", annotation_text=f"{day0} 3PM Close", annotation_position="bottom left")
+            # Add horizontal lines for next day
+            fig.add_hline(
+                y=open_3pm,
+                line_dash="dot",
+                line_color="blue",
+                annotation_text=f"{day0} 3PM Open",
+                annotation_position="top left"
+            )
+            fig.add_hline(
+                y=close_3pm,
+                line_dash="dot",
+                line_color="red",
+                annotation_text=f"{day0} 3PM Close",
+                annotation_position="bottom left"
+            )
     
     # Layout adjustments
     fig.update_layout(
