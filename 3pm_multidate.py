@@ -1634,3 +1634,46 @@ if signal_log_list:
     csv_daily = pnl_per_day.to_csv(index=False).encode('utf-8')
     st.download_button(label="Download Daily PnL CSV", data=csv_daily, file_name="pnl_per_day.csv", mime="text/csv")
 
+# Define function to compute net charges and net PnL per day
+def add_charges_and_netpnl(pnl_per_day_df):
+    """
+    Adds 'Cost per Trade' and 'Net P&L' columns to pnl_per_day DataFrame
+    """
+    # Example: customize charges according to your broker/NSE rates
+    brokerage_per_trade = 20       # INR per trade
+    gst_rate = 0.18                # 18% GST on brokerage
+    stamp_duty_rate = 0.00015      # 0.015% on turnover
+    
+    cost_per_trade_list = []
+    net_pnl_list = []
+    
+    for idx, row in pnl_per_day_df.iterrows():
+        # Assuming 'Buy Price', 'Sell Price', 'Quantity' columns exist
+        turnover = row['Buy Price'] * row['Quantity'] + row['Sell Price'] * row['Quantity']
+        
+        brokerage = brokerage_per_trade
+        gst = brokerage * gst_rate
+        stamp_duty = turnover * stamp_duty_rate
+        total_cost = brokerage + gst + stamp_duty
+        
+        net_pnl = row['Gross P&L'] - total_cost
+        
+        cost_per_trade_list.append(total_cost)
+        net_pnl_list.append(net_pnl)
+    
+    pnl_per_day_df['Cost per Trade'] = cost_per_trade_list
+    pnl_per_day_df['Net P&L'] = net_pnl_list
+    
+    return pnl_per_day_df
+
+# Apply to your daily PnL
+pnl_per_day = add_charges_and_netpnl(pnl_per_day)
+
+# Display in Streamlit
+st.write("### PnL Per Day (with Cost and Net P&L)")
+st.table(pnl_per_day)
+
+# Optional: download CSV
+csv_daily = pnl_per_day.to_csv(index=False).encode('utf-8')
+st.download_button(label="Download Daily PnL CSV", data=csv_daily, file_name="pnl_per_day_with_net.csv", mime="text/csv")
+
