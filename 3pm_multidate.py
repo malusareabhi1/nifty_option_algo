@@ -25,8 +25,8 @@ df.columns = ['_'.join(col).strip() for col in df.columns.values]
 
 df.reset_index(inplace=True)
 df.rename(columns={'index': 'Datetime'}, inplace=True)  # Ensure proper name
-st.write(df.columns)
-st.write(df.columns.tolist())
+#st.write(df.columns)
+#st.write(df.columns.tolist())
 
 # ✅ Normalize columns
 if isinstance(df.columns, pd.MultiIndex):
@@ -273,7 +273,10 @@ def condition_1_trade_signal_for_candle(nifty_df, candle_time):
     return {'buy_signal': False, 'message': 'Condition not met.'}
 
 #####################################################################################################################################
+df_plot = df[df['Datetime'].dt.date == selected_date]
 open_3pm, close_3pm = display_3pm_candle_info(df_plot, selected_date)
+
+#open_3pm, close_3pm = display_3pm_candle_info(df_plot, selected_date)
 
 
 ##########################################################################################################
