@@ -11,8 +11,9 @@ st.title("Nifty Base Zone Strategy - Multi-Day Backtest")
 
 def plot_nifty_multiday(df, trading_days):
     """
-    Plots Nifty 15-min candles for multiple trading days with 3PM open/close lines for each previous day.
-
+    Plots Nifty 15-min candles for multiple trading days with each day's 3PM Open/Close
+    marked only on the next trading day.
+    
     Parameters:
     - df : DataFrame with columns ['Datetime', 'Open_^NSEI', 'High_^NSEI', 'Low_^NSEI', 'Close_^NSEI']
     - trading_days : list of sorted trading dates (datetime.date)
@@ -21,33 +22,30 @@ def plot_nifty_multiday(df, trading_days):
     fig = go.Figure()
     
     for i in range(1, len(trading_days)):
-        day0 = trading_days[i-1]  # Previous day (for 3PM lines)
-        day1 = trading_days[i]    # Current day
+        day0 = trading_days[i-1]  # Previous day (for Base Zone)
+        day1 = trading_days[i]    # Current day (for candles)
         
-        # Filter data for day0 and day1
-        df_plot = df[df['Datetime'].dt.date.isin([day0, day1])]
+        # Filter data for current day only
+        df_plot = df[df['Datetime'].dt.date == day1]
         
-        # Add candlestick trace
+        # Add candlestick trace for current day
         fig.add_trace(go.Candlestick(
             x=df_plot['Datetime'],
             open=df_plot['Open_^NSEI'],
             high=df_plot['High_^NSEI'],
             low=df_plot['Low_^NSEI'],
             close=df_plot['Close_^NSEI'],
-            name=f"{day0} & {day1}"
+            name=f"{day1}"
         ))
         
         # Get 3 PM candle of previous day (Base Zone)
-        candle_3pm = df_plot[(df_plot['Datetime'].dt.date == day0) &
-                             (df_plot['Datetime'].dt.hour == 15) &
-                             (df_plot['Datetime'].dt.minute == 0)]
+        candle_3pm = df[df['Datetime'].dt.date == day0]
+        candle_3pm = candle_3pm[(candle_3pm['Datetime'].dt.hour == 15) &
+                                (candle_3pm['Datetime'].dt.minute == 0)]
         if not candle_3pm.empty:
             open_3pm = candle_3pm.iloc[0]['Open_^NSEI']
             close_3pm = candle_3pm.iloc[0]['Close_^NSEI']
             
-            # Add horizontal lines
-            #fig.add_hline(y=open_3pm, line_dash="dot", line_color="blue", annotation_text=f"{day0} 3PM Open", annotation_position="top left")
-            #fig.add_hline(y=close_3pm, line_dash="dot", line_color="red", annotation_text=f"{day0} 3PM Close", annotation_position="bottom left")
             # Add horizontal lines for next day
             fig.add_hline(
                 y=open_3pm,
@@ -66,16 +64,15 @@ def plot_nifty_multiday(df, trading_days):
     
     # Layout adjustments
     fig.update_layout(
-    title="Nifty 15-min Candles with 3PM Open/Close Lines",
-    xaxis_rangeslider_visible=False,
-    xaxis=dict(
-        rangebreaks=[
-            dict(bounds=["sat", "mon"]),          # Hide weekends
-            dict(bounds=[15.5, 9.25], pattern="hour")  # Hide off-hours
-        ]
+        title="Nifty 15-min Candles with Previous Day 3PM Open/Close Lines",
+        xaxis_rangeslider_visible=False,
+        xaxis=dict(
+            rangebreaks=[
+                dict(bounds=["sat", "mon"]),          # Hide weekends
+                dict(bounds=[15.5, 9.25], pattern="hour")  # Hide off-hours
+            ]
+        )
     )
-)
-
     
     return fig
 
