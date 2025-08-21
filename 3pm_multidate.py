@@ -1674,35 +1674,4 @@ if signal_log_list:
 
 ##################################################################################
 
-if signal_log_list:
-    # Compute PnL and Exit Reason first
-    signal_log_df_with_pnl = compute_trade_pnl(signal_log_df, df)
-    
-    # Add Cost per trade column
-    signal_log_df_with_pnl['Cost_per_Trade'] = signal_log_df_with_pnl['Entry Price'] * signal_log_df_with_pnl['Quantity']
-    
-    # Performance summary
-    perf_summary_df, pnl_per_day = compute_performance(signal_log_df_with_pnl)
-    
-    # Add Net P&L per day
-    pnl_per_day['Net_PnL'] = pnl_per_day['PnL'].sum()  # Assuming compute_performance returns PnL per day
-    
-    # Color Styling for Performance Summary
-    def color_pnl(val):
-        color = 'green' if val > 0 else 'red'
-        return f'color: {color}; font-weight: bold;'
-    
-    st.write("### 📊 Performance Summary")
-    st.dataframe(perf_summary_df.style.applymap(color_pnl, subset=['Total PnL']))  # Highlight PnL
-    
-    st.write("### 📅 PnL Per Day (with Net PnL)")
-    st.dataframe(pnl_per_day.style.applymap(color_pnl, subset=['PnL', 'Net_PnL']))  # Highlight daily PnL
-    
-    # Optional: download CSV
-    csv_perf = perf_summary_df.to_csv(index=False).encode('utf-8')
-    st.download_button(label="📥 Download Performance Summary CSV", data=csv_perf, file_name="performance_summary.csv", mime="text/csv")
-    
-    csv_daily = pnl_per_day.to_csv(index=False).encode('utf-8')
-    st.download_button(label="📥 Download Daily PnL CSV", data=csv_daily, file_name="pnl_per_day.csv", mime="text/csv")
-
 
