@@ -1360,11 +1360,13 @@ def compute_trade_pnl(signal_log_df, df):
 #####################################################################################
 
 
-def compute_performance(signal_df):
+def compute_performance(signal_df, brokerage_per_trade=20, gst_rate=0.18, stamp_duty_rate=0.00015):
     """
-    Compute performance summary from signal log with PnL.
+    Compute performance summary from signal log with PnL and include daily costs.
     
-    Returns a DataFrame with key metrics.
+    Returns:
+    - summary_df: Overall performance summary
+    - pnl_per_day: Daily PnL with Total PnL, Net Expense, and Net PnL
     """
     total_trades = len(signal_df)
     winning_trades = signal_df[signal_df['PnL'] > 0]
@@ -1378,9 +1380,39 @@ def compute_performance(signal_df):
     win_pct = len(winning_trades) / total_trades * 100 if total_trades > 0 else 0
     loss_pct = len(losing_trades) / total_trades * 100 if total_trades > 0 else 0
     
-    # Optional: PnL per day
-    pnl_per_day = signal_df.groupby('Date')['PnL'].sum().reset_index()
+    # ✅ Group by date and calculate daily metrics
+    pnl_per_day = signal_df.groupby('Date').agg({
+        'PnL': 'sum',
+        'Quantity': 'sum'
+    }).reset_index()
     
+    # ✅ Add Net Expense and Net PnL
+    cost_per_trade_list = []
+    net_pnl_list = []
+    
+    for idx, row in pnl_per_day.iterrows():
+        day_trades = signal_df[signal_df['Date'] == row['Date']]
+        day_expense = 0
+        
+        for _, trade in day_trades.iterrows():
+            turnover = trade['Buy Premium'] * trade['Quantity'] * 2  # Buy + Sell
+            brokerage = brokerage_per_trade
+            gst = brokerage * gst_rate
+            stamp_duty = turnover * stamp_duty_rate
+            total_cost = brokerage + gst + stamp_duty
+            day_expense += total_cost
+        
+        cost_per_trade_list.append(round(day_expense, 2))
+        net_pnl_list.append(round(row['PnL'] - day_expense, 2))
+    
+    pnl_per_day['Total PnL'] = pnl_per_day['PnL'].round(2)
+    pnl_per_day['Net Expense'] = cost_per_trade_list
+    pnl_per_day['Net PnL'] = net_pnl_list
+    
+    # ✅ Drop old raw PnL column for clarity (optional)
+    pnl_per_day = pnl_per_day[['Date', 'Total PnL', 'Net Expense', 'Net PnL']]
+    
+    # ✅ Summary for overall performance
     summary = {
         "Total Trades": total_trades,
         "Winning Trades": len(winning_trades),
@@ -1391,6 +1423,7 @@ def compute_performance(signal_df):
         "Average PnL": round(avg_pnl, 2),
         "Max PnL": round(max_pnl, 2),
         "Min PnL": round(min_pnl, 2),
+        "Net PnL (After Expenses)": round(sum(net_pnl_list), 2)
     }
     
     summary_df = pd.DataFrame([summary])
