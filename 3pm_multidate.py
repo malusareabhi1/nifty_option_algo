@@ -1467,7 +1467,7 @@ def compute_trade_pnl_with_costs(signal_log_df, df):
     return pd.DataFrame(trade_results)
 
 
-##################################################################################
+##################################START To Execute ################################################
 
 
 # ✅ User selects start & end date
