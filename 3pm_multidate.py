@@ -1843,4 +1843,88 @@ if signal_log_list:
 
 ##################################################################################
 
+def track_trade_exit(signal, option_prices_df):
+    """
+    Track trade exit (SL, TP, Trailing SL, or Time Exit).
+
+    Parameters
+    ----------
+    signal : dict
+        Signal dictionary created by trading_signal_all_conditions2
+    option_prices_df : pd.DataFrame
+        Must have ['Datetime','Open','High','Low','Close'] of the option premium (same timeframe)
+
+    Returns
+    -------
+    dict
+        Updated signal with exit details
+    """
+    sl = signal['sl_init']
+    target1 = signal['target1']
+    highest = signal['trigger_level']
+    entry_time = signal['entry_time']
+    time_exit_limit = entry_time + pd.Timedelta(minutes=16)   # time exit after 16 min
+
+    exit_price, exit_reason, exit_time = None, None, None
+
+    for _, row in option_prices_df.iterrows():
+        price_high = row['High']
+        price_low = row['Low']
+        t = row['Datetime']
+
+        # --- 1. Stoploss Hit ---
+        if price_low <= sl:
+            exit_price = sl
+            exit_reason = "SL Hit"
+            exit_time = t
+            break
+
+        # --- 2. Target Hit (Partial Profit Booking) ---
+        if price_high >= target1:
+            highest = max(highest, price_high)  # update highest seen
+            sl = max(sl, 0.9 * highest)         # trailing SL
+            exit_price = target1
+            exit_reason = "Target1 Hit (Partial)"
+            exit_time = t
+            # Continue tracking for trailing SL (don’t break immediately)
+
+        # --- 3. Trailing SL ---
+        highest = max(highest, price_high)
+        new_sl = 0.9 * highest
+        if new_sl > sl:
+            sl = new_sl  # ratchet SL
+
+        if price_low <= sl and t > entry_time:
+            exit_price = sl
+            exit_reason = "Trailing SL"
+            exit_time = t
+            break
+
+        # --- 4. Time-based Exit ---
+        if t >= time_exit_limit:
+            exit_price = row['Close']
+            exit_reason = "Time Exit"
+            exit_time = t
+            break
+
+    if exit_price is None:  # no exit yet
+        exit_price = option_prices_df.iloc[-1]['Close']
+        exit_reason = "Open Trade"
+        exit_time = option_prices_df.iloc[-1]['Datetime']
+
+    # Update signal
+    signal.update({
+        'exit_price': round(exit_price, 2),
+        'exit_reason': exit_reason,
+        'exit_time': exit_time,
+        'PnL': round((exit_price - signal['trigger_level']) * signal['quantity'], 2)
+                 if signal['option_type'] == 'CALL'
+                 else round((signal['trigger_level'] - exit_price) * signal['quantity'], 2)
+    })
+    return signal
+
+
+# 3. Track exit
+trade_result = track_trade_exit(sig, option_df)
+st.write(trade_result)
 
