@@ -1843,6 +1843,53 @@ if signal_log_list:
 
 ##################################################################################
 
+def get_option_data(strike, expiry, option_type, start_date, end_date, interval='15minute'):
+    """
+    Fetch historical option premium OHLC data using nsepy.
+    """
+    opt = get_history(symbol='NIFTY',
+                      start=start_date,
+                      end=end_date,
+                      index=True,
+                      option_type=option_type.upper()[0],  # 'C' or 'P'
+                      strike_price=strike,
+                      expiry_date=expiry)
+    if opt is None or opt.empty:
+        return None
+    
+    # Resample if needed to 15-min OHLC
+    df = opt[['Open', 'High', 'Low', 'Close']].copy()
+    df.index.name = 'Datetime'
+    df = df.resample('15T').agg({
+        'Open': 'first',
+        'High': 'max',
+        'Low': 'min',
+        'Close': 'last'
+    }).dropna().reset_index()
+    return df
+    
+def get_option_data_realtime(strike, expiry, option_type):
+    """
+    Fetch intraday option chain and simulate 15-min OHLC for specified contract.
+    """
+    data = nse_optionchain_scrapper("NIFTY")
+    records = []
+    now = datetime.now()
+    row = data[(data['strikePrice'] == strike) & (data['type'] == option_type.upper())]
+    if row.empty:
+        return None
+    premium = row['lastPrice'].iloc[0]
+    
+    # Simulate single candle (since NSE provides snapshot only)
+    df = pd.DataFrame({
+        'Datetime': [now],
+        'Open': [premium],
+        'High': [premium],
+        'Low': [premium],
+        'Close': [premium]
+    })
+    return df
+    
 def track_trade_exit(signal, option_prices_df):
     """
     Track trade exit (SL, TP, Trailing SL, or Time Exit).
@@ -1924,7 +1971,7 @@ def track_trade_exit(signal, option_prices_df):
     return signal
 
 # 2. Fetch option premium data for that strike
-option_df = get_option_data(signal['strike'], signal['expiry'], signal['option_type'])  # 15m candles
+option_df = get_option_data_realtime(signal['strike'], signal['expiry'], signal['option_type'])  # 15m candles
 
 # 3. Track exit
 trade_result = track_trade_exit(signal, option_df)
