@@ -1925,6 +1925,6 @@ def track_trade_exit(signal, option_prices_df):
 
 
 # 3. Track exit
-trade_result = track_trade_exit(sig, option_df)
+trade_result = track_trade_exit(signal, option_df)
 st.write(trade_result)
 
