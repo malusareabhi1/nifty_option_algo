@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 
 st.set_page_config(layout="wide")
-st.title("Nifty Base Zone Strategy - Multi-Day Backtest")
+st.title("Nifty 3PM Base Zone Strategy - Multi-Day Backtest")
 
 
 
@@ -1365,7 +1365,7 @@ def compute_performance(signal_df, brokerage_per_trade=20, gst_rate=0.18, stamp_
     Compute performance summary from signal log with PnL and include daily costs.
     
     Returns:
-    - summary_df: Overall performance summary
+    - summary_df: Overall performance summary (including Total Expense)
     - pnl_per_day: Daily PnL with Total PnL, Net Expense, and Net PnL
     """
     total_trades = len(signal_df)
@@ -1412,6 +1412,9 @@ def compute_performance(signal_df, brokerage_per_trade=20, gst_rate=0.18, stamp_
     # ✅ Drop old raw PnL column for clarity (optional)
     pnl_per_day = pnl_per_day[['Date', 'Total PnL', 'Net Expense', 'Net PnL']]
     
+    # ✅ Compute total expense
+    total_expense = sum(cost_per_trade_list)
+    
     # ✅ Summary for overall performance
     summary = {
         "Total Trades": total_trades,
@@ -1423,6 +1426,7 @@ def compute_performance(signal_df, brokerage_per_trade=20, gst_rate=0.18, stamp_
         "Average PnL": round(avg_pnl, 2),
         "Max PnL": round(max_pnl, 2),
         "Min PnL": round(min_pnl, 2),
+        "Total Expense": round(total_expense, 2),  # ✅ Added this line
         "Net PnL (After Expenses)": round(sum(net_pnl_list), 2)
     }
     
@@ -1659,11 +1663,13 @@ if signal_log_list:
     # Performance summary
     perf_summary_df, pnl_per_day = compute_performance(signal_log_df_with_pnl)
     
-    st.write("### Performance Summary")
-    st.table(perf_summary_df)
+    
     
     st.write("### PnL Per Day")
     st.table(pnl_per_day)
+
+    st.write("### Performance Summary")
+    st.table(perf_summary_df)
     
     # Optional: download CSV
     csv_perf = perf_summary_df.to_csv(index=False).encode('utf-8')
