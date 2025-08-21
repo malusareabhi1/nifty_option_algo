@@ -1971,7 +1971,7 @@ def track_trade_exit(signal, option_prices_df):
     return signal
 
 # 2. Fetch option premium data for that strike
-option_df = get_option_data_realtime(signal['strike'], signal['expiry'], signal['option_type'])  # 15m candles
+option_df = get_option_data_realtime(signal['Strike Price'], signal['Expiry Date'], signal['Option Selected'])  # 15m candles
 
 # 3. Track exit
 trade_result = track_trade_exit(signal, option_df)
