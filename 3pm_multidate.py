@@ -1469,10 +1469,17 @@ def compute_trade_pnl_with_costs(signal_log_df, df):
 
 ##################################START To Execute ################################################
 
-
-# ✅ User selects start & end date
-start_date = st.date_input("Select Start Date", value=datetime.today() - timedelta(days=15))
-end_date = st.date_input("Select End Date", value=datetime.today())
+data_source = st.radio("Select Data Source", ["Yahoo Finance", "Upload CSV"])
+if data_source == "Upload CSV":
+    uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
+    if uploaded_file:
+        df = pd.read_csv(uploaded_file)
+    else:
+        st.stop()
+else:
+    # ✅ User selects start & end date
+    start_date = st.date_input("Select Start Date", value=datetime.today() - timedelta(days=15))
+    end_date = st.date_input("Select End Date", value=datetime.today())
 
 if start_date >= end_date:
     st.warning("End date must be after start date")
