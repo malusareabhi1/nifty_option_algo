@@ -88,53 +88,7 @@ def plot_nifty_multiday(df, trading_days):
     
     return fig
     
-# ✅ User selects start & end date
-start_date = st.date_input("Select Start Date", value=datetime.today() - timedelta(days=15))
-end_date = st.date_input("Select End Date", value=datetime.today())
 
-if start_date >= end_date:
-    st.warning("End date must be after start date")
-    st.stop()
-
-# ✅ Download full data for range (start-1 day to end)
-download_start = start_date - timedelta(days=1)  # To include previous day for first day
-df = yf.download("^NSEI", start=download_start, end=end_date + timedelta(days=1), interval="15m")
-if df.empty:
-    st.warning("No data for selected range")
-    st.stop()
-df.columns = ['_'.join(col).strip() for col in df.columns.values]
-
-df.reset_index(inplace=True)
-df.rename(columns={'index': 'Datetime'}, inplace=True)  # Ensure proper name
-#st.write(df.columns)
-#st.write(df.columns.tolist())
-
-# ✅ Normalize columns
-if isinstance(df.columns, pd.MultiIndex):
-    df.columns = ['_'.join(col).strip() if isinstance(col, tuple) else col for col in df.columns]
-
-df['Datetime'] = pd.to_datetime(df['Datetime'])
-if df['Datetime'].dt.tz is None:
-    df['Datetime'] = df['Datetime'].dt.tz_localize('UTC').dt.tz_convert('Asia/Kolkata')
-else:
-    df['Datetime'] = df['Datetime'].dt.tz_convert('Asia/Kolkata')
-
-# ✅ Filter only NSE trading hours
-df = df[(df['Datetime'].dt.time >= datetime.strptime("09:15", "%H:%M").time()) &
-        (df['Datetime'].dt.time <= datetime.strptime("15:30", "%H:%M").time())]
-
-# ✅ Get all unique trading days
-unique_days = sorted(df['Datetime'].dt.date.unique())
-
-# ✅ Filter for user-selected range
-unique_days = [d for d in unique_days if start_date <= d <= end_date]
-
-if len(unique_days) < 2:
-    st.warning("Not enough trading days in the selected range")
-    st.stop()
-
-# ✅ Initialize combined trade log
-combined_trade_log = []
 ##############################################################################
 def display_3pm_candle_info(df, day):
     """
@@ -1538,6 +1492,54 @@ def compute_trade_pnl_with_costs(signal_log_df, df):
 
 ##################################################################################
 
+
+# ✅ User selects start & end date
+start_date = st.date_input("Select Start Date", value=datetime.today() - timedelta(days=15))
+end_date = st.date_input("Select End Date", value=datetime.today())
+
+if start_date >= end_date:
+    st.warning("End date must be after start date")
+    st.stop()
+
+# ✅ Download full data for range (start-1 day to end)
+download_start = start_date - timedelta(days=1)  # To include previous day for first day
+df = yf.download("^NSEI", start=download_start, end=end_date + timedelta(days=1), interval="15m")
+if df.empty:
+    st.warning("No data for selected range")
+    st.stop()
+df.columns = ['_'.join(col).strip() for col in df.columns.values]
+
+df.reset_index(inplace=True)
+df.rename(columns={'index': 'Datetime'}, inplace=True)  # Ensure proper name
+#st.write(df.columns)
+#st.write(df.columns.tolist())
+
+# ✅ Normalize columns
+if isinstance(df.columns, pd.MultiIndex):
+    df.columns = ['_'.join(col).strip() if isinstance(col, tuple) else col for col in df.columns]
+
+df['Datetime'] = pd.to_datetime(df['Datetime'])
+if df['Datetime'].dt.tz is None:
+    df['Datetime'] = df['Datetime'].dt.tz_localize('UTC').dt.tz_convert('Asia/Kolkata')
+else:
+    df['Datetime'] = df['Datetime'].dt.tz_convert('Asia/Kolkata')
+
+# ✅ Filter only NSE trading hours
+df = df[(df['Datetime'].dt.time >= datetime.strptime("09:15", "%H:%M").time()) &
+        (df['Datetime'].dt.time <= datetime.strptime("15:30", "%H:%M").time())]
+
+# ✅ Get all unique trading days
+unique_days = sorted(df['Datetime'].dt.date.unique())
+
+# ✅ Filter for user-selected range
+unique_days = [d for d in unique_days if start_date <= d <= end_date]
+
+if len(unique_days) < 2:
+    st.warning("Not enough trading days in the selected range")
+    st.stop()
+
+# ✅ Initialize combined trade log
+combined_trade_log = []
 # trading_days = list of unique trading days in selected range
 
 trading_days = sorted([d for d in df['Datetime'].dt.date.unique() if start_date <= d <= end_date])
