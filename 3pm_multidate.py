@@ -307,29 +307,6 @@ def condition_1_trade_signal_for_candle(nifty_df, candle_time):
     
     return {'buy_signal': False, 'message': 'Condition not met.'}
 
-#####################################################################################################################################
-#df_plot = df[df['Datetime'].dt.date == selected_date]
-# Get all unique trading days in the data within the selected range
-unique_days = sorted(df['Datetime'].dt.date.unique())
-trading_days = [d for d in unique_days if start_date <= d <= end_date]
-
-# Loop through each day
-for i in range(1, len(trading_days)):
-    day0 = trading_days[i-1]  # Previous day (for Base Zone)
-    day1 = trading_days[i]    # Current day (for signals)
-    
-    df_plot = df[df['Datetime'].dt.date.isin([day0, day1])]
-    
-    # Now you can use df_plot safely
-    open_3pm, close_3pm = display_3pm_candle_info(df_plot, day0)
-
-#open_3pm, close_3pm = display_3pm_candle_info(df_plot, selected_date)
-
-
-#open_3pm, close_3pm = display_3pm_candle_info(df_plot, selected_date)
-
-
-##########################################################################################################
 
 #import pandas as pd
 #import streamlit as st
@@ -1604,6 +1581,26 @@ for i in range(1, len(unique_days)):
 
         # Append to combined trade log
         combined_trade_log.append(trade_log_df)
+
+#df_plot = df[df['Datetime'].dt.date == selected_date]
+# Get all unique trading days in the data within the selected range
+unique_days = sorted(df['Datetime'].dt.date.unique())
+trading_days = [d for d in unique_days if start_date <= d <= end_date]
+
+# Loop through each day
+for i in range(1, len(trading_days)):
+    day0 = trading_days[i-1]  # Previous day (for Base Zone)
+    day1 = trading_days[i]    # Current day (for signals)
+    
+    df_plot = df[df['Datetime'].dt.date.isin([day0, day1])]
+    
+    # Now you can use df_plot safely
+    open_3pm, close_3pm = display_3pm_candle_info(df_plot, day0)
+
+#open_3pm, close_3pm = display_3pm_candle_info(df_plot, selected_date)
+
+
+#open_3pm, close_3pm = display_3pm_candle_info(df_plot, selected_date)
 
 ##################################################################################
 # Convert to DataFrame
