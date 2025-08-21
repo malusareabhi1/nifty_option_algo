@@ -1598,6 +1598,8 @@ for i in range(1, len(unique_days)):
 
         # Append to combined trade log
         combined_trade_log.append(trade_log_df)
+
+##################################################################################
 # Convert to DataFrame
 if signal_log_list:
     signal_log_df = pd.DataFrame(signal_log_list)
@@ -1609,7 +1611,8 @@ if signal_log_list:
     st.download_button(label="Download Signal Log CSV", data=csv, file_name="signal_log.csv", mime="text/csv")
 else:
     st.write("No trade signals detected for the selected period.")
-    
+
+##################################################################################
 # ✅ Combine all logs into one DataFrame
 if combined_trade_log:
     all_trades = pd.concat(combined_trade_log, ignore_index=True)
@@ -1622,6 +1625,7 @@ if combined_trade_log:
 else:
     st.write("No trade signals found for the selected period.")
 
+##################################################################################
 
 if signal_log_list:
     # Compute PnL and Exit Reason
@@ -1634,6 +1638,7 @@ if signal_log_list:
     csv = signal_log_df_with_pnl.to_csv(index=False).encode('utf-8')
     st.download_button(label="Download Signal Log with PnL CSV", data=csv, file_name="signal_log_pnl.csv", mime="text/csv")
 
+##################################################################################
 
 if signal_log_list:
     signal_log_df_with_costs = compute_trade_pnl_with_costs(signal_log_df, df)
@@ -1645,7 +1650,7 @@ if signal_log_list:
     csv = signal_log_df_with_costs.to_csv(index=False).encode('utf-8')
     st.download_button(label="Download Trade Log with Costs CSV", data=csv, file_name="trade_log_with_costs.csv", mime="text/csv")
 
-
+##################################################################################
 
 if signal_log_list:
     # Compute PnL and Exit Reason first
@@ -1667,5 +1672,37 @@ if signal_log_list:
     csv_daily = pnl_per_day.to_csv(index=False).encode('utf-8')
     st.download_button(label="Download Daily PnL CSV", data=csv_daily, file_name="pnl_per_day.csv", mime="text/csv")
 
+##################################################################################
+
+if signal_log_list:
+    # Compute PnL and Exit Reason first
+    signal_log_df_with_pnl = compute_trade_pnl(signal_log_df, df)
+    
+    # Add Cost per trade column
+    signal_log_df_with_pnl['Cost_per_Trade'] = signal_log_df_with_pnl['Entry Price'] * signal_log_df_with_pnl['Quantity']
+    
+    # Performance summary
+    perf_summary_df, pnl_per_day = compute_performance(signal_log_df_with_pnl)
+    
+    # Add Net P&L per day
+    pnl_per_day['Net_PnL'] = pnl_per_day['PnL'].sum()  # Assuming compute_performance returns PnL per day
+    
+    # Color Styling for Performance Summary
+    def color_pnl(val):
+        color = 'green' if val > 0 else 'red'
+        return f'color: {color}; font-weight: bold;'
+    
+    st.write("### 📊 Performance Summary")
+    st.dataframe(perf_summary_df.style.applymap(color_pnl, subset=['Total PnL']))  # Highlight PnL
+    
+    st.write("### 📅 PnL Per Day (with Net PnL)")
+    st.dataframe(pnl_per_day.style.applymap(color_pnl, subset=['PnL', 'Net_PnL']))  # Highlight daily PnL
+    
+    # Optional: download CSV
+    csv_perf = perf_summary_df.to_csv(index=False).encode('utf-8')
+    st.download_button(label="📥 Download Performance Summary CSV", data=csv_perf, file_name="performance_summary.csv", mime="text/csv")
+    
+    csv_daily = pnl_per_day.to_csv(index=False).encode('utf-8')
+    st.download_button(label="📥 Download Daily PnL CSV", data=csv_daily, file_name="pnl_per_day.csv", mime="text/csv")
 
 
