@@ -89,7 +89,7 @@ def plot_nifty_multiday(df, trading_days):
     return fig
     
 # ✅ User selects start & end date
-start_date = st.date_input("Select Start Date", value=datetime.today() - timedelta(days=7))
+start_date = st.date_input("Select Start Date", value=datetime.today() - timedelta(days=15))
 end_date = st.date_input("Select End Date", value=datetime.today())
 
 if start_date >= end_date:
