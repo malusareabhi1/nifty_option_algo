@@ -1848,7 +1848,7 @@ for i in range(1, len(unique_days)):
     #signal = trading_signal_all_conditions1(day_df)
     signal = trading_signal_all_conditions2(day_df)
     #signal = trading_signal_all_conditions3(day_df)
-    st.write(signal)
+    #st.write(signal)
     #st.table(pd.DataFrame([signal]))
     if signal:
         #st.write(f"### {day1} → Signal detected: {signal['message']}")
