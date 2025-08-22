@@ -1848,23 +1848,28 @@ if signal_log_list:
 #import requests
 
 import requests
+import json
 
 def nse_optionchain_scrapper(symbol="NIFTY"):
     url = f"https://www.nseindia.com/api/option-chain-indices?symbol={symbol}"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
-        "Accept-Language": "en-US,en;q=0.9",
+        "Accept": "application/json, text/plain, */*",
+        "Referer": "https://www.nseindia.com/option-chain",
         "Accept-Encoding": "gzip, deflate, br",
-        "Referer": "https://www.nseindia.com/option-chain"
+        "Accept-Language": "en-US,en;q=0.9"
     }
 
     session = requests.Session()
-    # First request to get cookies
     session.get("https://www.nseindia.com", headers=headers)
-    response = session.get(url, headers=headers)
-    response.raise_for_status()
-    return response.json()
 
+    response = session.get(url, headers=headers)
+    
+    # Check if response is JSON
+    if "application/json" in response.headers.get("Content-Type", ""):
+        return response.json()
+    else:
+        raise ValueError(f"NSE returned non-JSON response: {response.status_code}")
 
 #########################################################################################
 def get_option_data(strike, expiry, option_type, start_date, end_date, interval='15minute'):
