@@ -1183,50 +1183,40 @@ st.plotly_chart(fig, use_container_width=True)
 
 ##################################################################################################################
 
-# Generate signals between the selected date range
-signals = []
+# ✅ Initialize combined trade log for signals
+all_signals = []
 
-for date in pd.date_range(start=start_date, end=end_date):
-    df_day = df[df['Datetime'].dt.date == date.date()]
-    if not df_day.empty:
-        signal_list = trading_signal_all_conditions4(df_day, quantity=10*75)
-        if signal_list:
-            signals.extend(signal_list)
+# ✅ Loop through each day in the selected range (starting from 2nd day)
+for i in range(1, len(unique_days)):
+    day0 = unique_days[i-1]  # previous day (for base candle)
+    day1 = unique_days[i]    # current day
 
-# Convert to DataFrame if signals exist
-if signals:
-    signal_df = pd.DataFrame(signals)
+    # Filter data for these 2 days
+    df_two_days = df[(df['Datetime'].dt.date == day0) | (df['Datetime'].dt.date == day1)]
+
+    # Generate signals for these 2 days
+    signals = trading_signal_all_conditions4(df_two_days, quantity=10*75, return_all_signals=True)
+
+    if signals:
+        for sig in signals:
+            sig['Day'] = str(day1)  # add date column for clarity
+            all_signals.append(sig)
+
+# ✅ Display all signals in Streamlit
+if all_signals:
+    signals_df = pd.DataFrame(all_signals)
+    st.subheader(f"Trade Signals Between {start_date} and {end_date}")
+    st.dataframe(signals_df)
+
+    # ✅ CSV download option
+    csv = signals_df.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="📥 Download All Signals CSV",
+        data=csv,
+        file_name="all_signals_between_dates.csv",
+        mime="text/csv"
+    )
 else:
-    signal_df = pd.DataFrame()
-
-# Display signal table in Streamlit
-if not signal_df.empty:
-    st.subheader("Trade Signals")
-    st.dataframe(signal_df)
-
-    # Now loop through signal_df to fetch nearest ITM options
-    option_data = []
-    for index, row in signal_df.iterrows():
-        spot_price = row['spot_price']
-        expiry_date = row['expiry']
-        option_type = row['option_type']
-        nearest_option = get_nearest_itm_option(spot_price, expiry_date, option_type)
-        if nearest_option:
-            option_data.append({
-                'Signal Time': row['Datetime'],
-                'Spot Price': spot_price,
-                'Option Symbol': nearest_option['symbol'],
-                'Strike Price': nearest_option['strikePrice'],
-                'LTP': nearest_option['lastPrice']
-            })
-
-    if option_data:
-        option_df = pd.DataFrame(option_data)
-        st.subheader("Nearest ITM Option Table")
-        st.dataframe(option_df)
-    else:
-        st.warning("No ITM options found.")
-else:
-    st.warning("No signals generated in the selected date range.")
+    st.info("No signals generated for the selected date range.")
 ####################################################################################################################
 
