@@ -1251,9 +1251,13 @@ if not signals_df.empty:
     )
 else:
     st.write("No signals found to display ITM options.")
+    
 ##############################################################  TRADE LOG  ##################################################################
 
 
+
+
+st.write("Option DataFrame Columns:", option_df.columns.tolist())
 # Initialize trade log list
 trade_log = []
 
