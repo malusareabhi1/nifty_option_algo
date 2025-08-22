@@ -3,6 +3,7 @@ import pandas as pd
 import yfinance as yf
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
+import requests
 
 st.set_page_config(layout="wide")
 st.title("Nifty 3PM Base Zone Strategy - Multi-Day Backtest")
