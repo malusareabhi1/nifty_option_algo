@@ -1289,5 +1289,30 @@ trade_log_df = pd.DataFrame(trade_log)
 trade_log_df.to_csv("trade_log.csv", index=False)
 st.write(trade_log_df)
 
-#####################################################################################################################################
+######################################################  ✅ Build Trade Log Table ###############################################################################
+# ✅ Build Trade Log Table
+trade_log = []
+for _, row in signals_df.iterrows():
+    option_info = option_chain_finder(option_chain_df, row['Spot Price'], row['Option Type'])
+    entry_price = option_info['LTP']
+    sl = round(entry_price * 0.9, 2)
+    target = round(entry_price * 1.2, 2)
 
+    trade_log.append({
+        "Entry Time": row['Entry Time'],
+        "Option Type": row['Option Type'],
+        "Spot Price": row['Spot Price'],
+        "Nearest ITM Strike": option_info['strikePrice'],
+        "Expiry": option_info['expiryDate'].strftime("%Y-%m-%d"),
+        "LTP": option_info['LTP'],
+        "IV": option_info['IV'],
+        "SL": sl,
+        "Target": target,
+        "Quantity": option_info['total_quantity'],
+        "PnL": 0  # Will calculate dynamically later
+    })
+
+trade_log_df = pd.DataFrame(trade_log)
+
+st.dataframe(trade_log_df, use_container_width=True)
+########################################################################################################################################
