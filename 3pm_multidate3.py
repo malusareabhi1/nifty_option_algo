@@ -1766,6 +1766,131 @@ def trading_signal_all_conditions3(df, quantity=10*75, previous_trade=None, retu
     return signals if signals else None
 
 
+########################################### With Sell/Exit ########################################################
+
+
+
+
+def trading_signal_all_conditions4(df, quantity=10*75, previous_trade=None, return_all_signals=False):
+    """
+    Generate BUY and SELL signals based on Base Zone Strategy with reversal conditions.
+    """
+
+    signals = []
+    df = df.copy()
+    df['Date'] = df['Datetime'].dt.date
+    unique_days = sorted(df['Date'].unique())
+    if len(unique_days) < 2:
+        return None
+
+    # --- Base Zone ---
+    day0 = unique_days[-2]
+    day1 = unique_days[-1]
+    candle_base = df[(df['Date'] == day0) &
+                     (df['Datetime'].dt.hour == 15) &
+                     (df['Datetime'].dt.minute == 0)]
+    if candle_base.empty:
+        return None
+
+    base_open = candle_base.iloc[0]['Open_^NSEI']
+    base_close = candle_base.iloc[0]['Close_^NSEI']
+    base_low = min(base_open, base_close)
+    base_high = max(base_open, base_close)
+
+    # --- Day 1 first candle ---
+    candle1 = df[(df['Date'] == day1) &
+                 (df['Datetime'].dt.hour == 9) &
+                 (df['Datetime'].dt.minute == 15)]
+    if candle1.empty:
+        return None
+
+    H1 = candle1.iloc[0]['High_^NSEI']
+    L1 = candle1.iloc[0]['Low_^NSEI']
+    C1 = candle1.iloc[0]['Close_^NSEI']
+    entry_time = candle1.iloc[0]['Datetime']
+    spot_price = df['Close_^NSEI'].iloc[-1]
+
+    expiry = get_nearest_weekly_expiry(pd.to_datetime(day1))
+
+    def make_signal(condition, option_type, action, trigger_level, entry_time, message):
+        strike = get_nearest_itm_option(spot_price, option_type)
+        return {
+            'condition': condition,
+            'option_type': option_type,
+            'action': action,  # BUY or SELL
+            'strike': strike,
+            'trigger_level': trigger_level,
+            'entry_time': entry_time,
+            'expiry': expiry,
+            'quantity': quantity,
+            'spot_price': spot_price,
+            'message': message
+        }
+
+    # ✅ SELL logic if previous trade exists
+    if previous_trade:
+        if previous_trade['option_type'] == 'CALL' and spot_price < previous_trade['trigger_level']:
+            sig = make_signal('Exit', 'CALL', 'SELL', spot_price, df.iloc[-1]['Datetime'],
+                              'Reversal: Exit CALL as price dropped below trigger')
+            signals.append(sig)
+            if not return_all_signals: return sig
+
+        if previous_trade['option_type'] == 'PUT' and spot_price > previous_trade['trigger_level']:
+            sig = make_signal('Exit', 'PUT', 'SELL', spot_price, df.iloc[-1]['Datetime'],
+                              'Reversal: Exit PUT as price rose above trigger')
+            signals.append(sig)
+            if not return_all_signals: return sig
+
+    # ✅ Original BUY logic
+    if (L1 <= base_high and H1 >= base_low) and (C1 > base_high):
+        sig = make_signal(1, 'CALL', 'BUY', H1, entry_time,
+                          'Condition 1: Bullish breakout → Buy CALL')
+        signals.append(sig)
+        if not return_all_signals: return sig
+
+    if C1 < base_low:
+        day1_after = df[(df['Date'] == day1) & (df['Datetime'] > entry_time)].sort_values('Datetime')
+        for _, nxt in day1_after.iterrows():
+            if nxt['Low_^NSEI'] <= L1:
+                sig = make_signal(2, 'PUT', 'BUY', L1, nxt['Datetime'],
+                                  'Condition 2: Gap down confirmed → Buy PUT')
+                signals.append(sig)
+                if not return_all_signals: return sig
+                break
+            if nxt['Close_^NSEI'] > base_high:
+                ref_high = nxt['High_^NSEI']
+                sig = make_signal(2.7, 'CALL', 'BUY', ref_high, nxt['Datetime'],
+                                  'Condition 2 Flip → Buy CALL')
+                signals.append(sig)
+                if not return_all_signals: return sig
+                break
+
+    if C1 > base_high:
+        day1_after = df[(df['Date'] == day1) & (df['Datetime'] > entry_time)].sort_values('Datetime')
+        for _, nxt in day1_after.iterrows():
+            if nxt['High_^NSEI'] >= H1:
+                sig = make_signal(3, 'CALL', 'BUY', H1, nxt['Datetime'],
+                                  'Condition 3: Gap up confirmed → Buy CALL')
+                signals.append(sig)
+                if not return_all_signals: return sig
+                break
+            if nxt['Close_^NSEI'] < base_low:
+                ref_low = nxt['Low_^NSEI']
+                sig = make_signal(3.7, 'PUT', 'BUY', ref_low, nxt['Datetime'],
+                                  'Condition 3 Flip → Buy PUT')
+                signals.append(sig)
+                if not return_all_signals: return sig
+                break
+
+    if (L1 <= base_high and H1 >= base_low) and (C1 < base_low):
+        sig = make_signal(4, 'PUT', 'BUY', L1, entry_time,
+                          'Condition 4: Bearish breakdown → Buy PUT')
+        signals.append(sig)
+        if not return_all_signals: return sig
+
+    return signals if signals else None
+
+
 
 ##################################START To Execute ################################################
 
@@ -1848,7 +1973,10 @@ for i in range(1, len(unique_days)):
     #signal = trading_signal_all_conditions1(day_df)
     signal = trading_signal_all_conditions2(day_df)
     #signal = trading_signal_all_conditions3(day_df)
-    #st.write(signal)
+    signal = trading_signal_all_conditions4(day_df)
+    
+    #
+    st.write(signal)
     #st.table(pd.DataFrame([signal]))
     if signal:
         #st.write(f"### {day1} → Signal detected: {signal['message']}")
