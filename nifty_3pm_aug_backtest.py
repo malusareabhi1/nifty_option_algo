@@ -879,8 +879,143 @@ def trading_signal_all_conditions1(df, quantity=10*750, return_all_signals=False
     return signals if signals else None
 
 
-###############################################################################################################
-#run_check_for_all_candles(df)  # df = your full OHLC DataFrame
+###
+
+
+def trading_signal_all_conditions2(df, quantity=10*750, previous_trade=None, return_all_signals=False):
+    """
+    Evaluate trading conditions based on Base Zone strategy and generate entry/exit signals.
+
+    Parameters:
+    - df: pd.DataFrame with ['Datetime','Open_^NSEI','High_^NSEI','Low_^NSEI','Close_^NSEI']
+    - quantity: total quantity to trade (default 10 lots = 7500)
+    - previous_trade: dict containing previous trade details (optional)
+    - return_all_signals: if True, returns all signals; else returns first signal
+
+    Returns:
+    - None if no signals
+    - dict for first signal (if return_all_signals=False)
+    - list of dicts for all signals (if return_all_signals=True)
+    """
+
+    signals = []
+    spot_price = df['Close_^NSEI'].iloc[-1]  # latest price
+    current_time = df['Datetime'].iloc[-1]
+
+    # ✅ Check for exit condition if previous trade exists
+    if previous_trade:
+        entry_price = previous_trade['buy_price']
+        sl = previous_trade['stoploss']
+        tp = previous_trade['take_profit']
+        option_type = previous_trade['option_type']
+
+        # Check SL / TP
+        if option_type == 'CALL':
+            if spot_price <= sl:
+                exit_sig = {
+                    'action': 'EXIT',
+                    'reason': 'STOPLOSS HIT',
+                    'option_type': 'CALL',
+                    'exit_price': spot_price,
+                    'entry_price': entry_price,
+                    'pnl': (spot_price - entry_price) * previous_trade['quantity'],
+                    'exit_time': current_time
+                }
+                return exit_sig
+            elif spot_price >= tp:
+                exit_sig = {
+                    'action': 'EXIT',
+                    'reason': 'TARGET HIT',
+                    'option_type': 'CALL',
+                    'exit_price': spot_price,
+                    'entry_price': entry_price,
+                    'pnl': (spot_price - entry_price) * previous_trade['quantity'],
+                    'exit_time': current_time
+                }
+                return exit_sig
+
+        if option_type == 'PUT':
+            if spot_price >= sl:
+                exit_sig = {
+                    'action': 'EXIT',
+                    'reason': 'STOPLOSS HIT',
+                    'option_type': 'PUT',
+                    'exit_price': spot_price,
+                    'entry_price': entry_price,
+                    'pnl': (entry_price - spot_price) * previous_trade['quantity'],
+                    'exit_time': current_time
+                }
+                return exit_sig
+            elif spot_price <= tp:
+                exit_sig = {
+                    'action': 'EXIT',
+                    'reason': 'TARGET HIT',
+                    'option_type': 'PUT',
+                    'exit_price': spot_price,
+                    'entry_price': entry_price,
+                    'pnl': (entry_price - spot_price) * previous_trade['quantity'],
+                    'exit_time': current_time
+                }
+                return exit_sig
+
+        # Time-based exit (optional)
+        if current_time.hour == 15 and current_time.minute >= 15:
+            exit_sig = {
+                'action': 'EXIT',
+                'reason': 'TIME EXIT',
+                'option_type': option_type,
+                'exit_price': spot_price,
+                'entry_price': entry_price,
+                'pnl': ((spot_price - entry_price) if option_type == 'CALL' else (entry_price - spot_price)) * previous_trade['quantity'],
+                'exit_time': current_time
+            }
+            return exit_sig
+
+    # ✅ Entry logic (your original code below this point)
+    df = df.copy()
+    df['Date'] = df['Datetime'].dt.date
+    unique_days = sorted(df['Date'].unique())
+    if len(unique_days) < 2:
+        return None
+
+    day0 = unique_days[-2]
+    day1 = unique_days[-1]
+
+    # Step 1: Base Zone
+    candle_3pm = df[(df['Date'] == day0) &
+                    (df['Datetime'].dt.hour == 15) &
+                    (df['Datetime'].dt.minute == 0)]
+    if candle_3pm.empty:
+        return None
+
+    base_open = candle_3pm.iloc[0]['Open_^NSEI']
+    base_close = candle_3pm.iloc[0]['Close_^NSEI']
+    base_low = min(base_open, base_close)
+    base_high = max(base_open, base_close)
+
+    # Step 2: First candle Day1
+    candle_915 = df[(df['Date'] == day1) &
+                    (df['Datetime'].dt.hour == 9) &
+                    (df['Datetime'].dt.minute == 15)]
+    if candle_915.empty:
+        return None
+
+    H1 = candle_915.iloc[0]['High_^NSEI']
+    L1 = candle_915.iloc[0]['Low_^NSEI']
+    C1 = candle_915.iloc[0]['Close_^NSEI']
+    entry_time = candle_915.iloc[0]['Datetime']
+
+    expiry = get_nearest_weekly_expiry(pd.to_datetime(day1))
+
+    day1_after_915 = df[(df['Date'] == day1) & (df['Datetime'] > entry_time)].sort_values('Datetime')
+
+    # --- Original Conditions ---
+    # (Condition 1, 2, 2.7, 3, 3.7, 4)
+    # (Your original code remains the same here)
+    # Append signals as before
+    # ---------------------------
+
+    return signals if signals else None
 
 
 #st.write(result_chain.tail())
@@ -903,8 +1038,9 @@ end_time = pd.to_datetime("14:00").time()
 
 # Get option chain and signals
 result_chain = find_nearest_itm_option()
-signal = trading_signal_all_conditions1(df)
-
+#signal = trading_signal_all_conditions1(df)
+signal = trading_signal_all_conditions2(df)
+st.write(signal)
 # Only take trade if within the window
 # if start_time <= candle_time_only <= end_time:    
 if signal:
