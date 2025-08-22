@@ -1219,4 +1219,35 @@ if all_signals:
 else:
     st.info("No signals generated for the selected date range.")
 ####################################################################################################################
+if not signal_df.empty:
+    # Create new DataFrame for ITM Options
+    option_rows = []
+    for index, row in signal_df.iterrows():
+        spot_price = row['spot_price']
+        option_type = row['option_type']
+        nearest_itm_strike = get_nearest_itm_option(spot_price, option_type)
+        
+        option_rows.append({
+            'Entry Time': row['entry_time'],
+            'Option Type': option_type,
+            'Spot Price': spot_price,
+            'Nearest ITM Strike': nearest_itm_strike,
+            'Expiry': row['expiry']
+        })
+    
+    option_df = pd.DataFrame(option_rows)
+    
+    st.subheader("Nearest ITM Options for Signals")
+    st.table(option_df)
 
+    # Download button
+    csv_options = option_df.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="Download ITM Options CSV",
+        data=csv_options,
+        file_name="itm_options.csv",
+        mime="text/csv"
+    )
+else:
+    st.write("No signals found to display ITM options.")
+################################################################################################################################
