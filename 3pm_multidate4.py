@@ -1217,4 +1217,37 @@ else:
 
 ##################################################################################################################
 
+# Prepare list for combined data
+combined_data = []
+
+# Loop through each signal and fetch ITM option details
+for index, row in signal_df.iterrows():
+    symbol = row['Symbol']  # e.g., NIFTY or BANKNIFTY
+    spot_price = row['Price']
+    
+    # Call your function to get nearest ITM option
+    itm_option = get_nearest_itm_option(symbol, spot_price)
+    
+    # Combine data
+    combined_row = {
+        'Datetime': row['Datetime'],
+        'Signal': row['Signal'],
+        'Spot Price': spot_price,
+        'Nearest ITM Option': itm_option['option_symbol'],
+        'Option LTP': itm_option['ltp'],
+        'Strike Price': itm_option['strike'],
+        'Option Type': itm_option['type']
+    }
+    combined_data.append(combined_row)
+
+# Convert to DataFrame
+final_df = pd.DataFrame(combined_data)
+
+# Display table (Streamlit example)
+import streamlit as st
+st.write("### Trade Signals with Nearest ITM Options")
+st.dataframe(final_df)
+
+
+####################################################################################################################
 
