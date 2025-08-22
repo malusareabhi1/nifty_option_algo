@@ -1179,24 +1179,41 @@ st.plotly_chart(fig, use_container_width=True)
 
 ################################################## find Signals  ########################################################
 
-df = pd.DataFrame(df)
+# ✅ Initialize combined trade log for signals
+all_signals = []
 
-# Call the signal function
-signals = trading_signal_all_conditions4(df, quantity=10*75, previous_trade=None, return_all_signals=True)
+# ✅ Loop through each day in the selected range (starting from 2nd day)
+for i in range(1, len(unique_days)):
+    day0 = unique_days[i-1]  # previous day (for base candle)
+    day1 = unique_days[i]    # current day
 
-# Convert signals to DataFrame if not already
-if isinstance(signals, list):
-    signal_df = pd.DataFrame(signals)
+    # Filter data for these 2 days
+    df_two_days = df[(df['Datetime'].dt.date == day0) | (df['Datetime'].dt.date == day1)]
+
+    # Generate signals for these 2 days
+    signals = trading_signal_all_conditions4(df_two_days, quantity=10*75, return_all_signals=True)
+
+    if signals:
+        for sig in signals:
+            sig['Day'] = str(day1)  # add date column for clarity
+            all_signals.append(sig)
+
+# ✅ Display all signals in Streamlit
+if all_signals:
+    signals_df = pd.DataFrame(all_signals)
+    st.subheader(f"Trade Signals Between {start_date} and {end_date}")
+    st.dataframe(signals_df)
+
+    # ✅ CSV download option
+    csv = signals_df.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="📥 Download All Signals CSV",
+        data=csv,
+        file_name="all_signals_between_dates.csv",
+        mime="text/csv"
+    )
 else:
-    signal_df = signals
-
-# ✅ Display Trade Signal Table
-st.subheader("Trade Signals")
-if not signal_df.empty:
-    st.dataframe(signal_df)  # Or use st.table(signal_df) for static
-else:
-    st.write("No trade signals generated yet.")
-
+    st.info("No signals generated for the selected date range.")
 
 ##################################################################################################################
 
