@@ -1077,7 +1077,11 @@ else:
 
 st.subheader("Cumulative Trade Log")
 if not st.session_state.trade_log_df.empty:
-    st.table(st.session_state.trade_log_df)
+    #st.table(st.session_state.trade_log_df)
+    last_signal = st.session_state.trade_log_df.tail(1)  # Get last row
+    st.table(last_signal)  # Display only the last signal
+
+    
     csv = st.session_state.trade_log_df.to_csv(index=False).encode('utf-8')
     st.download_button(
         label="📥 Download Trade Log as CSV",
