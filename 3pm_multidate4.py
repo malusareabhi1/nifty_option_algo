@@ -1177,3 +1177,27 @@ fig = plot_nifty_multiday(df, trading_days)
 st.plotly_chart(fig, use_container_width=True)
 
 
+################################################## find Signals  ########################################################
+
+df = pd.DataFrame(data)
+
+# Call the signal function
+signals = trading_signal_all_conditions4(df, quantity=10*75, previous_trade=None, return_all_signals=True)
+
+# Convert signals to DataFrame if not already
+if isinstance(signals, list):
+    signal_df = pd.DataFrame(signals)
+else:
+    signal_df = signals
+
+# ✅ Display Trade Signal Table
+st.subheader("Trade Signals")
+if not signal_df.empty:
+    st.dataframe(signal_df)  # Or use st.table(signal_df) for static
+else:
+    st.write("No trade signals generated yet.")
+
+
+##################################################################################################################
+
+
