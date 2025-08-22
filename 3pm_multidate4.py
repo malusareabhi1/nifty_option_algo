@@ -1179,7 +1179,7 @@ st.plotly_chart(fig, use_container_width=True)
 
 ################################################## find Signals  ########################################################
 
-df = pd.DataFrame(data)
+df = pd.DataFrame(df)
 
 # Call the signal function
 signals = trading_signal_all_conditions4(df, quantity=10*75, previous_trade=None, return_all_signals=True)
