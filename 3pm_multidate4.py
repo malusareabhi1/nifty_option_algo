@@ -1219,7 +1219,7 @@ if all_signals:
 else:
     st.info("No signals generated for the selected date range.")
     
-####################################################################################################################
+####################################################### ITM #############################################################
 if not signals_df.empty:
     # Create new DataFrame for ITM Options
     option_rows = []
@@ -1251,4 +1251,39 @@ if not signals_df.empty:
     )
 else:
     st.write("No signals found to display ITM options.")
-################################################################################################################################
+##############################################################  TRADE LOG  ##################################################################
+
+
+# Initialize trade log list
+trade_log = []
+
+# Example: Loop through option_df for signals
+for index, row in option_df.iterrows():
+    symbol = row['symbol']
+    entry_time = row['entry_time']
+    exit_time = row['exit_time']
+    entry_price = row['entry_price']
+    exit_price = row['exit_price']
+    trade_type = "CALL" if "CE" in symbol else "PUT"
+    
+    pnl = round((exit_price - entry_price), 2)  # Simple PnL calculation
+    
+    trade_log.append({
+        "Symbol": symbol,
+        "Trade Type": trade_type,
+        "Entry Time": entry_time,
+        "Exit Time": exit_time,
+        "Entry Price": entry_price,
+        "Exit Price": exit_price,
+        "PnL": pnl
+    })
+
+# Convert to DataFrame
+trade_log_df = pd.DataFrame(trade_log)
+
+# Save to CSV
+trade_log_df.to_csv("trade_log.csv", index=False)
+st.write(trade_log_df)
+
+#####################################################################################################################################
+
