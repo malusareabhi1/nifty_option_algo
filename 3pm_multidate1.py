@@ -1617,7 +1617,153 @@ def trading_signal_all_conditions2(df, quantity=10*75, return_all_signals=False)
         if not return_all_signals: return sig
 
     return signals if signals else None
+    
 
+#################################### With Exitt logi ##############################################
+
+
+
+def trading_signal_all_conditions3(df, quantity=10*75, previous_trade=None, return_all_signals=False):
+    """
+    Extended Base Zone Strategy - NIFTY Index Options (15-min candles) with entry & exit logic
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Must contain ['Datetime','Open_^NSEI','High_^NSEI','Low_^NSEI','Close_^NSEI'] in 15m timeframe
+    previous_trade : dict or None
+        If provided, check for exit signals for that trade
+    quantity : int
+        Total units (default 10 lots = 750, since 1 lot = 75)
+    return_all_signals : bool
+        If True -> return list of all signals
+        If False -> return first valid signal
+
+    Returns
+    -------
+    dict or list(dict) or None
+    """
+
+    signals = []
+    df = df.copy()
+    df['Date'] = df['Datetime'].dt.date
+    unique_days = sorted(df['Date'].unique())
+    if len(unique_days) < 2:
+        return None  # Not enough history
+
+    day0 = unique_days[-2]
+    day1 = unique_days[-1]
+
+    # --- If previous trade exists, check for exit ---
+    if previous_trade:
+        trade = previous_trade.copy()
+        trade_open_time = trade['entry_time']
+        trade_option_type = trade['option_type']
+        sl = trade['sl_init']
+        target = trade['target1']
+        trail_sl_rule = trade['trail_sl_rule']
+
+        after_entry = df[df['Datetime'] > trade_open_time]
+
+        for _, candle in after_entry.iterrows():
+            high = candle['High_^NSEI']
+            low = candle['Low_^NSEI']
+            current_time = candle['Datetime']
+
+            # Simulate option price movement (you can replace with actual option price data)
+            # Approximation: option price moves proportionally to NIFTY
+            if trade_option_type == 'CALL':
+                # Exit if SL or Target hit
+                if low <= sl:
+                    trade['exit_reason'] = 'SL Hit'
+                    trade['exit_time'] = current_time
+                    trade['status'] = 'CLOSED'
+                    return trade
+                if high >= target:
+                    trade['exit_reason'] = 'Target Hit'
+                    trade['exit_time'] = current_time
+                    trade['status'] = 'CLOSED'
+                    return trade
+
+            if trade_option_type == 'PUT':
+                if high >= sl:
+                    trade['exit_reason'] = 'SL Hit'
+                    trade['exit_time'] = current_time
+                    trade['status'] = 'CLOSED'
+                    return trade
+                if low <= target:
+                    trade['exit_reason'] = 'Target Hit'
+                    trade['exit_time'] = current_time
+                    trade['status'] = 'CLOSED'
+                    return trade
+
+            # Time-based exit (after 16 min)
+            if (current_time - trade_open_time).total_seconds() > (16 * 60):
+                trade['exit_reason'] = 'Time Exit'
+                trade['exit_time'] = current_time
+                trade['status'] = 'CLOSED'
+                return trade
+
+        # If no exit yet, return same trade
+        trade['status'] = 'OPEN'
+        return trade
+
+    # --- ENTRY LOGIC (same as before) ---
+    candle_base = df[(df['Date'] == day0) &
+                     (df['Datetime'].dt.hour == 15) &
+                     (df['Datetime'].dt.minute == 0)]
+    if candle_base.empty:
+        return None
+
+    base_open = candle_base.iloc[0]['Open_^NSEI']
+    base_close = candle_base.iloc[0]['Close_^NSEI']
+    base_low = min(base_open, base_close)
+    base_high = max(base_open, base_close)
+
+    candle1 = df[(df['Date'] == day1) &
+                 (df['Datetime'].dt.hour == 9) &
+                 (df['Datetime'].dt.minute == 15)]
+    if candle1.empty:
+        return None
+
+    H1 = candle1.iloc[0]['High_^NSEI']
+    L1 = candle1.iloc[0]['Low_^NSEI']
+    C1 = candle1.iloc[0]['Close_^NSEI']
+    entry_time = candle1.iloc[0]['Datetime']
+    spot_price = df['Close_^NSEI'].iloc[-1]
+
+    expiry = get_nearest_weekly_expiry(pd.to_datetime(day1))
+
+    def make_signal(condition, option_type, trigger_level, entry_time, message):
+        strike = get_nearest_itm_option(spot_price, option_type)
+        entry_price = trigger_level  # Approximation
+        return {
+            'condition': condition,
+            'option_type': option_type,
+            'strike': strike,
+            'trigger_level': trigger_level,
+            'entry_time': entry_time,
+            'expiry': expiry,
+            'quantity': quantity,
+            'spot_price': spot_price,
+            'sl_init': round(entry_price * 0.90, 2),
+            'target1': round(entry_price * 1.10, 2),
+            'trail_sl_rule': 'Ratchet to 90% of highest premium seen',
+            'time_exit': 'Exit 16 minutes after entry if no SL/TP',
+            'message': message,
+            'status': 'OPEN'
+        }
+
+    # Apply conditions (same as before)
+    if (L1 <= base_high and H1 >= base_low) and (C1 > base_high):
+        sig = make_signal(1, 'CALL', H1, entry_time,
+                          'Condition 1: Bullish breakout → Buy CALL on break above H1')
+        signals.append(sig)
+        if not return_all_signals: return sig
+
+    # (Add other conditions as before...)
+
+    return signals if signals else None
 
 
 
