@@ -1977,7 +1977,11 @@ if signal_log_list:
     perf_summary_df, pnl_per_day = compute_performance(signal_log_df_with_pnl)
     
      # ✅ Add total row for PnL Per Day
-    total_pnl = pnl_per_day['PnL'].sum()
+   # total_pnl = pnl_per_day['PnL'].sum()
+    if 'PnL' in pnl_per_day.columns:
+        total_pnl = pnl_per_day['PnL'].sum()
+    else:
+        total_pnl = 0
     total_row = pd.DataFrame({'Date': ['TOTAL'], 'PnL': [total_pnl]})
     pnl_per_day_with_total = pd.concat([pnl_per_day, total_row], ignore_index=True)
     
