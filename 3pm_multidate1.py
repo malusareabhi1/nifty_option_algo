@@ -1847,18 +1847,23 @@ if signal_log_list:
 
 #import requests
 
+import requests
+
 def nse_optionchain_scrapper(symbol="NIFTY"):
     url = f"https://www.nseindia.com/api/option-chain-indices?symbol={symbol}"
     headers = {
-        "User-Agent": "Mozilla/5.0",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
         "Accept-Language": "en-US,en;q=0.9",
-        "Accept-Encoding": "gzip, deflate, br"
+        "Accept-Encoding": "gzip, deflate, br",
+        "Referer": "https://www.nseindia.com/option-chain"
     }
+
     session = requests.Session()
+    # First request to get cookies
+    session.get("https://www.nseindia.com", headers=headers)
     response = session.get(url, headers=headers)
     response.raise_for_status()
-    data = response.json()
-    return data
+    return response.json()
 
 
 #########################################################################################
