@@ -1844,6 +1844,23 @@ if signal_log_list:
 
 ##################################################################################
 
+#import requests
+
+def nse_optionchain_scrapper(symbol="NIFTY"):
+    url = f"https://www.nseindia.com/api/option-chain-indices?symbol={symbol}"
+    headers = {
+        "User-Agent": "Mozilla/5.0",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br"
+    }
+    session = requests.Session()
+    response = session.get(url, headers=headers)
+    response.raise_for_status()
+    data = response.json()
+    return data
+
+
+#########################################################################################
 def get_option_data(strike, expiry, option_type, start_date, end_date, interval='15minute'):
     """
     Fetch historical option premium OHLC data using nsepy.
