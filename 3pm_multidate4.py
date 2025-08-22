@@ -1263,7 +1263,7 @@ st.write("Option DataFrame Columns:", option_df.columns.tolist())
 # ✅ Build Trade Log Table
 trade_log = []
 for _, row in signals_df.iterrows():
-    option_info = option_chain_finder(option_chain_df, row['Spot Price'], row['Option Type'])
+    option_info = option_chain_finder(option_df, row['Spot Price'], row['Option Type'])
     entry_price = option_info['LTP']
     sl = round(entry_price * 0.9, 2)
     target = round(entry_price * 1.2, 2)
