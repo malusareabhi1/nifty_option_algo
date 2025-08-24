@@ -1257,8 +1257,8 @@ else:
 
 
 
-st.write("Option DataFrame Columns:", option_df.columns.tolist())
-st.write(option_df.index.tolist())
+#st.write("Option DataFrame Columns:", option_df.columns.tolist())
+#st.write(option_df.index.tolist())
 ######################################################  ✅ Build Trade Log Table ###############################################################################
 # ✅ Build Trade Log Table
 trade_log = []
