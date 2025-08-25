@@ -487,4 +487,4 @@ elif MENU == "Support":
 # Footer
 # ------------------------------------------------------------
 st.markdown("---")
-st.caption("© 2025 Your Brand • This is a colorful demo UI. Replace demo handlers with your live logic, APIs, and secure storage.")
+st.caption("© 2025 Shree Software • This is a colorful demo UI. Replace demo handlers with your live logic, APIs, and secure storage.")
