@@ -715,6 +715,7 @@ with st.sidebar:
         "Navigate",
         ["Home", "Strategies", "Broker API", "Dashboard", "Products", "Support"],
         index=0,
+    key="main_menu_radio"
     )
 
 # ------------------------------------------------------------
