@@ -1412,6 +1412,7 @@ def compute_trade_pnl_with_costs(signal_log_df, df):
     trade_results = []
 
     capital = 0  # running capital (cumulative PnL)
+    
 
     for _, row in signal_log_df.iterrows():
         day = row['Date']
@@ -1422,6 +1423,8 @@ def compute_trade_pnl_with_costs(signal_log_df, df):
         stoploss = row['Stoploss (Trailing 10%)']
         take_profit = row['Take Profit (10% rise)']
         option_type = row['Option Selected']
+        # Capital needed for this trade (premium × quantity)
+        capital_needed = buy_premium * qty
 
         day_df = df[df['Datetime'].dt.date == day]
         day_after_entry = day_df[day_df['Datetime'] >= entry_time].sort_values('Datetime')
@@ -1461,6 +1464,7 @@ def compute_trade_pnl_with_costs(signal_log_df, df):
             "Raw PnL": raw_pnl,
             "Total Charges": total_charges,
             "Net PnL": net_pnl,
+            "Capital Needed": capital_needed,  # ✅ Added column
             "Capital After Trade": capital
         })
 
