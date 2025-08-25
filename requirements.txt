@@ -7,3 +7,4 @@ streamlit-autorefresh
 twilio
 requests
 nsepython
+ta
