@@ -186,7 +186,7 @@ with st.sidebar:
     # Mark attribute for downstream CSS targeting
     st.markdown(f"<div style='display:none' data-theme={'dark' if st.session_state.theme_dark else 'light'}></div>", unsafe_allow_html=True)
 
-    st.image("https://assets-global.website-files.com/5e0a1f0d3a9f1b6f7f1b6f34/5e0a1f63a4f62a5534b5f5f9_finance-illustration.png", use_column_width=True)
+    st.image("https://assets-global.website-files.com/5e0a1f0d3a9f1b6f7f1b6f34/5e0a1f63a4f62a5534b5f5f9_finance-illustration.png")
 
     MENU = st.radio(
         "Navigate",
