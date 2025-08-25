@@ -233,7 +233,7 @@ with st.sidebar:
 # Home
 # ------------------------------------------------------------
 if MENU == "Home":
-    st.title("Welcome to Your Algo Trading Platform")
+    st.title("Welcome to SHREE Algo Trading Platform")
     st.write("Automate your trades with smart, auditable strategies. Connect your broker, choose a strategy, and manage risk — all from one dashboard.")
 
     c1, c2, c3 = st.columns(3)
