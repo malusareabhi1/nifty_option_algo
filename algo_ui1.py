@@ -701,14 +701,15 @@ def add_trade_log(symbol: str, side: str, qty: int, price: float, pnl: float):
 # Sidebar Navigation
 # ------------------------------------------------------------
 with st.sidebar:
-    st.title("⚡ Algo Trading")
-    # Theme toggle (visual only)
-    st.session_state.theme_dark = st.toggle("Dark Theme", value=st.session_state.theme_dark, key="theme_toggle")
-    # Mark attribute for CSS targeting
-    st.markdown(f"<div style='display:none' data-theme={'dark' if st.session_state.theme_dark else 'light'}></div>", unsafe_allow_html=True)
-
-    st.image(
-        "https://assets-global.website-files.com/5e0a1f0d3a9f1b6f7f1b6f34/5e0a1f63a4f62a5534b5f5f9_finance-illustration.png"
+    # Sidebar (render only once)
+    st.sidebar.title("⚡ Algo Trading")
+    st.sidebar.toggle("Dark Theme", key="dark_theme_toggle")
+    
+    MENU = st.sidebar.radio(
+        "Navigate",
+        ["Home", "Strategies", "Broker API", "Dashboard", "Products", "Support"],
+        index=0,
+        key="main_menu_radio"
     )
 
     MENU = st.radio(
