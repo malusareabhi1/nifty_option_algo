@@ -703,7 +703,7 @@ def add_trade_log(symbol: str, side: str, qty: int, price: float, pnl: float):
 with st.sidebar:
     st.title("⚡ Algo Trading")
     # Theme toggle (visual only)
-    st.session_state.theme_dark = st.toggle("Dark Theme", value=st.session_state.theme_dark)
+    st.session_state.theme_dark = st.toggle("Dark Theme", value=st.session_state.theme_dark, key="theme_toggle")
     # Mark attribute for CSS targeting
     st.markdown(f"<div style='display:none' data-theme={'dark' if st.session_state.theme_dark else 'light'}></div>", unsafe_allow_html=True)
 
