@@ -1676,7 +1676,7 @@ def trading_signal_all_conditions2_improved(df, quantity=10*75, return_all_signa
     base_range = base_high - base_low
 
     # Skip abnormal zones (too narrow or too wide)
-    if base_range < 0.002 * base_close or base_range > 0.01 * base_close:
+    if base_range < 0.001 * base_close or base_range > 0.015 * base_close:
         return None
 
     # --- Step 2: Day 1 first candle ---
@@ -1696,7 +1696,7 @@ def trading_signal_all_conditions2_improved(df, quantity=10*75, return_all_signa
 
     # --- Volume Filter ---
     avg_vol = df[df['Date'] == day0]['Volume_^NSEI'].mean()
-    if candle1.iloc[0]['Volume_^NSEI'] < 1.2 * avg_vol:  # Require at least 20% higher volume
+    if candle1.iloc[0]['Volume_^NSEI'] < 1.0 * avg_vol:  # Require at least 20% higher volume
         return None
 
     # --- Helper for creating a signal ---
