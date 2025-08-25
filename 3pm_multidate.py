@@ -1776,7 +1776,105 @@ def trading_signal_all_conditions2_improved(df, quantity=10*75, return_all_signa
 
     return signals if signals else None
 
+################################################################################################
 
+
+def trading_signal_all_conditions_2_improved(df, quantity=10*750, return_all_signals=False):
+    """
+    Evaluate trading conditions based on Base Zone strategy.
+    
+    ✅ Includes:
+        - Support Flip trades (2.7 & 3.7)
+        - Time filter (avoid trades after 14:30)
+        - Skip abnormal Base Zones (too tight or too wide)
+    
+    Parameters:
+    - df: pd.DataFrame with columns ['Datetime','Open_^NSEI','High_^NSEI','Low_^NSEI','Close_^NSEI']
+    - quantity: trade size
+    - return_all_signals: if True, returns all signals list instead of last signal
+
+    Returns:
+    - dict or list of signals
+    """
+    signals = []
+    spot_price = df['Close_^NSEI'].iloc[-1]
+    
+    # Ensure datetime is pandas datetime
+    df['Datetime'] = pd.to_datetime(df['Datetime'])
+    df['Date'] = df['Datetime'].dt.date
+    unique_days = sorted(df['Date'].unique())
+    
+    if len(unique_days) < 2:
+        return None  # Need at least 2 days of data
+
+    # Day 0 (previous day) Base Zone calculation
+    day0 = unique_days[-2]
+    day1 = unique_days[-1]
+    
+    prev_day_data = df[df['Date'] == day0]
+    today_data = df[df['Date'] == day1]
+
+    # Base Zone from 15:00 - 15:15 candle
+    base_candle = prev_day_data[(prev_day_data['Datetime'].dt.time >= pd.to_datetime('15:00').time()) & 
+                                (prev_day_data['Datetime'].dt.time <= pd.to_datetime('15:15').time())]
+
+    if base_candle.empty:
+        return None
+    
+    base_open = base_candle['Open_^NSEI'].iloc[0]
+    base_close = base_candle['Close_^NSEI'].iloc[0]
+    base_low = min(base_open, base_close)
+    base_high = max(base_open, base_close)
+    base_range = base_high - base_low
+    
+    # ✅ Skip abnormal Base Zones
+    if base_range < 5 or base_range > 100:  # too tight or too wide
+        return None
+
+    # Day 1 first candle (09:15 - 09:30)
+    first_candle = today_data[(today_data['Datetime'].dt.time >= pd.to_datetime('09:15').time()) & 
+                              (today_data['Datetime'].dt.time <= pd.to_datetime('09:30').time())]
+
+    if first_candle.empty:
+        return None
+
+    H1 = first_candle['High_^NSEI'].iloc[0]
+    L1 = first_candle['Low_^NSEI'].iloc[0]
+
+    # Loop through today's data to check breakout
+    for i, row in today_data.iterrows():
+        current_time = row['Datetime'].time()
+        
+        # ✅ Time filter: Avoid trades after 14:30
+        if current_time >= pd.to_datetime('14:30').time():
+            break
+
+        price_high = row['High_^NSEI']
+        price_low = row['Low_^NSEI']
+
+        # Buy Condition: Breaks above base_high
+        if price_high > base_high:
+            signals.append({
+                'signal': 'BUY',
+                'price': price_high,
+                'time': row['Datetime'],
+                'reason': 'Breakout Above Base Zone',
+                'quantity': quantity
+            })
+            base_high = price_high  # ✅ Flip support (Base High updates)
+        
+        # Sell Condition: Breaks below base_low
+        elif price_low < base_low:
+            signals.append({
+                'signal': 'SELL',
+                'price': price_low,
+                'time': row['Datetime'],
+                'reason': 'Breakout Below Base Zone',
+                'quantity': quantity
+            })
+            base_low = price_low  # ✅ Flip support (Base Low updates)
+
+    return signals if return_all_signals else (signals[-1] if signals else None)
 
 ##################################START To Execute ################################################
 
@@ -1858,7 +1956,10 @@ for i in range(1, len(unique_days)):
     # Call your trading signal function
     #signal = trading_signal_all_conditions1(day_df)
     #
-    signal = trading_signal_all_conditions2(day_df)
+    #signal = trading_signal_all_conditions2(day_df) 
+
+    signal = trading_signal_all_conditions_2_improved(day_df) 
+    
 #######################################################################################
     
 
