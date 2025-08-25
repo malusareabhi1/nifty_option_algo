@@ -1973,9 +1973,9 @@ def track_trade_exit(signal, option_prices_df):
 
 #st.write(signal)
 # 2. Fetch option premium data for that strike
-option_df = get_option_data_realtime(signal['spot_price'], signal['expiry'], signal['strike'])  # 15m candles
+#option_df = get_option_data_realtime(signal['spot_price'], signal['expiry'], signal['strike'])  # 15m candles
 
 # 3. Track exit
-trade_result = track_trade_exit(signal, option_df)
-st.write(trade_result)
+#trade_result = track_trade_exit(signal, option_df)
+#st.write(trade_result)
 
