@@ -1956,9 +1956,9 @@ for i in range(1, len(unique_days)):
     # Call your trading signal function
     #signal = trading_signal_all_conditions1(day_df)
     #
-    #signal = trading_signal_all_conditions2(day_df) 
+    signal = trading_signal_all_conditions2(day_df) 
 
-    signal = trading_signal_all_conditions_2_improved(day_df) 
+    #signal = trading_signal_all_conditions_2_improved(day_df) 
     
 #######################################################################################
     
