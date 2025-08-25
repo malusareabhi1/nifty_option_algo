@@ -1320,6 +1320,8 @@ def compute_performance(signal_df, brokerage_per_trade=20, gst_rate=0.18, stamp_
     # ✅ Add Net Expense and Net PnL
     cost_per_trade_list = []
     net_pnl_list = []
+    capital_needed_list = []
+    capital_after_list = []
     
     for idx, row in pnl_per_day.iterrows():
         day_trades = signal_df[signal_df['Date'] == row['Date']]
@@ -1332,13 +1334,20 @@ def compute_performance(signal_df, brokerage_per_trade=20, gst_rate=0.18, stamp_
             stamp_duty = turnover * stamp_duty_rate
             total_cost = brokerage + gst + stamp_duty
             day_expense += total_cost
+
+             # Calculate capital needed for each trade
+            trade_capital = trade['Buy Premium'] * trade['Quantity']
+            day_capital_needed += trade_capital
         
         cost_per_trade_list.append(round(day_expense, 2))
         net_pnl_list.append(round(row['PnL'] - day_expense, 2))
+        capital_needed_list.append(round(day_capital_needed, 2))
     
     pnl_per_day['Total PnL'] = pnl_per_day['PnL'].round(2)
     pnl_per_day['Net Expense'] = cost_per_trade_list
     pnl_per_day['Net PnL'] = net_pnl_list
+    pnl_per_day['Capital Needed'] = capital_needed_list  # ✅ Added
+    pnl_per_day['Capital After'] = capital_after_list  # ✅ Added
     
     # ✅ Drop old raw PnL column for clarity (optional)
     pnl_per_day = pnl_per_day[['Date', 'Total PnL', 'Net Expense', 'Net PnL']]
@@ -1358,7 +1367,8 @@ def compute_performance(signal_df, brokerage_per_trade=20, gst_rate=0.18, stamp_
         "Max PnL": round(max_pnl, 2),
         "Min PnL": round(min_pnl, 2),
         "Total Expense": round(total_expense, 2),  # ✅ Added this line
-        "Net PnL (After Expenses)": round(sum(net_pnl_list), 2)
+        "Net PnL (After Expenses)": round(sum(net_pnl_list), 2),
+        "Final Capital": round(current_capital, 2)
     }
     
     summary_df = pd.DataFrame([summary])
