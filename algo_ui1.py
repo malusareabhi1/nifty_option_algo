@@ -7,6 +7,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+st.sidebar.image("shree.jpg", use_container_width=True)  # Correct parameter
 # ------------------------------------------------------------
 # Page Config & Global Theming
 # ------------------------------------------------------------
