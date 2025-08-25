@@ -1857,67 +1857,16 @@ for i in range(1, len(unique_days)):
 
     # Call your trading signal function
     #signal = trading_signal_all_conditions1(day_df)
-    #signal = trading_signal_all_conditions2(day_df)
+    #
+    signal = trading_signal_all_conditions2(day_df)
 #######################################################################################
-    def trading_signal_debug(df, quantity=10*75):
-        signals = []
-        df = df.copy()
-        df['Date'] = df['Datetime'].dt.date
-        unique_days = sorted(df['Date'].unique())
     
-        if len(unique_days) < 2:
-            print("❌ Not enough history (need at least 2 days).")
-            return None
-    
-        day0 = unique_days[-2]
-        day1 = unique_days[-1]
-    
-        # --- Step 1: Base Zone ---
-        candle_base = df[(df['Date'] == day0) &
-                         (df['Datetime'].dt.hour == 15) &
-                         (df['Datetime'].dt.minute == 0)]
-        if candle_base.empty:
-            print(f"❌ No 15:00 candle found for {day0}. Base Zone missing.")
-            return None
-    
-        base_open = candle_base.iloc[0]['Open_^NSEI']
-        base_close = candle_base.iloc[0]['Close_^NSEI']
-        base_low = min(base_open, base_close)
-        base_high = max(base_open, base_close)
-        print(f"✅ Base Zone: {base_low} - {base_high}")
-    
-        # --- Step 2: Day 1 first candle ---
-        candle1 = df[(df['Date'] == day1) &
-                     (df['Datetime'].dt.hour == 9) &
-                     (df['Datetime'].dt.minute == 15)]
-        if candle1.empty:
-            print(f"❌ No 09:15 candle found for {day1}.")
-            return None
-    
-        H1 = candle1.iloc[0]['High_^NSEI']
-        L1 = candle1.iloc[0]['Low_^NSEI']
-        C1 = candle1.iloc[0]['Close_^NSEI']
-        print(f"✅ Day1 First Candle H:{H1}, L:{L1}, C:{C1}")
-    
-        # --- Step 3: Check conditions ---
-        if (L1 <= base_high and H1 >= base_low) and (C1 > base_high):
-            print("🔥 Condition 1 triggered (Bullish breakout)")
-        elif C1 < base_low:
-            print("🔥 Condition 2 setup (Gap down)")
-        elif C1 > base_high:
-            print("🔥 Condition 3 setup (Gap up)")
-        elif (L1 <= base_high and H1 >= base_low) and (C1 < base_low):
-            print("🔥 Condition 4 triggered (Bearish breakdown)")
-        else:
-            print("❌ No conditions satisfied.")
-    
-        return None
 
     ##################################################################
     
-    trading_signal_debug(df)
+    #trading_signal_debug(df)
     
-    signal = trading_signal_all_conditions2_improved(day_df)
+    #signal = trading_signal_all_conditions2_improved(day_df)
     
     #st.write(signal)
     if signal:
