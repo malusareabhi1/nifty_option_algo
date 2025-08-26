@@ -170,6 +170,22 @@ else:
 
 
     st.plotly_chart(fig, use_container_width=True)
+    # After plotting the candlestick chart
+    three_pm = df[(df['Datetime'].dt.time >= pd.to_datetime('15:00').time()) &
+                  (df['Datetime'].dt.time < pd.to_datetime('15:15').time())]
+    
+    if not three_pm.empty:
+        three_pm_row = three_pm.iloc[0]
+        ax.axvline(x=mdates.date2num(three_pm_row['Datetime']), color='red', linestyle='--', linewidth=1.5)
+    
+        # Add label "3 PM Candle" at its position
+        ax.text(mdates.date2num(three_pm_row['Datetime']),
+                three_pm_row['High'] + (three_pm_row['High'] * 0.001),  # Slightly above the candle high
+                "3 PM Candle",
+                color='red',
+                fontsize=10,
+                fontweight='bold',
+                ha='center')
    
 
 def display_3pm_candle_info(df, day):
