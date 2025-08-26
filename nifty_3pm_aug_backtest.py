@@ -130,6 +130,44 @@ else:
     # Determine dynamic height based on data length (minimum 400, maximum 900)
     dynamic_height = max(400, min(len(df) * 10, 900))
 
+        fig = go.Figure(data=[go.Candlestick(
+        x=df_filtered['Datetime'],
+        open=df_filtered['Open'],
+        high=df_filtered['High'],
+        low=df_filtered['Low'],
+        close=df_filtered['Close'],
+        name="Candlestick",
+        increasing_line_color='green',
+        decreasing_line_color='red'
+    )])
+    
+    # Highlight 3 PM candle
+    three_pm_candle = df_filtered[df_filtered['Datetime'].dt.time == pd.to_datetime("15:00", format="%H:%M").time()]
+    if not three_pm_candle.empty:
+        fig.add_trace(go.Candlestick(
+            x=three_pm_candle['Datetime'],
+            open=three_pm_candle['Open'],
+            high=three_pm_candle['High'],
+            low=three_pm_candle['Low'],
+            close=three_pm_candle['Close'],
+            name="3 PM Candle",
+            increasing_line_color='blue',
+            decreasing_line_color='blue',
+            line=dict(width=4)  # Make it bold
+        ))
+    
+    # Auto-adjust chart height
+    fig.update_layout(
+        title="Candlestick Chart with Bold 3 PM Candle",
+        yaxis_title="Price",
+        xaxis_title="Datetime",
+        height=600,  # Auto-adjustable based on container
+        margin=dict(l=10, r=10, t=40, b=40)
+    )
+    
+        
+    
+
 
     st.plotly_chart(fig, use_container_width=True)
    
