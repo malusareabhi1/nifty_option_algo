@@ -164,12 +164,7 @@ else:
         height=600,  # Auto-adjustable based on container
         margin=dict(l=10, r=10, t=40, b=40)
     )
-    
-        
-    
 
-
-    st.plotly_chart(fig, use_container_width=True)
     # After plotting the candlestick chart
     three_pm = df[(df['Datetime'].dt.time >= pd.to_datetime('15:00').time()) &
                   (df['Datetime'].dt.time < pd.to_datetime('15:15').time())]
@@ -185,8 +180,12 @@ else:
                 color='red',
                 fontsize=10,
                 fontweight='bold',
-                ha='center')
-   
+                ha='center')        
+    
+
+
+    st.plotly_chart(fig, use_container_width=True)
+    
 
 def display_3pm_candle_info(df, day):
     """
