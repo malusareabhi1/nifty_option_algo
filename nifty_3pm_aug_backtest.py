@@ -127,6 +127,8 @@ else:
             ]
         )
     )
+    # Determine dynamic height based on data length (minimum 400, maximum 900)
+    dynamic_height = max(400, min(len(df) * 10, 900))
 
 
     st.plotly_chart(fig, use_container_width=True)
