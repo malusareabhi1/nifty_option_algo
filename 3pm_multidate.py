@@ -2196,7 +2196,7 @@ if signal_log_list:
     signal_log_df_with_pnl = compute_trade_pnl(signal_log_df, df)
     
     # Performance summary
-    perf_summary_df, pnl_per_day = compute_performance(signal_log_df_with_pnl)
+    perf_summary_df, pnl_per_day = compute_performance1(signal_log_df_with_pnl)
     
     
     
