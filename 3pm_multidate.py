@@ -1299,6 +1299,7 @@ def compute_performance1(signal_df, brokerage_per_trade=20, gst_rate=0.18, stamp
     - summary_df: Overall performance summary (including Total Expense)
     - pnl_per_day: Daily PnL with Total PnL, Net Expense, and Net PnL
     """
+    day_capital_needed=0
     total_trades = len(signal_df)
     winning_trades = signal_df[signal_df['PnL'] > 0]
     losing_trades = signal_df[signal_df['PnL'] <= 0]
