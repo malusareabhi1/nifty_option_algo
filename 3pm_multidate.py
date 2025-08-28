@@ -1291,7 +1291,7 @@ def compute_trade_pnl(signal_log_df, df):
 #####################################################################################
 
 
-def compute_performance(signal_df, brokerage_per_trade=20, gst_rate=0.18, stamp_duty_rate=0.00015):
+def compute_performance1(signal_df, brokerage_per_trade=20, gst_rate=0.18, stamp_duty_rate=0.00015):
     """
     Compute performance summary from signal log with PnL and include daily costs.
     
@@ -1376,6 +1376,94 @@ def compute_performance(signal_df, brokerage_per_trade=20, gst_rate=0.18, stamp_
 
 ###################################################################################
 
+
+def compute_performance(signal_df, brokerage_per_trade=20, gst_rate=0.18, stamp_duty_rate=0.00015, starting_capital=0):
+    """
+    Compute performance summary from signal log with PnL and include daily costs.
+    
+    Returns:
+    - summary_df: Overall performance summary (including Total Expense)
+    - pnl_per_day: Daily PnL with Total PnL, Net Expense, and Net PnL
+    """
+    import pandas as pd
+    
+    total_trades = len(signal_df)
+    winning_trades = signal_df[signal_df['PnL'] > 0]
+    losing_trades = signal_df[signal_df['PnL'] <= 0]
+    
+    total_pnl = signal_df['PnL'].sum()
+    avg_pnl = signal_df['PnL'].mean() if total_trades > 0 else 0
+    max_pnl = signal_df['PnL'].max() if total_trades > 0 else 0
+    min_pnl = signal_df['PnL'].min() if total_trades > 0 else 0
+    
+    win_pct = len(winning_trades) / total_trades * 100 if total_trades > 0 else 0
+    loss_pct = len(losing_trades) / total_trades * 100 if total_trades > 0 else 0
+    
+    # Group by date and calculate daily PnL
+    pnl_per_day = signal_df.groupby('Date').agg({'PnL': 'sum', 'Quantity': 'sum'}).reset_index()
+    
+    cost_per_trade_list = []
+    net_pnl_list = []
+    capital_needed_list = []
+    capital_after_list = []
+    
+    current_capital = starting_capital  # Initialize overall capital tracker
+    
+    for idx, row in pnl_per_day.iterrows():
+        day_trades = signal_df[signal_df['Date'] == row['Date']]
+        day_expense = 0
+        day_capital_needed = 0  # Initialize daily capital before summing
+        
+        for _, trade in day_trades.iterrows():
+            turnover = trade['Buy Premium'] * trade['Quantity'] * 2  # Buy + Sell
+            brokerage = brokerage_per_trade
+            gst = brokerage * gst_rate
+            stamp_duty = turnover * stamp_duty_rate
+            total_cost = brokerage + gst + stamp_duty
+            day_expense += total_cost
+
+            # Calculate capital needed for each trade
+            trade_capital = trade['Buy Premium'] * trade['Quantity']
+            day_capital_needed += trade_capital
+        
+        # Update capital after daily PnL
+        current_capital += row['PnL'] - day_expense
+        
+        cost_per_trade_list.append(round(day_expense, 2))
+        net_pnl_list.append(round(row['PnL'] - day_expense, 2))
+        capital_needed_list.append(round(day_capital_needed, 2))
+        capital_after_list.append(round(current_capital, 2))
+    
+    pnl_per_day['Total PnL'] = pnl_per_day['PnL'].round(2)
+    pnl_per_day['Net Expense'] = cost_per_trade_list
+    pnl_per_day['Net PnL'] = net_pnl_list
+    pnl_per_day['Capital Needed'] = capital_needed_list
+    pnl_per_day['Capital After'] = capital_after_list
+    
+    pnl_per_day = pnl_per_day[['Date', 'Total PnL', 'Net Expense', 'Net PnL', 'Capital Needed', 'Capital After']]
+    
+    total_expense = sum(cost_per_trade_list)
+    
+    summary = {
+        "Total Trades": total_trades,
+        "Winning Trades": len(winning_trades),
+        "Losing Trades": len(losing_trades),
+        "Win %": round(win_pct, 2),
+        "Loss %": round(loss_pct, 2),
+        "Total PnL": round(total_pnl, 2),
+        "Average PnL": round(avg_pnl, 2),
+        "Max PnL": round(max_pnl, 2),
+        "Min PnL": round(min_pnl, 2),
+        "Total Expense": round(total_expense, 2),
+        "Net PnL (After Expenses)": round(sum(net_pnl_list), 2),
+        "Final Capital": round(current_capital, 2)
+    }
+    
+    summary_df = pd.DataFrame([summary])
+    return summary_df, pnl_per_day
+
+
+##########################################################################################################################
 
 def calculate_trade_cost(buy_price, sell_price, quantity, option_type="CE", brokerage_type="fixed"):
     """
