@@ -1586,22 +1586,25 @@ def get_nearest_itm_option(spot_price, option_type="CALL", strike_step=50):
     else:
         raise ValueError("option_type must be either 'CALL' or 'PUT'")
 
+#################################################################################################################################
 
 
 
-def trading_signal_all_conditions2(df, quantity=10*75, return_all_signals=False):
+import pandas as pd
+
+# --- Main Strategy ---
+def trading_signal_all_conditions2_newlogic(df, quantity=10*75, return_all_signals=False):
     """
-    Base Zone Strategy - NIFTY Index Options (15-min candles)
+    Base Zone Strategy (Revised Logic)
 
     Parameters
     ----------
     df : pd.DataFrame
-        Must contain ['Datetime','Open_^NSEI','High_^NSEI','Low_^NSEI','Close_^NSEI'] in 15m timeframe
+        Must contain ['Datetime','Open_^NSEI','High_^NSEI','Low_^NSEI','Close_^NSEI']
     quantity : int
-        Total units (default 10 lots = 750, since 1 lot = 75)
+        Default 10 lots = 750
     return_all_signals : bool
-        If True -> return list of all signals
-        If False -> return first valid signal
+        If True, return list of signals; else return first valid signal.
 
     Returns
     -------
@@ -1611,14 +1614,15 @@ def trading_signal_all_conditions2(df, quantity=10*75, return_all_signals=False)
     signals = []
     df = df.copy()
     df['Date'] = df['Datetime'].dt.date
+
     unique_days = sorted(df['Date'].unique())
     if len(unique_days) < 2:
-        return None  # Not enough history
+        return None
 
-    # --- Step 1: Base Zone (Day 0, 15:00–15:15 candle) ---
     day0 = unique_days[-2]
     day1 = unique_days[-1]
 
+    # --- Step 1: Base Zone from Day 0, 15:00 candle ---
     candle_base = df[(df['Date'] == day0) &
                      (df['Datetime'].dt.hour == 15) &
                      (df['Datetime'].dt.minute == 0)]
@@ -1642,87 +1646,78 @@ def trading_signal_all_conditions2(df, quantity=10*75, return_all_signals=False)
     C1 = candle1.iloc[0]['Close_^NSEI']
     entry_time = candle1.iloc[0]['Datetime']
     spot_price = df['Close_^NSEI'].iloc[-1]
-
     expiry = get_nearest_weekly_expiry(pd.to_datetime(day1))
 
-    # --- Helper for creating a signal ---
-    def make_signal(condition, option_type, trigger_level, entry_time, message):
-        strike = get_nearest_itm_option(spot_price, option_type)  # placeholder
-        entry_price = trigger_level  # placeholder, in practice fetch option premium
+    # --- Shared order management wrapper ---
+    def make_signal(condition, option_type, trigger_level, trigger_time, ref_candle):
+        strike = get_nearest_itm_option(spot_price, option_type)
+        entry_price = trigger_level  # placeholder; in real use, fetch option premium
         return {
             'condition': condition,
             'option_type': option_type,
             'strike': strike,
             'trigger_level': trigger_level,
-            'entry_time': entry_time,
+            'entry_time': trigger_time,
             'expiry': expiry,
             'quantity': quantity,
             'spot_price': spot_price,
-            'sl_init': round(entry_price * 0.90, 2),       # 10% SL
-            'target1': round(entry_price * 1.10, 2),       # +10% partial profit
-            'trail_sl_rule': 'Ratchet to 90% of highest premium seen',
-            'time_exit': 'Exit 16 minutes after entry if no SL/TP',
-            'message': message
+            'sl_init': round(entry_price * 0.90, 2),
+            'partial_profit': round(entry_price * 1.10, 2),
+            'trail_sl_rule': 'Maintain 10% trailing SL on option premium',
+            'time_exit': 'Exit after 16 minutes if neither SL nor +10% target hit',
+            'ref_candle': ref_candle,
         }
 
-    # --- Step 3: Apply Conditions ---
+    # --- Step 3: Conditions ---
 
     # Condition 1: Break above Base Zone
-    if (L1 <= base_high and H1 >= base_low) and (C1 > base_high):
-        sig = make_signal(1, 'CALL', H1, entry_time,
-                          'Condition 1: Bullish breakout → Buy CALL on break above H1')
+    if (H1 >= base_low and L1 <= base_high) and (C1 > base_high):
+        sig = make_signal(1, 'CALL', H1, entry_time, 'Candle 1')
         signals.append(sig)
         if not return_all_signals: return sig
 
     # Condition 2: Major Gap Down
-    if C1 < base_low:
-        # wait for next candle break
+    elif C1 < base_low:
+        # Entry below L1 in next candles
         day1_after = df[(df['Date'] == day1) & (df['Datetime'] > entry_time)].sort_values('Datetime')
         for _, nxt in day1_after.iterrows():
             if nxt['Low_^NSEI'] <= L1:
-                sig = make_signal(2, 'PUT', L1, nxt['Datetime'],
-                                  'Condition 2: Gap down confirmed → Buy PUT below L1')
+                sig = make_signal(2, 'PUT', L1, nxt['Datetime'], 'Reference Candle 2')
                 signals.append(sig)
                 if not return_all_signals: return sig
                 break
-            if nxt['Close_^NSEI'] > base_high:  # Flip 2.7
-                ref_high = nxt['High_^NSEI']
-                sig = make_signal(2.7, 'CALL', ref_high, nxt['Datetime'],
-                                  'Condition 2 Flip: Close above Base Zone → Buy CALL above ref high')
+            if nxt['Close_^NSEI'] > base_high:
+                sig = make_signal(2.7, 'CALL', nxt['High_^NSEI'], nxt['Datetime'], 'Candle 2')
                 signals.append(sig)
                 if not return_all_signals: return sig
                 break
 
     # Condition 3: Major Gap Up
-    if C1 > base_high:
+    elif C1 > base_high:
         day1_after = df[(df['Date'] == day1) & (df['Datetime'] > entry_time)].sort_values('Datetime')
         for _, nxt in day1_after.iterrows():
             if nxt['High_^NSEI'] >= H1:
-                sig = make_signal(3, 'CALL', H1, nxt['Datetime'],
-                                  'Condition 3: Gap up confirmed → Buy CALL above H1')
+                sig = make_signal(3, 'CALL', H1, nxt['Datetime'], 'Reference Candle 3')
                 signals.append(sig)
                 if not return_all_signals: return sig
                 break
-            if nxt['Close_^NSEI'] < base_low:  # Flip 3.7
-                ref_low = nxt['Low_^NSEI']
-                sig = make_signal(3.7, 'PUT', ref_low, nxt['Datetime'],
-                                  'Condition 3 Flip: Close below Base Zone → Buy PUT below ref low')
+            if nxt['Close_^NSEI'] < base_low:
+                sig = make_signal(3.7, 'PUT', nxt['Low_^NSEI'], nxt['Datetime'], 'Candle 3')
                 signals.append(sig)
                 if not return_all_signals: return sig
                 break
 
     # Condition 4: Break below Base Zone
-    if (L1 <= base_high and H1 >= base_low) and (C1 < base_low):
-        sig = make_signal(4, 'PUT', L1, entry_time,
-                          'Condition 4: Bearish breakdown → Buy PUT on break below L1')
+    elif (H1 >= base_low and L1 <= base_high) and (C1 < base_low):
+        sig = make_signal(4, 'PUT', L1, entry_time, 'Candle 4')
         signals.append(sig)
         if not return_all_signals: return sig
 
     return signals if signals else None
-################################################################################################################
 
 
-import ta   # technical analysis library for EMA, ATR etc.
+####################################################################################################################################
+import ta   # technical analysis library for EMA, ATR etc.###########
 
 def trading_signal_all_conditions2_improved(df, quantity=10*75, return_all_signals=False):
     """
@@ -2059,8 +2054,9 @@ for i in range(1, len(unique_days)):
     # Call your trading signal function
     #signal = trading_signal_all_conditions1(day_df)
     #
-    signal = trading_signal_all_conditions2(day_df) 
+    #signal = trading_signal_all_conditions2(day_df) 
 
+    signal = trading_signal_all_conditions2_newlogic(day_df)  
     #signal = trading_signal_all_conditions_2_improved(day_df) 
     
 #######################################################################################
