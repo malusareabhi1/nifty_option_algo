@@ -1592,25 +1592,10 @@ def get_nearest_itm_option(spot_price, option_type="CALL", strike_step=50):
 
 import pandas as pd
 
-# --- Main Strategy ---
 def trading_signal_all_conditions2_newlogic(df, quantity=10*75, return_all_signals=False):
     """
-    Base Zone Strategy (Revised Logic)
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Must contain ['Datetime','Open_^NSEI','High_^NSEI','Low_^NSEI','Close_^NSEI']
-    quantity : int
-        Default 10 lots = 750
-    return_all_signals : bool
-        If True, return list of signals; else return first valid signal.
-
-    Returns
-    -------
-    dict or list(dict) or None
+    Revised Base Zone Strategy (returns signal dict(s) that include 'message' key)
     """
-
     signals = []
     df = df.copy()
     df['Date'] = df['Datetime'].dt.date
@@ -1622,7 +1607,7 @@ def trading_signal_all_conditions2_newlogic(df, quantity=10*75, return_all_signa
     day0 = unique_days[-2]
     day1 = unique_days[-1]
 
-    # --- Step 1: Base Zone from Day 0, 15:00 candle ---
+    # Base Zone: Day0 15:00 (15:00-15:15 candle)
     candle_base = df[(df['Date'] == day0) &
                      (df['Datetime'].dt.hour == 15) &
                      (df['Datetime'].dt.minute == 0)]
@@ -1634,7 +1619,7 @@ def trading_signal_all_conditions2_newlogic(df, quantity=10*75, return_all_signa
     base_low = min(base_open, base_close)
     base_high = max(base_open, base_close)
 
-    # --- Step 2: Day 1 first candle (09:15–09:30) ---
+    # Day1 first 15-min candle (09:15-09:30)
     candle1 = df[(df['Date'] == day1) &
                  (df['Datetime'].dt.hour == 9) &
                  (df['Datetime'].dt.minute == 15)]
@@ -1646,72 +1631,96 @@ def trading_signal_all_conditions2_newlogic(df, quantity=10*75, return_all_signa
     C1 = candle1.iloc[0]['Close_^NSEI']
     entry_time = candle1.iloc[0]['Datetime']
     spot_price = df['Close_^NSEI'].iloc[-1]
+
+    # expiry & strike helpers must exist in your module:
     expiry = get_nearest_weekly_expiry(pd.to_datetime(day1))
 
-    # --- Shared order management wrapper ---
-    def make_signal(condition, option_type, trigger_level, trigger_time, ref_candle):
+    def make_signal(condition, option_type, trigger_level, trigger_time, ref_candle_label, message):
         strike = get_nearest_itm_option(spot_price, option_type)
-        entry_price = trigger_level  # placeholder; in real use, fetch option premium
+        entry_price = trigger_level  # placeholder: in live you would fetch option premium at fill
         return {
             'condition': condition,
+            'message': message,
+            'ref_candle': ref_candle_label,
             'option_type': option_type,
             'strike': strike,
             'trigger_level': trigger_level,
-            'entry_time': trigger_time,
+            'entry_time': pd.to_datetime(trigger_time),
             'expiry': expiry,
             'quantity': quantity,
             'spot_price': spot_price,
-            'sl_init': round(entry_price * 0.90, 2),
-            'partial_profit': round(entry_price * 1.10, 2),
-            'trail_sl_rule': 'Maintain 10% trailing SL on option premium',
-            'time_exit': 'Exit after 16 minutes if neither SL nor +10% target hit',
-            'ref_candle': ref_candle,
+            # Order management / risk fields (as per your rules)
+            'sl_init': round(entry_price * 0.90, 4),          # 10% trailing SL from entry
+            'partial_profit': round(entry_price * 1.10, 4),   # 10% target for 50% book
+            'trail_sl_rule': '10% trailing SL on option premium (ratchet up only)',
+            'time_exit_mins': 16,
         }
 
-    # --- Step 3: Conditions ---
-
-    # Condition 1: Break above Base Zone
+    # ---------- Condition 1: Break above Base Zone on Day1 open ----------
+    # Cuts Base Zone (intersects) and closes above base_high
     if (H1 >= base_low and L1 <= base_high) and (C1 > base_high):
-        sig = make_signal(1, 'CALL', H1, entry_time, 'Candle 1')
+        msg = f"Cond 1: Candle cuts Base Zone and closes above base_high ({base_high}). Entry CALL above H1={H1}."
+        sig = make_signal(1, 'CALL', H1, entry_time, 'Candle 1', msg)
         signals.append(sig)
-        if not return_all_signals: return sig
+        if not return_all_signals:
+            return sig
 
-    # Condition 2: Major Gap Down
-    elif C1 < base_low:
-        # Entry below L1 in next candles
+    # ---------- Condition 2: Major Gap Down ----------
+    # First candle closes entirely below Base Zone
+    if C1 < base_low:
+        # Primary entry: next candles break below L1
         day1_after = df[(df['Date'] == day1) & (df['Datetime'] > entry_time)].sort_values('Datetime')
+        triggered = False
         for _, nxt in day1_after.iterrows():
             if nxt['Low_^NSEI'] <= L1:
-                sig = make_signal(2, 'PUT', L1, nxt['Datetime'], 'Reference Candle 2')
+                msg = f"Cond 2: Gap down confirmed. Enter PUT when price <= L1 ({L1})."
+                sig = make_signal(2, 'PUT', L1, nxt['Datetime'], 'Reference Candle 2', msg)
                 signals.append(sig)
-                if not return_all_signals: return sig
+                triggered = True
+                if not return_all_signals:
+                    return sig
                 break
+            # Flip / recovery: later candle closes above Base Zone -> flip to CALL (2.7)
             if nxt['Close_^NSEI'] > base_high:
-                sig = make_signal(2.7, 'CALL', nxt['High_^NSEI'], nxt['Datetime'], 'Candle 2')
+                msg = f"Cond 2.7 Flip: Price closed above Base Zone. Enter CALL above high {nxt['High_^NSEI']}."
+                sig = make_signal(2.7, 'CALL', nxt['High_^NSEI'], nxt['Datetime'], 'Candle 2 (flip)', msg)
                 signals.append(sig)
-                if not return_all_signals: return sig
+                triggered = True
+                if not return_all_signals:
+                    return sig
                 break
+        # continue to next condition if not triggered
 
-    # Condition 3: Major Gap Up
-    elif C1 > base_high:
+    # ---------- Condition 3: Major Gap Up ----------
+    if C1 > base_high:
         day1_after = df[(df['Date'] == day1) & (df['Datetime'] > entry_time)].sort_values('Datetime')
+        triggered = False
         for _, nxt in day1_after.iterrows():
             if nxt['High_^NSEI'] >= H1:
-                sig = make_signal(3, 'CALL', H1, nxt['Datetime'], 'Reference Candle 3')
+                msg = f"Cond 3: Gap up confirmed. Enter CALL when price >= H1 ({H1})."
+                sig = make_signal(3, 'CALL', H1, nxt['Datetime'], 'Reference Candle 3', msg)
                 signals.append(sig)
-                if not return_all_signals: return sig
+                triggered = True
+                if not return_all_signals:
+                    return sig
                 break
+            # Flip to PUT (3.7) if later candle closes below Base Zone
             if nxt['Close_^NSEI'] < base_low:
-                sig = make_signal(3.7, 'PUT', nxt['Low_^NSEI'], nxt['Datetime'], 'Candle 3')
+                msg = f"Cond 3.7 Flip: Price closed below Base Zone. Enter PUT below low {nxt['Low_^NSEI']}."
+                sig = make_signal(3.7, 'PUT', nxt['Low_^NSEI'], nxt['Datetime'], 'Candle 3 (flip)', msg)
                 signals.append(sig)
-                if not return_all_signals: return sig
+                triggered = True
+                if not return_all_signals:
+                    return sig
                 break
 
-    # Condition 4: Break below Base Zone
-    elif (H1 >= base_low and L1 <= base_high) and (C1 < base_low):
-        sig = make_signal(4, 'PUT', L1, entry_time, 'Candle 4')
+    # ---------- Condition 4: Break below Base Zone on Day1 open ----------
+    if (H1 >= base_low and L1 <= base_high) and (C1 < base_low):
+        msg = f"Cond 4: Candle cuts Base Zone and closes below base_low ({base_low}). Entry PUT below L1={L1}."
+        sig = make_signal(4, 'PUT', L1, entry_time, 'Candle 4', msg)
         signals.append(sig)
-        if not return_all_signals: return sig
+        if not return_all_signals:
+            return sig
 
     return signals if signals else None
 
