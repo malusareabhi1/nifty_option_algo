@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 
 st.set_page_config(layout="wide")
-st.title("Nifty 3PM Base Zone Strategy - Multi-Day Backtest")
+st.title("Nifty 3PM Trailing SL and Take Profit  Strategy - Multi-Day Backtest")
 
 
 
@@ -1454,7 +1454,7 @@ def trading_signal_all_conditions1_trail_sl(df, quantity=10*75, return_all_signa
 
 
 
-def trading_signal_all_conditions1(df, quantity=10*75, return_all_signals=False):
+def trading_signal_all_conditions1_changes_working(df, quantity=10*75, return_all_signals=False):
     """
     Evaluate trading conditions based on Base Zone strategy with:
     - CALL stop loss = recent swing low (last 10 candles)
@@ -1618,7 +1618,235 @@ def trading_signal_all_conditions1(df, quantity=10*75, return_all_signals=False)
 
     return signals if signals else None
 
+###############################################Here’s the complete implementation of your described logic with all four conditions, proper entry, stop loss rules,
+############################trailing stop loss, and time-based exit (after 16 minutes). The function will return either a single trade
+####################################signal or all signals based on return_all_signals.#######################################################################################
 
+def trading_signal_all_conditions1(df, quantity=10*75, return_all_signals=False):
+    """
+    Evaluate trading conditions based on Base Zone strategy with:
+    - CALL stop loss = recent swing low (last 10 candles)
+    - PUT stop loss = recent swing high (last 10 candles)
+    - Dynamic trailing stop loss based on swing points
+    - Time exit after 16 minutes if neither SL nor Target hit
+    - Single active trade per day
+    """
+
+    signals = []
+    spot_price = df['Close_^NSEI'].iloc[-1]
+
+    # Preprocess
+    df = df.copy()
+    df['Date'] = df['Datetime'].dt.date
+    unique_days = sorted(df['Date'].unique())
+    if len(unique_days) < 2:
+        return None
+
+    # Day 0 and Day 1
+    day0 = unique_days[-2]  # Previous trading day
+    day1 = unique_days[-1]  # Current trading day
+
+    # Get Base Zone from 3 PM candle of previous day
+    candle_3pm = df[(df['Date'] == day0) &
+                    (df['Datetime'].dt.hour == 15) &
+                    (df['Datetime'].dt.minute == 0)]
+    if candle_3pm.empty:
+        return None
+
+    base_open = candle_3pm.iloc[0]['Open_^NSEI']
+    base_close = candle_3pm.iloc[0]['Close_^NSEI']
+    base_low = min(base_open, base_close)
+    base_high = max(base_open, base_close)
+
+    # Get 09:15–09:30 candle of current day
+    candle_915 = df[(df['Date'] == day1) &
+                    (df['Datetime'].dt.hour == 9) &
+                    (df['Datetime'].dt.minute == 15)]
+    if candle_915.empty:
+        return None
+
+    H1 = candle_915.iloc[0]['High_^NSEI']
+    L1 = candle_915.iloc[0]['Low_^NSEI']
+    C1 = candle_915.iloc[0]['Close_^NSEI']
+    entry_time = candle_915.iloc[0]['Datetime']
+
+    expiry = get_nearest_weekly_expiry(pd.to_datetime(day1))
+
+    # Data after 09:30
+    day1_after_915 = df[(df['Date'] == day1) & (df['Datetime'] > entry_time)].sort_values('Datetime')
+
+    # ✅ Helper functions
+    def get_recent_swing(current_time):
+        """Get swing high/low from last 10 candles before current_time."""
+        recent_data = df[(df['Date'] == day1) & (df['Datetime'] < current_time)].tail(10)
+        if recent_data.empty:
+            return None, None
+        swing_high = recent_data['High_^NSEI'].max()
+        swing_low = recent_data['Low_^NSEI'].min()
+        return swing_high, swing_low
+
+    def update_trailing_sl(option_type, current_sl, current_time):
+        """Update trailing stop loss dynamically based on recent swing points."""
+        new_high, new_low = get_recent_swing(current_time)
+        if option_type == 'CALL' and new_low and new_low > current_sl:
+            return new_low
+        elif option_type == 'PUT' and new_high and new_high < current_sl:
+            return new_high
+        return current_sl
+
+    def monitor_trade(sig):
+        """Monitor trade after entry for trailing SL and time exit."""
+        current_sl = sig['stoploss']
+        entry_dt = sig['entry_time']
+        exit_deadline = entry_dt + timedelta(minutes=16)
+        exited = False
+
+        for _, candle in day1_after_915.iterrows():
+            if candle['Datetime'] > exit_deadline:
+                sig['exit_price'] = candle['Close_^NSEI']
+                sig['status'] = 'Exited due to time limit'
+                exited = True
+                break
+
+            # Update trailing SL
+            current_sl = update_trailing_sl(sig['option_type'], current_sl, candle['Datetime'])
+            sig['stoploss'] = current_sl
+
+            # Check SL hit
+            if sig['option_type'] == 'CALL' and candle['Low_^NSEI'] <= current_sl:
+                sig['exit_price'] = current_sl
+                sig['status'] = 'Exited at Trailing SL'
+                exited = True
+                break
+            elif sig['option_type'] == 'PUT' and candle['High_^NSEI'] >= current_sl:
+                sig['exit_price'] = current_sl
+                sig['status'] = 'Exited at Trailing SL'
+                exited = True
+                break
+
+        if not exited:
+            sig['exit_price'] = day1_after_915.iloc[-1]['Close_^NSEI']
+            sig['status'] = 'Exited at EOD'
+
+        return sig
+
+    # ✅ Condition 1 — Break above Base Zone on Day 1 open
+    if (L1 < base_high and H1 > base_low) and (C1 > base_high):
+        sig = {
+            'condition': 1,
+            'option_type': 'CALL',
+            'buy_price': H1,
+            'stoploss': get_recent_swing(entry_time)[1],  # swing low
+            'quantity': quantity,
+            'expiry': expiry,
+            'entry_time': entry_time,
+            'message': 'Condition 1: Bullish breakout above Base Zone → Buy CALL above H1',
+            'spot_price': spot_price
+        }
+        sig = monitor_trade(sig)
+        signals.append(sig)
+        if not return_all_signals:
+            return sig
+
+    # ✅ Condition 2 — Major Gap Down
+    if C1 < base_low:
+        for _, next_candle in day1_after_915.iterrows():
+            swing_high, swing_low = get_recent_swing(next_candle['Datetime'])
+            if next_candle['Low_^NSEI'] < L1:
+                sig = {
+                    'condition': 2,
+                    'option_type': 'PUT',
+                    'buy_price': L1,
+                    'stoploss': swing_high,
+                    'quantity': quantity,
+                    'expiry': expiry,
+                    'entry_time': next_candle['Datetime'],
+                    'message': 'Condition 2: Gap down confirmed → Buy PUT below L1',
+                    'spot_price': spot_price
+                }
+                sig = monitor_trade(sig)
+                signals.append(sig)
+                if not return_all_signals:
+                    return sig
+
+            # Flip rule 2.7: CALL after bullish recovery
+            if next_candle['Close_^NSEI'] > base_high:
+                ref_high = next_candle['High_^NSEI']
+                sig_flip = {
+                    'condition': 2.7,
+                    'option_type': 'CALL',
+                    'buy_price': ref_high,
+                    'stoploss': swing_low,
+                    'quantity': quantity,
+                    'expiry': expiry,
+                    'entry_time': next_candle['Datetime'],
+                    'message': 'Condition 2 Flip: Later candle closed above Base Zone → Buy CALL',
+                    'spot_price': spot_price
+                }
+                sig_flip = monitor_trade(sig_flip)
+                signals.append(sig_flip)
+                if not return_all_signals:
+                    return sig_flip
+
+    # ✅ Condition 3 — Major Gap Up
+    if C1 > base_high:
+        for _, next_candle in day1_after_915.iterrows():
+            swing_high, swing_low = get_recent_swing(next_candle['Datetime'])
+            if next_candle['High_^NSEI'] > H1:
+                sig = {
+                    'condition': 3,
+                    'option_type': 'CALL',
+                    'buy_price': H1,
+                    'stoploss': swing_low,
+                    'quantity': quantity,
+                    'expiry': expiry,
+                    'entry_time': next_candle['Datetime'],
+                    'message': 'Condition 3: Gap up confirmed → Buy CALL above H1',
+                    'spot_price': spot_price
+                }
+                sig = monitor_trade(sig)
+                signals.append(sig)
+                if not return_all_signals:
+                    return sig
+
+            # Flip rule 3.7: PUT after bearish recovery
+            if next_candle['Close_^NSEI'] < base_low:
+                ref_low = next_candle['Low_^NSEI']
+                sig_flip = {
+                    'condition': 3.7,
+                    'option_type': 'PUT',
+                    'buy_price': ref_low,
+                    'stoploss': swing_high,
+                    'quantity': quantity,
+                    'expiry': expiry,
+                    'entry_time': next_candle['Datetime'],
+                    'message': 'Condition 3 Flip: Later candle closed below Base Zone → Buy PUT',
+                    'spot_price': spot_price
+                }
+                sig_flip = monitor_trade(sig_flip)
+                signals.append(sig_flip)
+                if not return_all_signals:
+                    return sig_flip
+
+    # ✅ Condition 4 — Break below Base Zone on Day 1 open
+    if (L1 < base_high and H1 > base_low) and (C1 < base_low):
+        sig = {
+            'condition': 4,
+            'option_type': 'PUT',
+            'buy_price': L1,
+            'stoploss': get_recent_swing(entry_time)[0],  # swing high
+            'quantity': quantity,
+            'expiry': expiry,
+            'entry_time': entry_time,
+            'message': 'Condition 4: Bearish breakdown below Base Zone → Buy PUT below L1',
+            'spot_price': spot_price
+        }
+        sig = monitor_trade(sig)
+        signals.append(sig)
+        if not return_all_signals:
+            return sig
+
+    return signals if signals else None
 
 
 ###########################################################################################################################################
