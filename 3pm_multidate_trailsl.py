@@ -1240,7 +1240,7 @@ def trading_signal_all_conditions1_old_working(df, quantity=10*75, return_all_si
     return signals if signals else None
 #######################################################################################################################################
 
-def trading_signal_all_conditions1(df, quantity=10*75, return_all_signals=False):
+def trading_signal_all_conditions1_trail_sl(df, quantity=10*75, return_all_signals=False):
     """
     Evaluate trading conditions based on Base Zone strategy with Trailing Stop Loss:
     - CALL stop loss = recent swing low (before and after entry, updated dynamically)
@@ -1443,6 +1443,175 @@ def trading_signal_all_conditions1(df, quantity=10*75, return_all_signals=False)
             new_swing_high, new_swing_low = get_recent_swing(df[df['Date'] == day1], candle['Datetime'])
             if new_swing_high < sig['stoploss']:
                 sig['stoploss'] = new_swing_high
+        signals.append(sig)
+        if not return_all_signals:
+            return sig
+
+    return signals if signals else None
+
+######################################################take profit with trailing SL #######################################################################################
+
+
+
+
+def trading_signal_all_conditions1(df, quantity=10*75, return_all_signals=False):
+    """
+    Evaluate trading conditions based on Base Zone strategy with:
+    - CALL stop loss = recent swing low (last 10 candles)
+    - PUT stop loss = recent swing high (last 10 candles)
+    - Dynamic trailing stop loss based on swing points
+    - Take Profit triggered by trailing SL (exit when price hits SL)
+    """
+
+    signals = []
+    spot_price = df['Close_^NSEI'].iloc[-1]
+    df = df.copy()
+    df['Date'] = df['Datetime'].dt.date
+    unique_days = sorted(df['Date'].unique())
+    if len(unique_days) < 2:
+        return None
+
+    day0 = unique_days[-2]  # Previous day
+    day1 = unique_days[-1]  # Current day
+
+    # Get Base Zone from 3 PM candle of previous day
+    candle_3pm = df[(df['Date'] == day0) &
+                    (df['Datetime'].dt.hour == 15) &
+                    (df['Datetime'].dt.minute == 0)]
+    if candle_3pm.empty:
+        return None
+
+    base_open = candle_3pm.iloc[0]['Open_^NSEI']
+    base_close = candle_3pm.iloc[0]['Close_^NSEI']
+    base_low = min(base_open, base_close)
+    base_high = max(base_open, base_close)
+
+    # Get 09:15 candle of current day
+    candle_915 = df[(df['Date'] == day1) &
+                    (df['Datetime'].dt.hour == 9) &
+                    (df['Datetime'].dt.minute == 15)]
+    if candle_915.empty:
+        return None
+
+    H1 = candle_915.iloc[0]['High_^NSEI']
+    L1 = candle_915.iloc[0]['Low_^NSEI']
+    C1 = candle_915.iloc[0]['Close_^NSEI']
+    entry_time = candle_915.iloc[0]['Datetime']
+
+    expiry = get_nearest_weekly_expiry(pd.to_datetime(day1))
+    day1_after_915 = df[(df['Date'] == day1) & (df['Datetime'] > entry_time)].sort_values('Datetime')
+
+    # Helper: Get recent swing points from last 10 candles
+    def get_recent_swing(current_time):
+        recent_data = df[(df['Date'] == day1) & (df['Datetime'] < current_time)].tail(10)
+        swing_high = recent_data['High_^NSEI'].max()
+        swing_low = recent_data['Low_^NSEI'].min()
+        return swing_high, swing_low
+
+    # Helper: Update trailing stop loss
+    def update_trailing_sl(option_type, current_sl, current_time):
+        new_high, new_low = get_recent_swing(current_time)
+        if option_type == 'CALL':  # SL below recent swing low
+            if new_low > current_sl:
+                return new_low
+        elif option_type == 'PUT':  # SL above recent swing high
+            if new_high < current_sl:
+                return new_high
+        return current_sl
+
+    # Common function to monitor trade after entry
+    def monitor_trade(sig):
+        current_sl = sig['stoploss']
+        for _, candle in day1_after_915.iterrows():
+            # Update trailing stop loss dynamically
+            current_sl = update_trailing_sl(sig['option_type'], current_sl, candle['Datetime'])
+            sig['stoploss'] = current_sl
+
+            # Exit if price hits SL
+            if sig['option_type'] == 'CALL' and candle['Low_^NSEI'] <= current_sl:
+                sig['exit_price'] = current_sl
+                sig['status'] = 'Exited at Trailing SL'
+                break
+            elif sig['option_type'] == 'PUT' and candle['High_^NSEI'] >= current_sl:
+                sig['exit_price'] = current_sl
+                sig['status'] = 'Exited at Trailing SL'
+                break
+        return sig
+
+    # Condition 1: CALL breakout
+    if (L1 < base_high and H1 > base_low) and (C1 > base_high):
+        sig = {
+            'condition': 1,
+            'option_type': 'CALL',
+            'buy_price': H1,
+            'stoploss': get_recent_swing(entry_time)[1],  # swing low
+            'quantity': quantity,
+            'expiry': expiry,
+            'entry_time': entry_time,
+            'message': 'Condition 1: Bullish breakout above Base Zone → Buy CALL above H1',
+            'spot_price': spot_price
+        }
+        sig = monitor_trade(sig)
+        signals.append(sig)
+        if not return_all_signals:
+            return sig
+
+    # Condition 2: PUT continuation after gap down
+    if C1 < base_low:
+        for _, next_candle in day1_after_915.iterrows():
+            swing_high, swing_low = get_recent_swing(next_candle['Datetime'])
+            if next_candle['Low_^NSEI'] < L1:
+                sig = {
+                    'condition': 2,
+                    'option_type': 'PUT',
+                    'buy_price': L1,
+                    'stoploss': swing_high,  # swing high
+                    'quantity': quantity,
+                    'expiry': expiry,
+                    'entry_time': next_candle['Datetime'],
+                    'message': 'Condition 2: Gap down confirmed → Buy PUT below L1',
+                    'spot_price': spot_price
+                }
+                sig = monitor_trade(sig)
+                signals.append(sig)
+                if not return_all_signals:
+                    return sig
+
+    # Condition 3: CALL continuation after gap up
+    if C1 > base_high:
+        for _, next_candle in day1_after_915.iterrows():
+            swing_high, swing_low = get_recent_swing(next_candle['Datetime'])
+            if next_candle['High_^NSEI'] > H1:
+                sig = {
+                    'condition': 3,
+                    'option_type': 'CALL',
+                    'buy_price': H1,
+                    'stoploss': swing_low,
+                    'quantity': quantity,
+                    'expiry': expiry,
+                    'entry_time': next_candle['Datetime'],
+                    'message': 'Condition 3: Gap up confirmed → Buy CALL above H1',
+                    'spot_price': spot_price
+                }
+                sig = monitor_trade(sig)
+                signals.append(sig)
+                if not return_all_signals:
+                    return sig
+
+    # Condition 4: PUT breakdown
+    if (L1 < base_high and H1 > base_low) and (C1 < base_low):
+        sig = {
+            'condition': 4,
+            'option_type': 'PUT',
+            'buy_price': L1,
+            'stoploss': get_recent_swing(entry_time)[0],  # swing high
+            'quantity': quantity,
+            'expiry': expiry,
+            'entry_time': entry_time,
+            'message': 'Condition 4: Bearish breakdown below Base Zone → Buy PUT below L1',
+            'spot_price': spot_price
+        }
+        sig = monitor_trade(sig)
         signals.append(sig)
         if not return_all_signals:
             return sig
