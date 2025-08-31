@@ -1622,13 +1622,17 @@ def trading_signal_all_conditions1_changes_working(df, quantity=10*75, return_al
 ############################trailing stop loss, and time-based exit (after 16 minutes). The function will return either a single trade
 ####################################signal or all signals based on return_all_signals.#######################################################################################
 
+import numpy as np
+import pandas as pd
+from datetime import timedelta
+
 def trading_signal_all_conditions1(df, quantity=10*75, return_all_signals=False):
     """
     Evaluate trading conditions based on Base Zone strategy with:
     - CALL stop loss = recent swing low (last 10 candles)
     - PUT stop loss = recent swing high (last 10 candles)
     - Dynamic trailing stop loss based on swing points
-    - Time exit after 16 minutes if neither SL nor Target hit
+    - Time exit after 16 minutes if neither SL nor trailing SL hit
     - Single active trade per day
     """
 
@@ -1675,68 +1679,118 @@ def trading_signal_all_conditions1(df, quantity=10*75, return_all_signals=False)
     # Data after 09:30
     day1_after_915 = df[(df['Date'] == day1) & (df['Datetime'] > entry_time)].sort_values('Datetime')
 
-    # ✅ Helper functions
+    # Helper functions
     def get_recent_swing(current_time):
-        """Get swing high/low from last 10 candles before current_time."""
+        """
+        Return scalar swing_high, swing_low from last 10 candles before current_time.
+        If insufficient data return (np.nan, np.nan).
+        """
         recent_data = df[(df['Date'] == day1) & (df['Datetime'] < current_time)].tail(10)
         if recent_data.empty:
-            return None, None
+            return np.nan, np.nan
+        # ensure scalar float values (not Series)
         swing_high = recent_data['High_^NSEI'].max()
         swing_low = recent_data['Low_^NSEI'].min()
+        # convert numpy scalars to python floats when possible
+        swing_high = float(swing_high) if not pd.isna(swing_high) else np.nan
+        swing_low = float(swing_low) if not pd.isna(swing_low) else np.nan
         return swing_high, swing_low
 
     def update_trailing_sl(option_type, current_sl, current_time):
-        """Update trailing stop loss dynamically based on recent swing points."""
+        """
+        Safely update trailing SL using last-10-candle swing points.
+        - For CALL: SL tracks the most recent swing_low (move up only)
+        - For PUT: SL tracks the most recent swing_high (move down only)
+        """
         new_high, new_low = get_recent_swing(current_time)
-        if option_type == 'CALL' and new_low and new_low > current_sl:
-            return new_low
-        elif option_type == 'PUT' and new_high and new_high < current_sl:
-            return new_high
+
+        # CALL: set/raise SL to new_low if valid
+        if option_type == 'CALL':
+            if pd.isna(new_low):
+                # nothing to update
+                return current_sl
+            # if current_sl is missing, initialize it
+            if current_sl is None or pd.isna(current_sl):
+                return new_low
+            # update only if new_low is higher than current_sl (trail upward)
+            if new_low > current_sl:
+                return new_low
+            return current_sl
+
+        # PUT: set/lower SL to new_high if valid
+        if option_type == 'PUT':
+            if pd.isna(new_high):
+                return current_sl
+            if current_sl is None or pd.isna(current_sl):
+                return new_high
+            # update only if new_high is lower than current_sl (trail downward)
+            if new_high < current_sl:
+                return new_high
+            return current_sl
+
         return current_sl
 
     def monitor_trade(sig):
-        """Monitor trade after entry for trailing SL and time exit."""
-        current_sl = sig['stoploss']
+        """
+        Monitor trade after entry:
+        - update trailing SL every new 15-min candle
+        - exit when SL is hit or when 16 minutes passed since entry (time exit)
+        - safe handling when there are no monitoring candles
+        """
+        current_sl = sig.get('stoploss', None)
         entry_dt = sig['entry_time']
         exit_deadline = entry_dt + timedelta(minutes=16)
-        exited = False
 
+        # if there are no candles to monitor, exit immediately at entry (safe fallback)
+        if day1_after_915.empty:
+            sig['exit_price'] = sig.get('buy_price', spot_price)
+            sig['status'] = 'No candles to monitor - exited'
+            return sig
+
+        exited = False
         for _, candle in day1_after_915.iterrows():
-            if candle['Datetime'] > exit_deadline:
+            # Time exit check (exit at or after deadline)
+            if candle['Datetime'] >= exit_deadline:
+                # Exit at market (use candle close as approximation of market exit)
                 sig['exit_price'] = candle['Close_^NSEI']
                 sig['status'] = 'Exited due to time limit'
                 exited = True
                 break
 
-            # Update trailing SL
+            # Update trailing SL safely
             current_sl = update_trailing_sl(sig['option_type'], current_sl, candle['Datetime'])
             sig['stoploss'] = current_sl
 
-            # Check SL hit
-            if sig['option_type'] == 'CALL' and candle['Low_^NSEI'] <= current_sl:
-                sig['exit_price'] = current_sl
-                sig['status'] = 'Exited at Trailing SL'
-                exited = True
-                break
-            elif sig['option_type'] == 'PUT' and candle['High_^NSEI'] >= current_sl:
-                sig['exit_price'] = current_sl
-                sig['status'] = 'Exited at Trailing SL'
-                exited = True
-                break
+            # Only check SL-hit if SL is a valid numeric value
+            if sig['option_type'] == 'CALL' and pd.notna(current_sl):
+                if candle['Low_^NSEI'] <= current_sl:
+                    sig['exit_price'] = current_sl
+                    sig['status'] = 'Exited at Trailing SL'
+                    exited = True
+                    break
+            elif sig['option_type'] == 'PUT' and pd.notna(current_sl):
+                if candle['High_^NSEI'] >= current_sl:
+                    sig['exit_price'] = current_sl
+                    sig['status'] = 'Exited at Trailing SL'
+                    exited = True
+                    break
 
+        # If not exited in loop, set EOD exit (or last candle close)
         if not exited:
-            sig['exit_price'] = day1_after_915.iloc[-1]['Close_^NSEI']
-            sig['status'] = 'Exited at EOD'
+            last_close = day1_after_915.iloc[-1]['Close_^NSEI']
+            sig['exit_price'] = last_close
+            sig['status'] = 'Exited at EOD/no SL hit'
 
         return sig
 
-    # ✅ Condition 1 — Break above Base Zone on Day 1 open
+    # Condition 1 — Break above Base Zone (CALL)
     if (L1 < base_high and H1 > base_low) and (C1 > base_high):
+        swing_high, swing_low = get_recent_swing(entry_time)
         sig = {
             'condition': 1,
             'option_type': 'CALL',
             'buy_price': H1,
-            'stoploss': get_recent_swing(entry_time)[1],  # swing low
+            'stoploss': swing_low,  # may be np.nan if insufficient history
             'quantity': quantity,
             'expiry': expiry,
             'entry_time': entry_time,
@@ -1748,11 +1802,12 @@ def trading_signal_all_conditions1(df, quantity=10*75, return_all_signals=False)
         if not return_all_signals:
             return sig
 
-    # ✅ Condition 2 — Major Gap Down
+    # Condition 2 — Major Gap Down (PUT) and flip 2.7
     if C1 < base_low:
         for _, next_candle in day1_after_915.iterrows():
             swing_high, swing_low = get_recent_swing(next_candle['Datetime'])
-            if next_candle['Low_^NSEI'] < L1:
+            # Primary PUT entry on break below L1
+            if next_candle['Low_^NSEI'] <= L1:
                 sig = {
                     'condition': 2,
                     'option_type': 'PUT',
@@ -1769,7 +1824,7 @@ def trading_signal_all_conditions1(df, quantity=10*75, return_all_signals=False)
                 if not return_all_signals:
                     return sig
 
-            # Flip rule 2.7: CALL after bullish recovery
+            # Flip rule 2.7: bullish recovery -> CALL
             if next_candle['Close_^NSEI'] > base_high:
                 ref_high = next_candle['High_^NSEI']
                 sig_flip = {
@@ -1788,11 +1843,11 @@ def trading_signal_all_conditions1(df, quantity=10*75, return_all_signals=False)
                 if not return_all_signals:
                     return sig_flip
 
-    # ✅ Condition 3 — Major Gap Up
+    # Condition 3 — Major Gap Up (CALL) and flip 3.7
     if C1 > base_high:
         for _, next_candle in day1_after_915.iterrows():
             swing_high, swing_low = get_recent_swing(next_candle['Datetime'])
-            if next_candle['High_^NSEI'] > H1:
+            if next_candle['High_^NSEI'] >= H1:
                 sig = {
                     'condition': 3,
                     'option_type': 'CALL',
@@ -1809,7 +1864,7 @@ def trading_signal_all_conditions1(df, quantity=10*75, return_all_signals=False)
                 if not return_all_signals:
                     return sig
 
-            # Flip rule 3.7: PUT after bearish recovery
+            # Flip rule 3.7: bearish recovery -> PUT
             if next_candle['Close_^NSEI'] < base_low:
                 ref_low = next_candle['Low_^NSEI']
                 sig_flip = {
@@ -1828,13 +1883,14 @@ def trading_signal_all_conditions1(df, quantity=10*75, return_all_signals=False)
                 if not return_all_signals:
                     return sig_flip
 
-    # ✅ Condition 4 — Break below Base Zone on Day 1 open
+    # Condition 4 — Break below Base Zone on Day 1 open (PUT)
     if (L1 < base_high and H1 > base_low) and (C1 < base_low):
+        swing_high, swing_low = get_recent_swing(entry_time)
         sig = {
             'condition': 4,
             'option_type': 'PUT',
             'buy_price': L1,
-            'stoploss': get_recent_swing(entry_time)[0],  # swing high
+            'stoploss': swing_high,
             'quantity': quantity,
             'expiry': expiry,
             'entry_time': entry_time,
