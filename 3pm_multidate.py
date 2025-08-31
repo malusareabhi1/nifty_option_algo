@@ -1214,13 +1214,15 @@ def trading_signal_all_conditions1_old(df, quantity=10*75, return_all_signals=Fa
                 signals.append(sig_flip)
                 if not return_all_signals:
                     return sig_flip
+                    sig
+                    {
             'take_profit': L1 * 0.90,
             'quantity': quantity,
             'expiry': expiry,
             'entry_time': entry_time,
             'message': 'Condition 4: Bearish breakdown below Base Zone → Buy PUT below L1',
             'spot_price': spot_price
-        
+                    }
         signals.append(sig)
         if not return_all_signals:
             return sig
