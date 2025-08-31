@@ -1062,7 +1062,7 @@ def trading_signal_all_condition(df: pd.DataFrame) -> pd.DataFrame:
     return df
 ##################-------------------------------------------------------------------------#
 
-def trading_signal_all_conditions1-old(df, quantity=10*75, return_all_signals=False):
+def trading_signal_all_conditions1_old(df, quantity=10*75, return_all_signals=False):
     """
     Evaluate trading conditions based on Base Zone strategy.
 
