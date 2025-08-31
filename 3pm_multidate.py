@@ -1257,7 +1257,8 @@ def compute_trade_pnl(signal_log_df, df):
             'condition': 4,
             'option_type': 'PUT',
             'buy_price': L1,
-            'stoploss': L1 * 1.10,
+            'stoploss': L1 * 1.10
+        }
         day_df = df[df['Datetime'].dt.date == day]
         day_after_entry = day_df[day_df['Datetime'] >= entry_time].sort_values('Datetime')
 
