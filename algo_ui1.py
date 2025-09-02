@@ -2,6 +2,7 @@ import time
 from datetime import datetime, timedelta
 from typing import Dict
 
+
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
@@ -475,8 +476,7 @@ elif MENU == "Dashboard":
     
 
     with right:
-        from datetime import datetime, timedelta
-        import plotly.graph_objects as go
+        
         
         # Function to plot candlestick chart
         def plot_candles(df, title="Candlestick Chart"):
