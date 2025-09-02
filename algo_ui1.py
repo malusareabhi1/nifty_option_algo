@@ -475,9 +475,8 @@ elif MENU == "Dashboard":
 
     
 
-    with right:
-        
-        
+    with right:     
+        st.subheader("NIFTY 15-Minute Candlestick Chart (Today + Previous Day)")
         # Function to plot candlestick chart
         def plot_candles(df, title="Candlestick Chart"):
             fig = go.Figure(data=[go.Candlestick(
@@ -492,7 +491,7 @@ elif MENU == "Dashboard":
             st.plotly_chart(fig, use_container_width=True)
 
             # Streamlit UI
-            st.subheader("NIFTY 15-Minute Candlestick Chart (Today + Previous Day)")
+            
             
             # Fetch NIFTY 50 index data
             ticker = "^NSEI"  # NIFTY Index symbol for Yahoo Finance
