@@ -475,18 +475,47 @@ elif MENU == "Dashboard":
     
 
     with right:
-        st.subheader("Chart (Demo)")
-        # Create fake ohlc for demo
-        dt = pd.date_range(datetime.now() - timedelta(hours=4), periods=32, freq="7min")
-        base = 100 + np.cumsum(np.random.normal(0, 0.5, len(dt)))
-        dfc = pd.DataFrame({
-            "Datetime": dt,
-            "Open": base + np.random.normal(0, 0.5, len(dt)),
-            "High": base + np.random.uniform(0.2, 1.2, len(dt)),
-            "Low": base - np.random.uniform(0.2, 1.2, len(dt)),
-            "Close": base + np.random.normal(0, 0.5, len(dt)),
-        })
-        plot_candles(dfc, title=f"{st.session_state.live_strategy} – Intraday")
+        from datetime import datetime, timedelta
+        import plotly.graph_objects as go
+        
+        # Function to plot candlestick chart
+        def plot_candles(df, title="Candlestick Chart"):
+            fig = go.Figure(data=[go.Candlestick(
+                x=df['Datetime'],
+                open=df['Open'],
+                high=df['High'],
+                low=df['Low'],
+                close=df['Close'],
+                name='candlestick'
+            )])
+            fig.update_layout(title=title, xaxis_rangeslider_visible=False)
+            st.plotly_chart(fig, use_container_width=True)
+
+            # Streamlit UI
+            st.subheader("NIFTY 15-Minute Candlestick Chart (Today + Previous Day)")
+            
+            # Fetch NIFTY 50 index data
+            ticker = "^NSEI"  # NIFTY Index symbol for Yahoo Finance
+            end = datetime.now()
+            start = end - timedelta(days=2)  # Last 2 days
+            
+            # Download data from yfinance
+            df = yf.download(ticker, start=start, end=end, interval="15m")
+            
+            # Reset index for proper plotting
+            df = df.reset_index()
+            df.rename(columns={"Datetime": "Datetime"}, inplace=True)
+            
+            # Filter only today and previous day
+            df['Date'] = df['Datetime'].dt.date
+            unique_days = sorted(df['Date'].unique())
+            if len(unique_days) >= 2:
+                filtered_df = df[df['Date'].isin(unique_days[-2:])]
+            else:
+                filtered_df = df
+            
+            # Plot chart
+            plot_candles(filtered_df, title="NIFTY 15-Min Candlestick (Last 2 Days)")
 
     st.divider()
 
