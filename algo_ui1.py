@@ -454,9 +454,19 @@ elif MENU == "Dashboard":
                 return "color: red;"
             else:
                 return "color: black;"
+
+                # Custom color function for Styler
+        def color_positive_negative(val):
+            color = 'green' if val > 0 else 'red'
+            return f'color: {color}; font-weight: bold;'
+        
+        # Apply colors to all columns
+        styled_df = df.style.format({"LTP": "{:.2f}", "Change%": "{:.2f}"}).applymap(color_positive_negative, subset=["LTP", "Change%"]).applymap(
+            lambda x: 'color: black; font-weight: bold;', subset=["Symbol"]
+        )
         
         # Apply style
-        styled_df = df.style.format({"LTP": "{:.2f}", "Change%": "{:.2f}"}).applymap(color_change, subset=["Change%"])
+        #styled_df = df.style.format({"LTP": "{:.2f}", "Change%": "{:.2f}"}).applymap(color_change, subset=["Change%"])
         
         # Display in Streamlit
         st.dataframe(styled_df, use_container_width=True)
