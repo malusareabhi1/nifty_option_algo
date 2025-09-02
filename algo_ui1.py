@@ -416,15 +416,7 @@ elif MENU == "Dashboard":
                 add_trade_log("NIFTY", "BUY", 50, 250.5, 0.0)
                 st.info("Test alert → trade log added.")
 
-        st.subheader("Live Market Data (Demo)")
-        syms = ["NIFTY", "BANKNIFTY", "RELIANCE", "TCS", "INFY"]
-        prices = np.round(np.random.normal(100, 10, len(syms)), 2)
-        live_df = pd.DataFrame({
-            "Symbol": syms,
-            "LTP": prices,
-            "Change%": np.round(np.random.normal(0.2, 0.5, len(syms)), 2)
-        })
-        st.dataframe(live_df, use_container_width=True)
+        
         ###################################################################################
         st.subheader("Live NIFTY 50 Market Data")
 
