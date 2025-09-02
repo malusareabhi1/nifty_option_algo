@@ -299,33 +299,24 @@ elif MENU == "Strategies":
     if up:
         df = pd.read_csv(up)
         #####################################################################################################
-        # Convert Datetime column
-        datetime_col = None
-        for col in ["Datetime", "Date", "timestamp", "time"]:
-            if col in df.columns:
-                try:
-                    df[col] = pd.to_datetime(df[col])
-                    datetime_col = col
-                    break
-                except Exception:
-                    pass
-
         if datetime_col:
-            # Convert to IST (Asia/Kolkata)
-            df[datetime_col] = df[datetime_col].dt.tz_localize('UTC', nonexistent='shift_forward', ambiguous='NaT').dt.tz_convert('Asia/Kolkata')
-
-            # Filter only working days (Mon-Fri)
-            df = df[df[datetime_col].dt.weekday < 5]
-
-            st.write(f"Timezone converted to IST and weekends removed. Total rows: {len(df)}")
-
-        st.dataframe(df.head(200), use_container_width=True)
-
-        if {"Open","High","Low","Close", datetime_col}.issubset(df.columns):
-            plot_candles(df.rename(columns={datetime_col: "Datetime"}), title=f"{st.session_state.selected_strategy} – Price")
-
-        if "PnL" in df.columns:
-            plot_equity_curve(df["PnL"], title=f"{st.session_state.selected_strategy} – Equity")
+        # Ensure it's a datetime type
+        df[datetime_col] = pd.to_datetime(df[datetime_col], errors='coerce')
+    
+        # Convert timezone
+        if df[datetime_col].dt.tz is None:  # Naive datetime
+            df[datetime_col] = df[datetime_col].dt.tz_localize('UTC').dt.tz_convert('Asia/Kolkata')
+        else:  # Already tz-aware
+            df[datetime_col] = df[datetime_col].dt.tz_convert('Asia/Kolkata')
+    
+        # Filter only working days (Mon-Fri)
+        df = df[df[datetime_col].dt.weekday < 5]
+    
+        # Optional: Filter market hours (09:15–15:30)
+        df = df[(df[datetime_col].dt.time >= pd.to_datetime("09:15").time()) &
+                (df[datetime_col].dt.time <= pd.to_datetime("15:30").time())]
+    
+        st.write(f"Timezone set to IST, weekends and off-hours removed. Total rows: {len(df)}")
 
 
         ######################################################################################################
