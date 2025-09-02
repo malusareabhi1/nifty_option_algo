@@ -444,7 +444,7 @@ elif MENU == "Dashboard":
         df["Change%"] = ((df["LTP"] - prev_close.values) / prev_close.values) * 100
         
         # Display in Streamlit
-        st.dataframe(df.style.format({"LTP": "{:.2f}", "Change%": "{:.2f}"}), use_container_width=True)
+        #st.dataframe(df.style.format({"LTP": "{:.2f}", "Change%": "{:.2f}"}), use_container_width=True)
 
             # Function to apply color
         def color_change(val):
