@@ -101,6 +101,7 @@ def _init_state():
         risk_per_trade_pct=1.0,
         max_trades=3,
         strategies=[
+            {"name": "3PM  Strategy 1.0", "short": "3PM 15min  with  last day breakout with today", "metrics": {"CAGR": 18.3, "Win%": 85.8, "MaxDD%": 15.6}},
             {"name": "Doctor Strategy 1.0", "short": "BB 20 SMA breakout with IV filter", "metrics": {"CAGR": 18.3, "Win%": 64.8, "MaxDD%": 12.6}},
             {"name": "ORB (Opening Range Breakout)", "short": "Range breakout after first 15m", "metrics": {"CAGR": 14.1, "Win%": 57.4, "MaxDD%": 10.9}},
             {"name": "EMA20 + Volume", "short": "Momentum confirmation with volume push", "metrics": {"CAGR": 11.7, "Win%": 55.0, "MaxDD%": 9.8}},
