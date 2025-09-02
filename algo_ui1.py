@@ -445,6 +445,21 @@ elif MENU == "Dashboard":
         
         # Display in Streamlit
         st.dataframe(df.style.format({"LTP": "{:.2f}", "Change%": "{:.2f}"}), use_container_width=True)
+
+            # Function to apply color
+        def color_change(val):
+            if val > 0:
+                return "color: green;"
+            elif val < 0:
+                return "color: red;"
+            else:
+                return "color: black;"
+        
+        # Apply style
+        styled_df = df.style.format({"LTP": "{:.2f}", "Change%": "{:.2f}"}).applymap(color_change, subset=["Change%"])
+        
+        # Display in Streamlit
+        st.dataframe(styled_df, use_container_width=True)
         #######################################################################################
 
     
