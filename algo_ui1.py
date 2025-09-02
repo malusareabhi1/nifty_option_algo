@@ -299,24 +299,7 @@ elif MENU == "Strategies":
     if up:
         df = pd.read_csv(up)
         #####################################################################################################
-        if datetime_col:
-        # Ensure it's a datetime type
-        df[datetime_col] = pd.to_datetime(df[datetime_col], errors='coerce')
-    
-        # Convert timezone
-        if df[datetime_col].dt.tz is None:  # Naive datetime
-            df[datetime_col] = df[datetime_col].dt.tz_localize('UTC').dt.tz_convert('Asia/Kolkata')
-        else:  # Already tz-aware
-            df[datetime_col] = df[datetime_col].dt.tz_convert('Asia/Kolkata')
-    
-        # Filter only working days (Mon-Fri)
-        df = df[df[datetime_col].dt.weekday < 5]
-    
-        # Optional: Filter market hours (09:15–15:30)
-        df = df[(df[datetime_col].dt.time >= pd.to_datetime("09:15").time()) &
-                (df[datetime_col].dt.time <= pd.to_datetime("15:30").time())]
-    
-        st.write(f"Timezone set to IST, weekends and off-hours removed. Total rows: {len(df)}")
+       
 
 
         ######################################################################################################
