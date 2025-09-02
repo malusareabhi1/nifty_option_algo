@@ -421,7 +421,7 @@ elif MENU == "Dashboard":
         st.subheader("Live NIFTY 50 Market Data")
 
         # Predefined NIFTY50 stock list (you can fetch dynamically from NSE if needed)
-        nifty50_symbols = ["NIFTY","BANKNIFTY",
+        nifty50_symbols = ["^NSEI","^NSEBANK",
             "RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS", "ICICIBANK.NS", "KOTAKBANK.NS",
             "AXISBANK.NS", "SBIN.NS", "ITC.NS", "LT.NS", "BHARTIARTL.NS", "ASIANPAINT.NS",
             "HINDUNILVR.NS", "MARUTI.NS", "BAJFINANCE.NS", "HCLTECH.NS", "ULTRACEMCO.NS",
