@@ -423,6 +423,37 @@ elif MENU == "Dashboard":
             "Change%": np.round(np.random.normal(0.2, 0.5, len(syms)), 2)
         })
         st.dataframe(live_df, use_container_width=True)
+        ###################################################################################
+        st.subheader("Live NIFTY 50 Market Data")
+
+        # Predefined NIFTY50 stock list (you can fetch dynamically from NSE if needed)
+        nifty50_symbols = [
+            "RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS", "ICICIBANK.NS", "KOTAKBANK.NS",
+            "AXISBANK.NS", "SBIN.NS", "ITC.NS", "LT.NS", "BHARTIARTL.NS", "ASIANPAINT.NS",
+            "HINDUNILVR.NS", "MARUTI.NS", "BAJFINANCE.NS", "HCLTECH.NS", "ULTRACEMCO.NS",
+            "POWERGRID.NS", "NTPC.NS", "SUNPHARMA.NS", "TECHM.NS", "TITAN.NS", "WIPRO.NS",
+            "ONGC.NS", "JSWSTEEL.NS", "HDFCLIFE.NS", "BPCL.NS", "IOC.NS", "COALINDIA.NS",
+            "DIVISLAB.NS", "DRREDDY.NS", "GRASIM.NS", "HEROMOTOCO.NS", "EICHERMOT.NS",
+            "BRITANNIA.NS", "BAJAJ-AUTO.NS", "HINDALCO.NS", "TATASTEEL.NS", "CIPLA.NS",
+            "SHREECEM.NS", "UPL.NS", "NESTLEIND.NS", "ADANIENT.NS", "ADANIPORTS.NS"
+        ]
+        
+        # Fetch data
+        data = yf.download(nifty50_symbols, period="1d", interval="1m")["Close"].iloc[-1]
+        
+        # Convert to DataFrame
+        df = pd.DataFrame(data).reset_index()
+        df.columns = ["Symbol", "LTP"]
+        
+        # Calculate % Change from previous close
+        prev_close = yf.download(nifty50_symbols, period="2d", interval="1d")["Close"].iloc[-2]
+        df["Change%"] = ((df["LTP"] - prev_close.values) / prev_close.values) * 100
+        
+        # Display in Streamlit
+        st.dataframe(df.style.format({"LTP": "{:.2f}", "Change%": "{:.2f}"}), use_container_width=True)
+        #######################################################################################
+
+    
 
     with right:
         st.subheader("Chart (Demo)")
