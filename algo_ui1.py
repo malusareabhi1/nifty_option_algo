@@ -518,7 +518,7 @@ elif MENU == "Dashboard":
             
             
             # Plot chart
-            plot_candles(filtered_df, title="NIFTY 15-Min Candlestick (Last 2 Days)")
+        plot_candles(filtered_df, title="NIFTY 15-Min Candlestick (Last 2 Days)")
 
     st.divider()
 
