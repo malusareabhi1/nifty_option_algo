@@ -754,23 +754,83 @@ elif MENU == "Backtest":
     
         # Call your trading signal function
         signal = trading_signal_all_conditions1(day_df)
-        #
-    #signal = trading_signal_all_conditions2(day_df) 
+        
 
-    #signal = trading_signal_all_conditions2_newlogic(day_df)  
-    #signal = trading_signal_all_conditions_2_improved(day_df) 
+##############################################################################################################
 
+    if signal:
+        #st.write(f"### {day1} → Signal detected: {signal['message']}")
+        #st.table(pd.DataFrame([signal]))
+
+        # Get option chain and trade log
+        result_chain = find_nearest_itm_option()
+        spot_price = signal['spot_price']
+        ot = "CE" if signal["option_type"].upper() == "CALL" else "PE"
+        result = option_chain_finder(result_chain, spot_price, option_type=ot, lots=10, lot_size=75)
+        
+        # Extract the option selected info
+        option_data = result['option_data']
+        strike_price = option_data.get('strikePrice')
+        buy_premium = option_data.get('lastPrice')
+        identifier = option_data.get('identifier')
+
+        # Construct signal log dictionary
+        sig_log = {
+            "Date": day1,  # Add the trading day
+            "Condition Type": signal['condition'],
+            "Entry Time": signal['entry_time'],
+            "Spot Price": spot_price,
+            "Option Selected": ot,
+            "Identifier": identifier,
+            "Strike Price": strike_price,
+            "Buy Premium": buy_premium,
+            "Stoploss (Trailing 10%)": buy_premium * 0.9 if buy_premium else None,
+            "Take Profit (10% rise)": buy_premium * 1.1 if buy_premium else None,
+            "Quantity": signal['quantity'],
+            "Partial Profit Booking Qty (50%)": signal['quantity'] / 2,
+            "Expiry Date": signal['expiry'],
+            "Time Exit (16 mins after entry)": signal['entry_time'] + pd.Timedelta(minutes=16)
+        }
+        # Append to list
+        signal_log_list.append(sig_log)
+        trade_log_df = generate_trade_log_from_option(result, signal)
+        
+        # Drop Trade details column
+        if 'Trade details' in trade_log_df.columns:
+            trade_log_df = trade_log_df.drop(columns=['Trade details'])
+        
+        #st.table(trade_log_df)
+
+        # Append to combined trade log
+        combined_trade_log.append(trade_log_df)
+
+#df_plot = df[df['Datetime'].dt.date == selected_date]
+# Get all unique trading days in the data within the selected range
+unique_days = sorted(df['Datetime'].dt.date.unique())
+trading_days = [d for d in unique_days if start_date <= d <= end_date]
+
+# Loop through each day
+for i in range(1, len(trading_days)):
+    day0 = trading_days[i-1]  # Previous day (for Base Zone)
+    day1 = trading_days[i]    # Current day (for signals)
+    
+    df_plot = df[df['Datetime'].dt.date.isin([day0, day1])]
+    
+    # Now you can use df_plot safely
+    open_3pm, close_3pm = display_3pm_candle_info(df_plot, day0)    
 
 
        
-                # 👉 here call your backtest function
 
- #st.markdown(f"### Strategy Info\n{selected['description']}")
+ 
 ########################################################################################################
+
+
 
 # ------------------------------------------------------------
 # Strategies
 # ------------------------------------------------------------
+
 elif MENU == "Strategies":
     st.title("Strategies Library")
 
