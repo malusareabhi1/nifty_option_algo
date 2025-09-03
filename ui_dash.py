@@ -673,6 +673,11 @@ elif MENU == "Dashboard":
                     close=df['Close_^NSEI'],
                     name='candlestick'
                 )])
+                # Hide non-trading gaps on x-axis
+                fig.update_xaxes(rangebreaks=[
+                    dict(bounds=["sat", "mon"]),  # hide weekends
+                    dict(bounds=[16, 9], pattern="hour"),  # hide non-market hours (after 15:30 until 09:15)
+                ])
                 fig.update_layout(title=title, xaxis_rangeslider_visible=False)
                 st.plotly_chart(fig, use_container_width=True)
         
