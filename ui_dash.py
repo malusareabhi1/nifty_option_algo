@@ -636,9 +636,11 @@ elif MENU == "Dashboard":
                 df.columns = ['_'.join(col).strip() for col in df.columns.values]
             # Reset index
             df = df.reset_index()
+            # Convert to IST
+            df['Datetime'] = df['Datetime'].dt.tz_localize('UTC').dt.tz_convert('Asia/Kolkata')
             #st.write(df)
             # Remove timezone if exists
-            df['Datetime'] = df['Datetime'].dt.tz_localize(None)
+            #df['Datetime'] = df['Datetime'].dt.tz_localize(None)
             st.write(df)
             # Extract date
             df['Date'] = df['Datetime'].dt.date
