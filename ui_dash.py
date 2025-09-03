@@ -1022,7 +1022,24 @@ elif MENU == "Backtest":
             df_plot = df[df['Datetime'].dt.date.isin([day0, day1])]
             
             # Now you can use df_plot safely
-            open_3pm, close_3pm = display_3pm_candle_info(df_plot, day0)    
+            open_3pm, close_3pm = display_3pm_candle_info(df_plot, day0)  
+
+        ##################################################################################
+        # Convert to DataFrame
+        if signal_log_list:
+            signal_log_df = pd.DataFrame(signal_log_list)
+            st.write("### Signal Log")
+            st.dataframe(signal_log_df)
+            
+            # Optional: download as CSV
+            csv = signal_log_df.to_csv(index=False).encode('utf-8')
+            st.download_button(label="Download Signal Log CSV", data=csv, file_name="signal_log.csv", mime="text/csv")
+        else:
+            st.write("No trade signals detected for the selected period.")
+        
+        ##################################################################################
+
+
 
 
        
