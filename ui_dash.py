@@ -703,11 +703,18 @@ elif MENU == "Dashboard":
             plot_candles(filtered_df, title="NIFTY 15-Min Candlestick (Last 2 Days)")
 
     st.divider()
+    
 
     
 
 #############################################################################################################################st.subheader("Trade Logs")
     #st.dataframe(st.session_state.trade_logs, use_container_width=True)
+    
+
+
+
+
+
 
 
 
