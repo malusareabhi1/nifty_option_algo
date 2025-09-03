@@ -372,6 +372,17 @@ if MENU == "Home":
     st.info("Use the sidebar to explore Strategies, connect Broker APIs, and run the live Dashboard.")
 
 # ------------------------------------------------------------
+# Backtest Strategies
+# ------------------------------------------------------------
+elif MENU == "Backtest":
+    st.title("Backtest Strategies ")
+
+    colA, colB = st.columns([2, 1])
+    with colA:
+        names = [s["name"] for s in st.session_state.strategies]
+        st.session_state.selected_strategy = st.selectbox("Select strategy", names, index=0)
+
+# ------------------------------------------------------------
 # Strategies
 # ------------------------------------------------------------
 elif MENU == "Strategies":
