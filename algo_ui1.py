@@ -376,14 +376,21 @@ if MENU == "Home":
 # Backtest Strategies
 # ------------------------------------------------------------
 elif MENU == "Backtest":
-    st.title("Backtest Strategies ")
+    st.title("Backtest Strategies")
 
     colA, colB = st.columns([2, 1])
     with colA:
+        # Get strategy names
         names = [s["name"] for s in st.session_state.strategies]
-        st.session_state.selected_strategy = st.selectbox("Select strategy", names, index=0)
 
-    # Find selected strategy details
+        # Selectbox for strategies
+        st.session_state.selected_strategy = st.selectbox(
+            "Select strategy",
+            names,
+            index=0
+        )
+
+        # Find selected strategy details
         selected = next(
             (s for s in st.session_state.strategies if s["name"] == st.session_state.selected_strategy),
             None
@@ -392,6 +399,9 @@ elif MENU == "Backtest":
         # Show description in markdown
         if selected and "description" in selected:
             st.markdown(f"### Strategy Info\n{selected['description']}")
+
+ st.markdown(f"### Strategy Info\n{selected['description']}")
+########################################################################################################
 
 # ------------------------------------------------------------
 # Strategies
