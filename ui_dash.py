@@ -685,8 +685,8 @@ elif MENU == "Dashboard":
                     start_time = three_pm.iloc[i]['Datetime']
                     end_time   = three_pm.iloc[i+1]['Datetime']
                 
-                    open_price  = three_pm.iloc[i]['Open']
-                    close_price = three_pm.iloc[i]['Close']
+                    open_price  = three_pm.iloc[i]['Open_^NSEI']
+                    close_price = three_pm.iloc[i]['Close_^NSEI']
                 
                     # Line for Open
                     fig.add_shape(
