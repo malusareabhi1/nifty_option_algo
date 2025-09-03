@@ -396,23 +396,24 @@ elif MENU == "Backtest":
             None
         )
     st.divider()
-        # Show description in markdown
-        if selected and "description" in selected:
-            st.markdown(f"### Strategy Info\n{selected['description']}")
+    # Show description in markdown
+    if selected and "description" in selected:
+        st.markdown(f"### Strategy Info\n{selected['description']}")
             # Ask for inputs only when strategy is selected
-            st.subheader("Backtest Parameters")
+        st.subheader("Backtest Parameters")
 
-            equity = st.text_input("Enter Equity Symbol (e.g. TCS, INFY, NIFTY)")
-            start_date = st.date_input("Start Date")
-            end_date = st.date_input("End Date")
+        equity = st.text_input("Enter Equity Symbol (e.g. TCS, INFY, NIFTY)")
+        start_date = st.date_input("Start Date")
+        end_date = st.date_input("End Date")
 
-            capital = st.number_input("Initial Capital (₹)", value=100000, step=1000)
-            risk = st.slider("Risk per Trade (%)", 1, 10, 2)
+        capital = st.number_input("Initial Capital (₹)", value=100000, step=1000)
+        risk = st.slider("Risk per Trade (%)", 1, 10, 2)
 
-            if st.button("Run Backtest"):
-                st.success(f"Running backtest for **{equity}** using strategy **{selected['name']}** from {start_date} to {end_date}")
+        if st.button("Run Backtest"):
+            st.success(f"Running backtest for **{equity}** using strategy **{selected['name']}** from {start_date} to {end_date}")
 
-            st.divider()
+    st.divider()
+       
                 # 👉 here call your backtest function
 
  #st.markdown(f"### Strategy Info\n{selected['description']}")
