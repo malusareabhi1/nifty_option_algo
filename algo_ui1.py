@@ -326,6 +326,29 @@ if MENU == "Home":
     with c3:
         st.markdown("<div class='card'>", unsafe_allow_html=True)
         st.markdown("### Risk Disclaimer")
+        st.markdown("""
+        ---
+        ### ⚠️ Risk Disclaimer
+        
+        1. **Informational Purpose Only**  
+           All content, services, or solutions provided by **Shree Software** are for **informational and educational purposes only**. They do not constitute financial, legal, or professional advice.
+        
+        2. **No Guaranteed Outcomes**  
+           While we aim to provide accurate and timely information, **we do not guarantee any specific results, profits, or success** from using our services.
+        
+        3. **User Responsibility**  
+           Clients and users must exercise **due diligence**, make **informed decisions**, and consult qualified professionals when necessary before acting on any information or solutions provided.
+        
+        4. **Limitation of Liability**  
+           **Shree Software shall not be liable** for any direct, indirect, or consequential loss or damage resulting from the use of our services, content, or advice.
+        
+        5. **Third-Party Dependencies**  
+           We may provide data, tools, or links from third-party sources. **We are not responsible for the accuracy, completeness, or outcomes** associated with such third-party information.
+        
+        6. **Market / Technology Risks** *(if applicable)*  
+           For financial or technical solutions, market conditions, system failures, or software limitations may impact results. Users must acknowledge these **inherent risks**.
+        ---
+        """)
         st.write("Trading involves risk. Past performance does not guarantee future returns. Trade responsibly.")
         st.markdown("</div>", unsafe_allow_html=True)
 
