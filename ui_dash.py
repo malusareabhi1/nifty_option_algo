@@ -562,7 +562,8 @@ elif MENU == "Dashboard":
         st.subheader("Live NIFTY 50 Market Data")
 
         # Predefined NIFTY50 stock list (you can fetch dynamically from NSE if needed)
-        nifty50_symbols = ["^NSEI","^NSEBANK",
+        nifty50_symbols = ["^NSEI","^NSEBANK" ]
+        """nifty50_symbols = ["^NSEI","^NSEBANK",
             "RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS", "ICICIBANK.NS", "KOTAKBANK.NS",
             "AXISBANK.NS", "SBIN.NS", "ITC.NS", "LT.NS", "BHARTIARTL.NS", "ASIANPAINT.NS",
             "HINDUNILVR.NS", "MARUTI.NS", "BAJFINANCE.NS", "HCLTECH.NS", "ULTRACEMCO.NS",
@@ -571,8 +572,7 @@ elif MENU == "Dashboard":
             "DIVISLAB.NS", "DRREDDY.NS", "GRASIM.NS", "HEROMOTOCO.NS", "EICHERMOT.NS",
             "BRITANNIA.NS", "BAJAJ-AUTO.NS", "HINDALCO.NS", "TATASTEEL.NS", "CIPLA.NS",
             "SHREECEM.NS", "UPL.NS", "NESTLEIND.NS", "ADANIENT.NS", "ADANIPORTS.NS"
-        ]
-        
+        ]"""
         # Fetch data
         data = yf.download(nifty50_symbols, period="1d", interval="1m")["Close"].iloc[-1]
         
