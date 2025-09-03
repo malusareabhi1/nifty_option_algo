@@ -645,6 +645,8 @@ elif MENU == "Dashboard":
                 # already tz-aware → just convert
                 df['Datetime'] = df['Datetime'].dt.tz_convert('Asia/Kolkata')
 
+            df = df.reset_index()
+
             # Filter only market hours (09:15 - 15:30)
             market_open = pd.to_datetime("09:15:00").time()
             market_close = pd.to_datetime("15:30:00").time()
