@@ -230,7 +230,7 @@ with st.sidebar:
 
     MENU = st.radio(
         "Navigate",
-        ["Home", "Strategies", "Broker API", "Dashboard", "Products", "Support"],
+        ["Home", "Strategies", "Broker API", "Dashboard","Backtest", "Products", "Support"],
         index=0,
     )
 
