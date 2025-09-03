@@ -20,6 +20,87 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+def generate_trade_log_from_option(result, trade_signal):
+    if result is None or trade_signal is None:
+        return None
+    # Determine exit reason and price
+    stoploss_hit = False
+    target_hit = False
+    
+    #exit_time = pd.to_datetime(exit_time)
+    #result.index = pd.to_datetime(result.index)
+
+    
+    
+    
+
+    option = result['option_data']
+    qty = result['total_quantity']
+
+    condition = trade_signal['condition']
+    entry_time = trade_signal['entry_time']
+    message = trade_signal['message']
+
+    buy_price = option.get('lastPrice', trade_signal.get('buy_price'))
+    expiry = option.get('expiryDate', trade_signal.get('expiry'))
+    option_type = option.get('optionType', trade_signal.get('option_type'))
+
+    stoploss = buy_price * 0.9
+    take_profit = buy_price * 1.10
+    partial_qty = qty // 2
+    time_exit = entry_time + timedelta(minutes=16)
+
+    
+
+    
+
+    trade_log = {
+        "Condition": condition,
+        "Option Type": option_type,
+        "Strike Price": option.get('strikePrice'),
+        #"Exit Price": exit_price,  # ✅ new column
+        "Buy Premium": buy_price,
+        "Stoploss (Trailing 10%)": stoploss,
+        "Take Profit (10% rise)": take_profit,
+        "Quantity": qty,
+        "Partial Profit Booking Qty (50%)": partial_qty,
+        "Expiry Date": expiry.strftime('%Y-%m-%d') if hasattr(expiry, 'strftime') else expiry,
+        "Entry Time": entry_time.strftime('%Y-%m-%d %H:%M:%S') if hasattr(entry_time, 'strftime') else entry_time,
+        "Time Exit (16 mins after entry)": time_exit.strftime('%Y-%m-%d %H:%M:%S'),
+        "Trade Message": message
+        #"Trade Details": row["Trade Details"],
+        #"Exit Reason": reason
+    }
+
+    # Add condition-specific details
+    if condition == 1:
+        trade_log["Trade Details"] = (
+            "Buy nearest ITM CALL option. Stoploss trailing 10% below buy premium. "
+            "Book 50% qty profit when premium rises 10%. "
+            "Time exit after 16 minutes if no target hit."
+        )
+    elif condition == 2:
+        trade_log["Trade Details"] = (
+            "Major gap down. Buy nearest ITM PUT option when next candle crosses low of 9:30 candle. "
+            "Stoploss trailing 10% below buy premium."
+        )
+    elif condition == 3:
+        trade_log["Trade Details"] = (
+            "Major gap up. Buy nearest ITM CALL option. Stoploss trailing 10% below buy premium. "
+            "Book 50% qty profit when premium rises 10%. "
+            "Time exit after 16 minutes if no target hit."
+        )
+    elif condition == 4:
+        trade_log["Trade Details"] = (
+            "Buy nearest ITM PUT option. Stoploss trailing 10% below buy premium. "
+            "Book 50% qty profit when premium rises 10%. "
+            "Time exit after 16 minutes if no target hit."
+        )
+    else:
+        trade_log["Trade Details"] = "No specific trade details available."
+
+    trade_log_df = pd.DataFrame([trade_log])
+    return trade_log_df
 def option_chain_finder(option_chain_df, spot_price, option_type, lots=10, lot_size=75):
     """
     Find nearest ITM option in option chain DataFrame.
