@@ -20,6 +20,42 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+def calculate_trade_cost(buy_price, sell_price, quantity, option_type="CE", brokerage_type="fixed"):
+    """
+    Calculate total cost/charges per trade.
+    
+    Params:
+    - buy_price: Entry price per unit
+    - sell_price: Exit price per unit
+    - quantity: Number of units
+    - option_type: "CE" or "PE"
+    - brokerage_type: "fixed" or "percentage"
+    
+    Returns total charges
+    """
+    turnover = (buy_price + sell_price) * quantity
+
+    # Brokerage
+    if brokerage_type == "fixed":
+        brokerage = 20  # assume ₹20 per trade
+    else:  # percentage
+        brokerage = turnover * 0.0003  # 0.03%
+
+    # Exchange Transaction Charges
+    exchange_charges = turnover * 0.0000325  # 0.00325%
+
+    # GST on brokerage (18%)
+    gst = 0.18 * brokerage
+
+    # SEBI Charges (approx)
+    sebi_charges = turnover * 0.000001
+
+    # Stamp Duty (approx)
+    stamp_duty = turnover * 0.00003
+
+    total_charges = brokerage + exchange_charges + gst + sebi_charges + stamp_duty
+    return total_charges
+
 def compute_trade_pnl_with_costs(signal_log_df, df):
     """
     Compute PnL, exit reason, and capital impact per trade.
