@@ -644,6 +644,11 @@ elif MENU == "Dashboard":
             else:
                 # already tz-aware → just convert
                 df['Datetime'] = df['Datetime'].dt.tz_convert('Asia/Kolkata')
+
+            # Filter only market hours (09:15 - 15:30)
+            market_open = pd.to_datetime("09:15:00").time()
+            market_close = pd.to_datetime("15:30:00").time()
+            df = df[df['Datetime'].dt.time.between(market_open, market_close)]
             #st.write(df)
             # Remove timezone if exists
             #df['Datetime'] = df['Datetime'].dt.tz_localize(None)
