@@ -21,6 +21,13 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+def get_nearest_weekly_expiry(today):
+    """
+    Placeholder: implement your own logic to find nearest weekly expiry date
+    For demo, returns today + 7 days (Saturday)
+    """
+    return today + pd.Timedelta(days=7)
+    
 def plot_nifty_multiday(df, trading_days):
     """
     Plots Nifty 15-min candles for multiple trading days with each previous day's 3PM Open/Close
