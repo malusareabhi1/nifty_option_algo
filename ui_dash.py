@@ -395,7 +395,7 @@ elif MENU == "Backtest":
             (s for s in st.session_state.strategies if s["name"] == st.session_state.selected_strategy),
             None
         )
-
+        st.divider()
         # Show description in markdown
         if selected and "description" in selected:
             st.markdown(f"### Strategy Info\n{selected['description']}")
