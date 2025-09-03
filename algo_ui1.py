@@ -277,6 +277,50 @@ if MENU == "Home":
     with c2:
         st.markdown("<div class='card'>", unsafe_allow_html=True)
         st.markdown("### Why Choose Us?")
+        st.markdown("""
+        At **Shree Software**, we are committed to delivering **high-quality software solutions** that cater to your business needs. Our approach combines **innovation, reliability, and customer focus** to ensure your success.
+        
+        
+        ---
+        
+        
+        ### 🔑 Key Reasons to Choose Us
+        
+        
+        1. **Expert Team**: Experienced developers and designers who understand your business challenges.
+        2. **Customized Solutions**: Tailored software to match your specific requirements.
+        3. **On-Time Delivery**: We value your time and ensure project timelines are met.
+        4. **Affordable Pricing**: Competitive pricing without compromising on quality.
+        5. **24/7 Support**: Dedicated support team to help you whenever you need assistance.
+        
+        
+        > Our mission is to empower businesses through technology, making processes **efficient, reliable, and scalable**.
+        
+        
+        ### 🎯 Our Approach
+        - **Consultation & Analysis**: Understanding your business goals.
+        - **Design & Development**: Building robust and scalable software.
+        - **Testing & Quality Assurance**: Ensuring flawless performance.
+        - **Deployment & Maintenance**: Smooth launch and continuous support.
+        
+        
+        We combine the best of **technology, strategy, and creativity** to ensure your project stands out.
+        """)
+        
+        
+        # Optional HTML Styling for Highlight
+        st.markdown(
+        """
+        <div style='padding:12px;border-radius:12px;background:#f0f8ff;border:1px solid #cce0ff;'>
+        <h4 style='margin:0 0 6px 0;'>Client Commitment</h4>
+        <p style='margin:0;'>We focus on delivering solutions that <b>drive growth, efficiency, and innovation</b> for our clients.</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+        )
+        
+        
+        st.success("Learn more about our services by contacting us today!")
         st.write("Colorful, clean UI, safer defaults, backtests, paper trading, and live automation with popular brokers.")
         st.markdown("</div>", unsafe_allow_html=True)
     with c3:
