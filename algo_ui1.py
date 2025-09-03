@@ -245,6 +245,33 @@ if MENU == "Home":
     with c1:
         st.markdown("<div class='card'>", unsafe_allow_html=True)
         st.markdown("### What is Algo Trading?")
+        st.markdown(
+        r"""
+        Algorithmic Trading (**Algo Trading**) means using **computer programs** to automatically place
+        **buy/sell orders** based on predefined, rule‑based logic. Instead of clicking buttons manually,
+        algorithms monitor data streams (price, volume, indicators) and execute trades **fast**, **consistently**,
+        and **without emotions**.
+        
+        
+        ---
+        
+        
+        ### 🔑 Why Traders Use It
+        - **Automation**: Executes your plan 24×7 (where markets allow) exactly as written.
+        - **Speed**: Milliseconds matter for entries, exits, and order routing.
+        - **Backtesting**: Test your ideas on **historical data** before going live.
+        - **Scalability**: Watch dozens of instruments simultaneously.
+        
+        
+        ### ⚠️ Risks to Respect
+        - **Bad logic = fast losses** (garbage in, garbage out).
+        - **Overfitting**: Great on the past, weak in live markets.
+        - **Operational**: Data glitches, API limits, slippage, latency.
+        
+        
+        > **TL;DR**: Algo Trading = *rules → code → automated execution*.
+        """
+        )
         st.write("Algorithmic trading executes orders using pre-defined rules for entries, exits, and risk management.")
         st.markdown("</div>", unsafe_allow_html=True)
     with c2:
