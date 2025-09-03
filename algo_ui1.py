@@ -400,7 +400,7 @@ elif MENU == "Backtest":
         if selected and "description" in selected:
             st.markdown(f"### Strategy Info\n{selected['description']}")
 
- st.markdown(f"### Strategy Info\n{selected['description']}")
+ #st.markdown(f"### Strategy Info\n{selected['description']}")
 ########################################################################################################
 
 # ------------------------------------------------------------
