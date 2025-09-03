@@ -631,6 +631,9 @@ elif MENU == "Dashboard":
         if df.empty:
             st.error("⚠️ No 15-min data fetched from Yahoo Finance. Market may be closed or ticker invalid.")
         else:
+            # If multi-index, flatten it
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = ['_'.join(col).strip() for col in df.columns.values]
             # Reset index
             df = df.reset_index()
             #st.write(df)
