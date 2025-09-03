@@ -412,7 +412,7 @@ elif MENU == "Backtest":
             if st.button("Run Backtest"):
                 st.success(f"Running backtest for **{equity}** using strategy **{selected['name']}** from {start_date} to {end_date}")
 
-     st.divider()
+             st.divider()
                 # 👉 here call your backtest function
 
  #st.markdown(f"### Strategy Info\n{selected['description']}")
