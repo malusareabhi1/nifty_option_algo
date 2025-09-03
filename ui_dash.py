@@ -633,7 +633,7 @@ elif MENU == "Dashboard":
         else:
             # Reset index
             df = df.reset_index()
-            st.write(df)
+            #st.write(df)
             # Remove timezone if exists
             df['Datetime'] = df['Datetime'].dt.tz_localize(None)
             st.write(df)
