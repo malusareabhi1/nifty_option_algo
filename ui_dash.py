@@ -1040,6 +1040,21 @@ elif MENU == "Backtest":
         ##################################################################################
 
 
+        # ✅ Combine all logs into one DataFrame
+        if combined_trade_log:
+            all_trades = pd.concat(combined_trade_log, ignore_index=True)
+            st.write("### Combined Trade Log for Selected Period")
+            st.dataframe(all_trades)
+        
+            # ✅ Download button
+            csv = all_trades.to_csv(index=False).encode('utf-8')
+            st.download_button(label="Download Trade Log CSV", data=csv, file_name="multi_day_trade_log.csv", mime="text/csv")
+        else:
+            st.write("No trade signals found for the selected period.")
+
+##################################################################################
+
+
 
 
        
