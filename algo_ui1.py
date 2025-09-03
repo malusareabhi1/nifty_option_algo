@@ -326,7 +326,8 @@ if MENU == "Home":
     with c3:
         st.markdown("<div class='card'>", unsafe_allow_html=True)
         st.markdown("### Risk Disclaimer")
-        st.write("Trading involves risk. Past performance does not guarantee future returns. Trade responsibly.")
+        st.write("Algorithmic trading executes orders using pre-defined rules for entries, exits, and risk management.Trading involves risk. Past performance does not guarantee future returns. Trade responsibly.")
+        
         st.markdown("""
         ---
         ### ⚠️ Risk Disclaimer
