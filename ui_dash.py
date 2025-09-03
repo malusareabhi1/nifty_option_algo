@@ -652,7 +652,7 @@ elif MENU == "Dashboard":
             #st.write(df)
             # Remove timezone if exists
             #df['Datetime'] = df['Datetime'].dt.tz_localize(None)
-            st.write(df)
+            #st.write(df)
             # Extract date
             df['Date'] = df['Datetime'].dt.date
             unique_days = sorted(df['Date'].unique())
