@@ -678,6 +678,31 @@ elif MENU == "Dashboard":
                     dict(bounds=["sat", "mon"]),  # hide weekends
                     dict(bounds=[16, 9], pattern="hour"),  # hide non-market hours (after 15:30 until 09:15)
                 ])
+                # --- Find 3 PM candles ---
+                three_pm = df[df['Datetime'].dt.time == pd.to_datetime("15:00:00").time()]
+                
+                for i in range(len(three_pm) - 1):  
+                    start_time = three_pm.iloc[i]['Datetime']
+                    end_time   = three_pm.iloc[i+1]['Datetime']
+                
+                    open_price  = three_pm.iloc[i]['Open']
+                    close_price = three_pm.iloc[i]['Close']
+                
+                    # Line for Open
+                    fig.add_shape(
+                        type="line",
+                        x0=start_time, x1=end_time,
+                        y0=open_price, y1=open_price,
+                        line=dict(color="blue", width=1, dash="dot"),
+                    )
+                
+                    # Line for Close
+                    fig.add_shape(
+                        type="line",
+                        x0=start_time, x1=end_time,
+                        y0=close_price, y1=close_price,
+                        line=dict(color="red", width=1, dash="dot"),
+                    )
                 fig.update_layout(title=title, xaxis_rangeslider_visible=False)
                 st.plotly_chart(fig, use_container_width=True)
         
