@@ -619,46 +619,48 @@ elif MENU == "Dashboard":
         st.subheader("NIFTY 15-Minute(Today + Previous Day)")
         # Fetch NIFTY 50 index data
 # Fetch NIFTY 50 index data
+        # Fetch NIFTY 50 index data
         ticker = "^NSEI"  # NIFTY Index symbol for Yahoo Finance
         end = datetime.now()
-        start = end - timedelta(days=2)  # Last 2 days
-            
-            # Download data from yfinance
+        start = end - timedelta(days=2)
+        
+        # Download data
         df = yf.download(ticker, start=start, end=end, interval="15m")
-            
-            # Reset index for proper plotting
-        df = df.reset_index()
-        df.rename(columns={"Datetime": "Datetime"}, inplace=True)
-            
-            # Filter only today and previous day
-        df['Date'] = df['Datetime'].dt.date
-        unique_days = sorted(df['Date'].unique())
-        if len(unique_days) >= 2:
-            filtered_df = df[df['Date'].isin(unique_days[-2:])]
+        
+        # Ensure data is available
+        if df.empty:
+            st.error("⚠️ No 15-min data fetched from Yahoo Finance. Market may be closed or ticker invalid.")
         else:
-            filtered_df = df
+            # Reset index
+            df = df.reset_index()
         
+            # Remove timezone if exists
+            df['Datetime'] = df['Datetime'].dt.tz_localize(None)
         
-        # Function to plot candlestick chart
-        def plot_candles(df, title="Candlestick Chart"):
-            fig = go.Figure(data=[go.Candlestick(
-                x=df['Datetime'],
-                open=df['Open'],
-                high=df['High'],
-                low=df['Low'],
-                close=df['Close'],
-                name='candlestick'
-            )])
-            fig.update_layout(title=title, xaxis_rangeslider_visible=False)
-            st.plotly_chart(fig, use_container_width=True)
-
-            # Streamlit UI
-            
-            
-            
-            
-            # Plot chart
-        plot_candles(filtered_df, title="NIFTY 15-Min Candlestick (Last 2 Days)")
+            # Extract date
+            df['Date'] = df['Datetime'].dt.date
+            unique_days = sorted(df['Date'].unique())
+        
+            # Filter last 2 days
+            if len(unique_days) >= 2:
+                filtered_df = df[df['Date'].isin(unique_days[-2:])]
+            else:
+                filtered_df = df
+        
+            # Plot candlestick chart
+            def plot_candles(df, title="Candlestick Chart"):
+                fig = go.Figure(data=[go.Candlestick(
+                    x=df['Datetime'],
+                    open=df['Open'],
+                    high=df['High'],
+                    low=df['Low'],
+                    close=df['Close'],
+                    name='candlestick'
+                )])
+                fig.update_layout(title=title, xaxis_rangeslider_visible=False)
+                st.plotly_chart(fig, use_container_width=True)
+        
+            plot_candles(filtered_df, title="NIFTY 15-Min Candlestick (Last 2 Days)")
 
     st.divider()
 
