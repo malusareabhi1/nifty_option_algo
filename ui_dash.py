@@ -679,14 +679,15 @@ elif MENU == "Dashboard":
                     dict(bounds=[16, 9], pattern="hour"),  # hide non-market hours (after 15:30 until 09:15)
                 ])
                 # --- Find 3 PM candles ---
-                three_pm = df[df['Datetime'].dt.time == pd.to_datetime("15:00:00").time()]
+               # --- Find 3 PM candles ---
+                three_pm = df[(df['Datetime'].dt.hour == 15) & (df['Datetime'].dt.minute == 0)]
                 
-                for i in range(len(three_pm) - 1):  
-                    start_time = three_pm.iloc[i]['Datetime']
-                    end_time   = three_pm.iloc[i+1]['Datetime']
+                for _, row in three_pm.iterrows():
+                    start_time = row['Datetime']
+                    end_time   = start_time + timedelta(minutes=15)
                 
-                    open_price  = three_pm.iloc[i]['Open_^NSEI']
-                    close_price = three_pm.iloc[i]['Close_^NSEI']
+                    open_price  = row['Open_^NSEI']
+                    close_price = row['Close_^NSEI']
                 
                     # Line for Open
                     fig.add_shape(
