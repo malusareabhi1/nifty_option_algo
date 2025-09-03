@@ -616,7 +616,7 @@ elif MENU == "Dashboard":
     
 
     with right:     
-        st.subheader("NIFTY 15-Minute(Today + Previous Day)")
+        #st.subheader("NIFTY 15-Minute(Today + Previous Day)")
         # Fetch NIFTY 50 index data
 # Fetch NIFTY 50 index data
         # Fetch NIFTY 50 index data
@@ -633,7 +633,7 @@ elif MENU == "Dashboard":
         else:
             # Reset index
             df = df.reset_index()
-        
+            st.write(df)
             # Remove timezone if exists
             df['Datetime'] = df['Datetime'].dt.tz_localize(None)
         
