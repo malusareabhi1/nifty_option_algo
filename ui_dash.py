@@ -704,8 +704,19 @@ elif MENU == "Dashboard":
 
     st.divider()
 
-    st.subheader("Trade Logs")
-    st.dataframe(st.session_state.trade_logs, use_container_width=True)
+    
+
+#############################################################################################################################st.subheader("Trade Logs")
+    #st.dataframe(st.session_state.trade_logs, use_container_width=True)
+
+
+
+
+
+
+
+
+############################################################################################################################
 
 # ------------------------------------------------------------
 # Products / Pricing
