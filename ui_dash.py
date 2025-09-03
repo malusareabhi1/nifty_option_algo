@@ -653,11 +653,11 @@ elif MENU == "Dashboard":
             # Plot candlestick chart
             def plot_candles(df, title="Candlestick Chart"):
                 fig = go.Figure(data=[go.Candlestick(
-                    x=df['Datetime'],
-                    open=df['Open'],
-                    high=df['High'],
-                    low=df['Low'],
-                    close=df['Close'],
+                    x=df['Datetime_^NSEI'],
+                    open=df['Open_^NSEI'],
+                    high=df['High_^NSEI'],
+                    low=df['Low_^NSEI'],
+                    close=df['Close_^NSEI'],
                     name='candlestick'
                 )])
                 fig.update_layout(title=title, xaxis_rangeslider_visible=False)
