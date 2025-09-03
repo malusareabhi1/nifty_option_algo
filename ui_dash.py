@@ -637,7 +637,13 @@ elif MENU == "Dashboard":
             # Reset index
             df = df.reset_index()
             # Convert to IST
-            df['Datetime'] = df['Datetime'].dt.tz_localize('UTC').dt.tz_convert('Asia/Kolkata')
+           # Ensure Datetime is in IST
+            if df['Datetime'].dt.tz is None:  
+                # naive → localize to UTC first
+                df['Datetime'] = df['Datetime'].dt.tz_localize('UTC').dt.tz_convert('Asia/Kolkata')
+            else:
+                # already tz-aware → just convert
+                df['Datetime'] = df['Datetime'].dt.tz_convert('Asia/Kolkata')
             #st.write(df)
             # Remove timezone if exists
             #df['Datetime'] = df['Datetime'].dt.tz_localize(None)
