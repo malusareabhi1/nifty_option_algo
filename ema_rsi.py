@@ -31,11 +31,12 @@ def preprocess_dataframe(df):
     # Flatten MultiIndex if needed
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = ['_'.join(col).strip() for col in df.columns.values]
+    
     # Clean column names
     df.columns = df.columns.str.replace(r'_.*', '', regex=True)
     df.columns = [col.capitalize() for col in df.columns]
 
-    # Datetime handling
+    # Handle datetime
     if 'Datetime' in df.columns:
         df['Datetime'] = pd.to_datetime(df['Datetime'], utc=True).dt.tz_convert('Asia/Kolkata')
     elif 'Date' in df.columns:
@@ -43,15 +44,22 @@ def preprocess_dataframe(df):
     elif 'Timestamp' in df.columns:
         df['Datetime'] = pd.to_datetime(df['Timestamp'], utc=True).dt.tz_convert('Asia/Kolkata')
     else:
-        # Yahoo Finance case: index is datetime
+        # If no datetime column, assume index is datetime (Yahoo Finance)
         df = df.copy()
-        df.index = pd.to_datetime(df.index, utc=True).tz_convert('Asia/Kolkata')
+        if not isinstance(df.index, pd.DatetimeIndex):
+            raise ValueError("No datetime information found in the data!")
+        df.index = df.index.tz_localize('UTC').tz_convert('Asia/Kolkata')
         df.reset_index(inplace=True)
         df.rename(columns={'index':'Datetime'}, inplace=True)
+
+    # Make sure 'Datetime' exists now
+    if 'Datetime' not in df.columns:
+        raise ValueError("Datetime column could not be created!")
 
     # Filter NSE market hours
     df = df.set_index('Datetime').between_time("09:15", "15:30").reset_index()
     return df
+
 
 if data_source == "Online (Yahoo Finance)" and st.sidebar.button("Fetch Online Data"):
     df = yf.download(ticker, start=start_date, end=end_date, interval=interval)
