@@ -63,8 +63,8 @@ if "df" in locals() and not df.empty:
    # Extract opening range (first 15 minutes)
     opening_range = df.between_time("09:15", "09:30")
     
-    OR_high = float(opening_range["High"].max())
-    OR_low = float(opening_range["Low"].min())
+    OR_high = float(opening_range["High_^nsei"].max())
+    OR_low = float(opening_range["Low_^nsei"].min())
     
     # Get latest price (last available close)
     latest_price = float(df["Close"].iloc[-1])
