@@ -43,9 +43,9 @@ if data_source == "Online (Yahoo Finance)":
             df.reset_index(inplace=True)
             df.rename(columns={'index':'Datetime'}, inplace=True)
 
-# Keep only market hours (09:15–15:30 IST)
-df = df.set_index('Datetime').between_time("09:15", "15:30").reset_index()
-        #st.write("📊 Data (IST, NSE Hours Only)", df.head())
+            # Keep only market hours (09:15–15:30 IST)
+            df = df.set_index('Datetime').between_time("09:15", "15:30").reset_index()
+                    #st.write("📊 Data (IST, NSE Hours Only)", df.head())
 
 elif data_source == "Offline (CSV)":
     file = st.sidebar.file_uploader("Upload CSV File", type=["csv"])
