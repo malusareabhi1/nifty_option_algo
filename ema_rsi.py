@@ -42,8 +42,8 @@ if data_source == "Online (Yahoo Finance)":
             df.reset_index(inplace=True)
             df.rename(columns={'index':'Datetime'}, inplace=True)
 
-# Filter only NSE market hours
-df = df.set_index('Datetime').between_time("09:15", "15:30").reset_index()
+            # Filter only NSE market hours
+            df = df.set_index('Datetime').between_time("09:15", "15:30").reset_index()
 
 
 elif data_source == "Offline (CSV)":
