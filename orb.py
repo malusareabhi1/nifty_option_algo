@@ -2,8 +2,9 @@ import streamlit as st
 import pandas as pd
 import yfinance as yf
 from datetime import datetime, timedelta
+import plotly.graph_objects as go
 
-st.title("📈 Opening Range Breakout (ORB) Strategy with Trade Log & P&L")
+st.title("📈 Opening Range Breakout (ORB) Strategy with Trade Log, P&L & Candlestick Chart")
 
 # --- Data Input ---
 data_source = st.radio("Select Data Source:", ["Online (Yahoo Finance)", "Offline (CSV)"])
@@ -60,8 +61,6 @@ if "df" in locals() and not df.empty:
 
     # Trade log storage
     trades = []
-
-    # Simple ORB trading logic loop
     position = None
     entry_price = None
 
@@ -80,7 +79,6 @@ if "df" in locals() and not df.empty:
                 trades.append([i, "SELL", entry_price, None, None])
 
         elif position == "LONG" and price < OR_low:
-            # Exit long if price breaks OR low
             exit_price = price
             pnl = exit_price - entry_price
             trades[-1][3] = exit_price
@@ -88,7 +86,6 @@ if "df" in locals() and not df.empty:
             position, entry_price = None, None
 
         elif position == "SHORT" and price > OR_high:
-            # Exit short if price breaks OR high
             exit_price = price
             pnl = entry_price - exit_price
             trades[-1][3] = exit_price
@@ -119,5 +116,49 @@ if "df" in locals() and not df.empty:
     total_pnl = trade_log["PnL"].sum()
     st.metric("Total P&L", f"{total_pnl:.2f}")
 
-    # Chart
-    st.line_chart(df["Close"])
+    # --- Plotly Candlestick Chart with Buy/Sell markers ---
+    st.subheader("📊 ORB Candlestick Chart")
+
+    fig = go.Figure(data=[go.Candlestick(
+        x=df.index,
+        open=df["Open"],
+        high=df["High"],
+        low=df["Low"],
+        close=df["Close"],
+        name="Candlesticks"
+    )])
+
+    # Add OR High/Low lines
+    fig.add_hline(y=OR_high, line_dash="dot", line_color="green", annotation_text="OR High")
+    fig.add_hline(y=OR_low, line_dash="dot", line_color="red", annotation_text="OR Low")
+
+    # Add Buy/Sell markers
+    for _, trade in trade_log.iterrows():
+        if trade["Signal"] == "BUY":
+            fig.add_trace(go.Scatter(
+                x=[trade["Datetime"]],
+                y=[trade["EntryPrice"]],
+                mode="markers+text",
+                marker=dict(color="green", size=12, symbol="triangle-up"),
+                text=["BUY"],
+                textposition="top center",
+                name="BUY"
+            ))
+        elif trade["Signal"] == "SELL":
+            fig.add_trace(go.Scatter(
+                x=[trade["Datetime"]],
+                y=[trade["EntryPrice"]],
+                mode="markers+text",
+                marker=dict(color="red", size=12, symbol="triangle-down"),
+                text=["SELL"],
+                textposition="bottom center",
+                name="SELL"
+            ))
+
+    fig.update_layout(
+        xaxis_rangeslider_visible=False,
+        template="plotly_white",
+        height=600
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
