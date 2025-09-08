@@ -17,16 +17,14 @@ df = None  # Initialize DataFrame
 
 # --- Helper Function to Preprocess Data ---
 def preprocess_dataframe(df):
-    # Flatten MultiIndex if present
+    # Flatten MultiIndex
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = ['_'.join(col).strip() for col in df.columns.values]
-    df.columns = df.columns.str.replace(r'_.*', '', regex=True)
-    df.columns = [col.capitalize() for col in df.columns]
 
     # Clean column names
     df.columns = [col.strip().capitalize() for col in df.columns]
 
-    # Detect datetime column
+    # Detect datetime column or use index
     datetime_col = None
     for col in df.columns:
         if col.lower() in ['datetime', 'date', 'time', 'timestamp']:
@@ -39,24 +37,32 @@ def preprocess_dataframe(df):
             df = df.reset_index().rename(columns={'index':'Datetime'})
             datetime_col = 'Datetime'
         else:
-            st.error("No datetime information found in the data!")
-            return df
+            st.error("No datetime information found. This ticker may not support intraday data for the selected range/interval.")
+            return None
 
     # Convert to datetime
-    df['Datetime'] = pd.to_datetime(df[datetime_col], errors='coerce', utc=True).dt.tz_convert('Asia/Kolkata')
-
-    # Drop rows where conversion failed
+    df['Datetime'] = pd.to_datetime(df[datetime_col], errors='coerce', utc=True)
+    df['Datetime'] = df['Datetime'].dt.tz_convert('Asia/Kolkata')
     df = df.dropna(subset=['Datetime'])
 
-    # Only filter market hours if datetime has a time component
+    # Only filter market hours if intraday
     if df['Datetime'].dt.time.nunique() > 1:
         df = df.set_index('Datetime').between_time("09:15", "15:30").reset_index()
     else:
-        st.warning("Data does not contain intraday timestamps; skipping market hours filter.")
+        st.warning("Data has no intraday timestamps. Market hours filter skipped.")
 
-    #st.write("Sample Data After Datetime Handling", df.head())
+    # Ensure OHLC columns exist
+    ohlc_cols = ['Open','High','Low','Close','Volume']
+    for col in ohlc_cols:
+        if col not in df.columns:
+            # Try common alternatives (like 'Adj Close')
+            if col=='Close' and 'Adj Close' in df.columns:
+                df['Close'] = df['Adj Close']
+            else:
+                st.error(f"Column {col} not found in data.")
+                return None
+
     return df
-
 
 # --- Fetch Online Data ---
 if data_source == "Online (Yahoo Finance)":
