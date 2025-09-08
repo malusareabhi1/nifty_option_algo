@@ -54,7 +54,7 @@ def preprocess_dataframe(df):
     else:
         st.warning("Data does not contain intraday timestamps; skipping market hours filter.")
 
-    st.write("Sample Data After Datetime Handling", df.head())
+    #st.write("Sample Data After Datetime Handling", df.head())
     return df
 
 
