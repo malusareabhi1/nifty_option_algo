@@ -3,7 +3,7 @@ import pandas as pd
 import yfinance as yf
 from datetime import datetime, timedelta
 
-st.title("📈 Opening Range Breakout (ORB) Strategy")
+st.title("📈 Opening Range Breakout (ORB) Strategy with Trade Log & P&L")
 
 # --- Data Input ---
 data_source = st.radio("Select Data Source:", ["Online (Yahoo Finance)", "Offline (CSV)"])
@@ -16,76 +16,108 @@ if data_source == "Online (Yahoo Finance)":
 
     if st.button("Fetch Online Data"):
         df = yf.download(ticker, start=start_date, end=end_date, interval=interval)
-        # 🔹 Fix MultiIndex (flatten columns)
-    if isinstance(df.columns, pd.MultiIndex):
-        df.columns = ['_'.join(col).strip() for col in df.columns.values]
-    
-    # 🔹 Standardize column names
-    df.columns = [col.capitalize() for col in df.columns]
 
-    # Normalize column names to lowercase
-    df.columns = [col.lower() for col in df.columns]
-    
-    # Make sure we have required OHLC columns
-    # 🔹 Normalize column names: Open, High, Low, Close, Volume
-    df.columns = [col.capitalize() for col in df.columns]
-    df.columns = df.columns.str.replace(r'_.*', '', regex=True)
-   
-   
-    
-    df.reset_index(inplace=True)
-    st.write("Sample Data", df.head())
-    
+        # 🔹 Fix MultiIndex (flatten columns if needed)
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = ['_'.join(col).strip() for col in df.columns.values]
+
+        # 🔹 Clean column names
+        df.columns = df.columns.str.replace(r'_.*', '', regex=True)  # remove suffix like _^nsei
+        df.columns = [col.capitalize() for col in df.columns]        # Open, High, Low, Close, Volume
+
+        df.reset_index(inplace=True)
+        st.write("Sample Data", df.head())
 
 elif data_source == "Offline (CSV)":
     file = st.file_uploader("Upload CSV File", type=["csv"])
     if file is not None:
         df = pd.read_csv(file)
-        # Try to normalize column names
-        #df.columns = [col.strip().capitalize() for col in df.columns]
-        # 🔹 Clean column names: remove suffixes like _^nsei
+
+        # 🔹 Clean column names
         df.columns = df.columns.str.replace(r'_.*', '', regex=True)
-        
-        # 🔹 Capitalize first letter (Open, High, Low, Close, Volume)
         df.columns = [col.capitalize() for col in df.columns]
 
         if "Datetime" in df.columns:
             df["Datetime"] = pd.to_datetime(df["Datetime"])
             df.set_index("Datetime", inplace=True)
+
         st.write("Sample Data", df.head())
 
 # --- ORB Strategy Logic ---
 if "df" in locals() and not df.empty:
     st.subheader("🔎 ORB Strategy Analysis")
 
-    # Make sure index is datetime
+    # Ensure datetime index
     if not isinstance(df.index, pd.DatetimeIndex):
         if "Datetime" in df.columns:
             df["Datetime"] = pd.to_datetime(df["Datetime"])
             df.set_index("Datetime", inplace=True)
 
-   # Extract opening range (first 15 minutes)
+    # Extract opening range (first 15 minutes)
     opening_range = df.between_time("09:15", "09:30")
-    
     OR_high = float(opening_range["High"].max())
     OR_low = float(opening_range["Low"].min())
-    
-    # Get latest price (last available close)
-    latest_price = float(df["Close"].iloc[-1])
-    
-    # ORB condition
-    if latest_price > OR_high:
-        signal = "BUY"
-    elif latest_price < OR_low:
-        signal = "SELL"
-    else:
-        signal = "NO TRADE"
 
-    # Display results
+    # Trade log storage
+    trades = []
+
+    # Simple ORB trading logic loop
+    position = None
+    entry_price = None
+
+    for i, row in df.iterrows():
+        price = row["Close"]
+
+        if position is None:  # No trade yet
+            if price > OR_high:
+                position = "LONG"
+                entry_price = price
+                trades.append([i, "BUY", entry_price, None, None])
+
+            elif price < OR_low:
+                position = "SHORT"
+                entry_price = price
+                trades.append([i, "SELL", entry_price, None, None])
+
+        elif position == "LONG" and price < OR_low:
+            # Exit long if price breaks OR low
+            exit_price = price
+            pnl = exit_price - entry_price
+            trades[-1][3] = exit_price
+            trades[-1][4] = pnl
+            position, entry_price = None, None
+
+        elif position == "SHORT" and price > OR_high:
+            # Exit short if price breaks OR high
+            exit_price = price
+            pnl = entry_price - exit_price
+            trades[-1][3] = exit_price
+            trades[-1][4] = pnl
+            position, entry_price = None, None
+
+    # Final exit at last candle
+    if position is not None:
+        exit_price = df["Close"].iloc[-1]
+        pnl = exit_price - entry_price if position == "LONG" else entry_price - exit_price
+        trades[-1][3] = exit_price
+        trades[-1][4] = pnl
+
+    # Convert trades to DataFrame
+    trade_log = pd.DataFrame(trades, columns=["Datetime", "Signal", "EntryPrice", "ExitPrice", "PnL"])
+
+    # Show Metrics
+    latest_price = float(df["Close"].iloc[-1])
     st.metric("Opening Range High", f"{OR_high:.2f}")
     st.metric("Opening Range Low", f"{OR_low:.2f}")
     st.metric("Latest Price", f"{latest_price:.2f}")
-    st.success(f"📌 ORB Signal: {signal}")
+
+    # Results
+    st.subheader("📒 Trade Log")
+    st.dataframe(trade_log)
+
+    st.subheader("💰 Strategy P&L")
+    total_pnl = trade_log["PnL"].sum()
+    st.metric("Total P&L", f"{total_pnl:.2f}")
 
     # Chart
     st.line_chart(df["Close"])
