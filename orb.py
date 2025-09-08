@@ -23,8 +23,19 @@ if data_source == "Online (Yahoo Finance)":
     # 🔹 Standardize column names
     df.columns = [col.capitalize() for col in df.columns]
 
+    # Normalize column names to lowercase
+    df.columns = [col.lower() for col in df.columns]
+    
+    # Make sure we have required OHLC columns
+    required_cols = ["open", "high", "low", "close"]
+    missing = [col for col in required_cols if col not in df.columns]
+    if missing:
+        st.error(f"Missing columns in data: {missing}")
+
+
     df.reset_index(inplace=True)
     st.write("Sample Data", df.head())
+    
 
 elif data_source == "Offline (CSV)":
     file = st.file_uploader("Upload CSV File", type=["csv"])
