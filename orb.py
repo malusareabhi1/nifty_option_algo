@@ -16,6 +16,13 @@ if data_source == "Online (Yahoo Finance)":
 
     if st.button("Fetch Online Data"):
         df = yf.download(ticker, start=start_date, end=end_date, interval=interval)
+        # 🔹 Fix MultiIndex (flatten columns)
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = ['_'.join(col).strip() for col in df.columns.values]
+    
+    # 🔹 Standardize column names
+    df.columns = [col.capitalize() for col in df.columns]
+
         df.reset_index(inplace=True)
         st.write("Sample Data", df.head())
 
