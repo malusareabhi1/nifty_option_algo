@@ -36,7 +36,7 @@ if data_source == "Online (Yahoo Finance)":
         df.rename(columns={'index':'Datetime'}, inplace=True)
         # Keep only NSE hours
         df = df.set_index('Datetime').between_time("09:15", "15:30").reset_index()
-        #st.write("📊 Data Sample (IST & NSE Hours)", df.head())
+        st.write("📊 Data Sample (IST & NSE Hours)", df.head())
 
 elif data_source == "Offline (CSV)":
     file = st.sidebar.file_uploader("Upload CSV File", type=["csv"])
