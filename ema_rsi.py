@@ -40,7 +40,7 @@ def preprocess_dataframe(df):
     }, inplace=True)
     
     # Ensure timezone is India
-    df['Datetime'] = pd.to_datetime(df['Datetime']).dt.tz_localize('UTC').dt.tz_convert('Asia/Kolkata')
+    #df['Datetime'] = pd.to_datetime(df['Datetime']).dt.tz_localize('UTC').dt.tz_convert('Asia/Kolkata')
 
     if df is not None:
             st.write(df.columns.tolist())
