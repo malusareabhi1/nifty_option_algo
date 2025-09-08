@@ -31,12 +31,20 @@ if data_source == "Online (Yahoo Finance)":
         df.columns = df.columns.str.replace(r'_.*', '', regex=True)
         df.columns = [col.capitalize() for col in df.columns]
         # Convert index to IST and reset as column
-        df.index = pd.to_datetime(df.index, utc=True).tz_convert('Asia/Kolkata')
-        df.reset_index(inplace=True)
-        df.rename(columns={'index':'Datetime'}, inplace=True)
-        # Keep only NSE hours
-        df = df.set_index('Datetime').between_time("09:15", "15:30").reset_index()
-        st.write("📊 Data Sample (IST & NSE Hours)", df.head())
+        # Ensure datetime column exists
+        if 'Datetime' in df.columns:
+            df['Datetime'] = pd.to_datetime(df['Datetime'], utc=True).dt.tz_convert('Asia/Kolkata')
+        elif 'Date' in df.columns:
+            df['Datetime'] = pd.to_datetime(df['Date'], utc=True).dt.tz_convert('Asia/Kolkata')
+        else:
+            # If datetime is index (Yahoo Finance)
+            df.index = pd.to_datetime(df.index, utc=True).tz_convert('Asia/Kolkata')
+            df.reset_index(inplace=True)
+            df.rename(columns={'index':'Datetime'}, inplace=True)
+
+# Filter only NSE market hours
+df = df.set_index('Datetime').between_time("09:15", "15:30").reset_index()
+
 
 elif data_source == "Offline (CSV)":
     file = st.sidebar.file_uploader("Upload CSV File", type=["csv"])
