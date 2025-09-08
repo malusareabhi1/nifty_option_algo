@@ -30,13 +30,11 @@ def preprocess_dataframe(df):
         df['Datetime'] = pd.to_datetime(df['Datetime'], utc=True).dt.tz_convert('Asia/Kolkata')
     elif 'Date' in df.columns:
         df['Datetime'] = pd.to_datetime(df['Date'], utc=True).dt.tz_convert('Asia/Kolkata')
-    elif 'Timestamp' in df.columns:
-        df['Datetime'] = pd.to_datetime(df['Timestamp'], utc=True).dt.tz_convert('Asia/Kolkata')
     else:
-        # Assume index is datetime
+        # If index is datetime (Yahoo Finance)
         if not isinstance(df.index, pd.DatetimeIndex):
             raise ValueError("No datetime information found in the data!")
-        # Only localize if naive
+        # Localize if naive
         if df.index.tz is None:
             df.index = df.index.tz_localize('UTC').tz_convert('Asia/Kolkata')
         else:
@@ -47,6 +45,7 @@ def preprocess_dataframe(df):
     # Filter NSE market hours (intraday)
     df = df.set_index('Datetime').between_time("09:15", "15:30").reset_index()
     return df
+
 
 # --- Fetch Online Data ---
 if data_source == "Online (Yahoo Finance)":
