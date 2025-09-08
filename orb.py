@@ -27,14 +27,12 @@ if data_source == "Online (Yahoo Finance)":
     df.columns = [col.lower() for col in df.columns]
     
     # Make sure we have required OHLC columns
-    required_cols = ["open", "high", "low", "close"]
-    missing = [col for col in required_cols if col not in df.columns]
-    if missing:
-        st.error(f"Missing columns in data: {missing}")
     # 🔹 Normalize column names: Open, High, Low, Close, Volume
     df.columns = [col.capitalize() for col in df.columns]
     df.columns = df.columns.str.replace(r'_.*', '', regex=True)
-
+   
+   
+    
     df.reset_index(inplace=True)
     st.write("Sample Data", df.head())
     
