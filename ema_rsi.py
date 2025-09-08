@@ -74,6 +74,8 @@ if data_source == "Online (Yahoo Finance)":
     if st.sidebar.button("Fetch Online Data"):
         df = yf.download(ticker, start=start_date, end=end_date, interval=interval)
         st.write("📊 Sample Data", df.head())
+        if df is not None:
+            st.write(df.columns.tolist())
         try:
             df = preprocess_dataframe(df)
         except Exception as e:
