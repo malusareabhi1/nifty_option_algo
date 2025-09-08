@@ -35,12 +35,8 @@ if data_source == "Online (Yahoo Finance)":
 
         # Reset index & convert timezone
         df.reset_index(inplace=True)
-        df['Datetime'] = pd.to_datetime(df['Datetime'])
-        df['Datetime'] = df['Datetime'].dt.tz_localize('UTC').dt.tz_convert('Asia/Kolkata')
-
-        # Keep only market hours (09:15 – 15:30 IST)
+        df['Datetime'] = pd.to_datetime(df['Datetime'], utc=True).dt.tz_convert('Asia/Kolkata')
         df = df.set_index("Datetime").between_time("09:15", "15:30").reset_index()
-
         st.write("📊 Data (IST, NSE Hours Only)", df.head())
 
 elif data_source == "Offline (CSV)":
