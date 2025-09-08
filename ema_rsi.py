@@ -3,7 +3,7 @@ import pandas as pd
 import yfinance as yf
 from datetime import datetime, timedelta
 import plotly.graph_objects as go
-import ta  # For technical indicators
+import ta  # For EMA and RSI
 
 # --- Page Config ---
 st.set_page_config(page_title="EMA + RSI Intraday Strategy", layout="wide")
@@ -15,6 +15,7 @@ data_source = st.sidebar.radio("Data Source:", ["Online (Yahoo Finance)", "Offli
 
 df = None
 
+# --- Fetch Data ---
 if data_source == "Online (Yahoo Finance)":
     ticker = st.sidebar.text_input("Ticker Symbol", "^NSEI")
     start_date = st.sidebar.date_input("Start Date", datetime.now() - timedelta(days=5))
@@ -23,29 +24,19 @@ if data_source == "Online (Yahoo Finance)":
     
     if st.sidebar.button("Fetch Online Data"):
         df = yf.download(ticker, start=start_date, end=end_date, interval=interval)
+        # Flatten MultiIndex if needed
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = ['_'.join(col).strip() for col in df.columns.values]
+        # Clean column names
         df.columns = df.columns.str.replace(r'_.*', '', regex=True)
         df.columns = [col.capitalize() for col in df.columns]
+        # Convert index to IST and reset as column
+        df.index = pd.to_datetime(df.index, utc=True).tz_convert('Asia/Kolkata')
         df.reset_index(inplace=True)
-
-        # Convert to IST
-        #df['Datetime'] = pd.to_datetime(df['Datetime'], utc=True).dt.tz_convert('Asia/Kolkata')
-        #df = df.set_index("Datetime").between_time("09:15", "15:30").reset_index()
-
-        # Ensure datetime column exists
-        if 'Datetime' in df.columns:
-            df['Datetime'] = pd.to_datetime(df['Datetime'], utc=True).dt.tz_convert('Asia/Kolkata')
-            df = df.set_index('Datetime')
-        else:
-            # If index is datetime (from Yahoo Finance)
-            df.index = pd.to_datetime(df.index, utc=True).tz_convert('Asia/Kolkata')
-            df.reset_index(inplace=True)
-            df.rename(columns={'index':'Datetime'}, inplace=True)
-
-            # Keep only market hours (09:15–15:30 IST)
-            df = df.set_index('Datetime').between_time("09:15", "15:30").reset_index()
-                    #st.write("📊 Data (IST, NSE Hours Only)", df.head())
+        df.rename(columns={'index':'Datetime'}, inplace=True)
+        # Keep only NSE hours
+        df = df.set_index('Datetime').between_time("09:15", "15:30").reset_index()
+        st.write("📊 Data Sample (IST & NSE Hours)", df.head())
 
 elif data_source == "Offline (CSV)":
     file = st.sidebar.file_uploader("Upload CSV File", type=["csv"])
@@ -60,24 +51,24 @@ elif data_source == "Offline (CSV)":
 
 # --- Strategy Logic ---
 if df is not None and not df.empty:
-    tab1, tab2, tab3 = st.tabs(["🔎 Strategy Analysis", "📒 Trade Log", "📊 Chart"])
+    tab1, tab2, tab3 = st.tabs(["🔎 Strategy Analysis", "📒 Trade Log", "📊 Candlestick Chart"])
 
-    # Calculate Indicators
+    # Calculate EMA & RSI
     df['EMA20'] = ta.trend.EMAIndicator(df['Close'], window=20).ema_indicator()
     df['EMA50'] = ta.trend.EMAIndicator(df['Close'], window=50).ema_indicator()
     df['RSI'] = ta.momentum.RSIIndicator(df['Close'], window=14).rsi()
 
-    # Trade logic
+    # --- Trade Logic ---
     trades = []
     position = None
     entry_price = None
 
     for i, row in df.iterrows():
-        timestamp = i  # i is the datetime index
+        timestamp = row['Datetime']
         price = row['Close']
         ema50 = row['EMA50']
         rsi = row['RSI']
-    
+
         if position is None:
             if price > ema50 and rsi > 30:
                 position = "LONG"
@@ -100,7 +91,6 @@ if df is not None and not df.empty:
             trades[-1][4] = pnl
             position, entry_price = None, None
 
-
     # Final exit at last candle
     if position is not None:
         exit_price = df['Close'].iloc[-1]
@@ -110,20 +100,20 @@ if df is not None and not df.empty:
 
     trade_log = pd.DataFrame(trades, columns=["Datetime","Signal","EntryPrice","ExitPrice","PnL"])
 
-    # --- Tabs ---
+    # --- Tabs Display ---
     with tab1:
         st.subheader("Strategy Metrics")
         col1, col2 = st.columns(2)
         col1.metric("Latest Close", f"{df['Close'].iloc[-1]:.2f}")
         col2.metric("Total P&L", f"{trade_log['PnL'].sum():.2f}")
-        st.write("Data Sample", df.head())
+        st.write(df.tail())
 
     with tab2:
         st.subheader("Trade Log")
         st.dataframe(trade_log)
 
     with tab3:
-        st.subheader("Candlestick Chart with Signals")
+        st.subheader("Candlestick Chart with EMA & Signals")
         fig = go.Figure(data=[go.Candlestick(
             x=df['Datetime'],
             open=df['Open'],
@@ -132,7 +122,6 @@ if df is not None and not df.empty:
             close=df['Close'],
             name="Candles"
         )])
-
         # Plot EMAs
         fig.add_trace(go.Scatter(x=df['Datetime'], y=df['EMA20'], mode='lines', name='EMA20', line=dict(color='blue')))
         fig.add_trace(go.Scatter(x=df['Datetime'], y=df['EMA50'], mode='lines', name='EMA50', line=dict(color='orange')))
