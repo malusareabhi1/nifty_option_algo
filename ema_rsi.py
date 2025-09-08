@@ -43,6 +43,8 @@ if data_source == "Online (Yahoo Finance)":
             df.rename(columns={'index':'Datetime'}, inplace=True)
             st.write("📊 Data Sample", df.head())
             # Filter only NSE market hours
+            # Show column names before processing
+            st.write("🔹 Column names before datetime handling:", df.columns.tolist())
             df = df.set_index('Datetime').between_time("09:15", "15:30").reset_index()
 
 
