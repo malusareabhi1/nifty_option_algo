@@ -31,6 +31,8 @@ if data_source == "Online (Yahoo Finance)":
     missing = [col for col in required_cols if col not in df.columns]
     if missing:
         st.error(f"Missing columns in data: {missing}")
+    # 🔹 Normalize column names: Open, High, Low, Close, Volume
+    df.columns = [col.capitalize() for col in df.columns]
 
 
     df.reset_index(inplace=True)
