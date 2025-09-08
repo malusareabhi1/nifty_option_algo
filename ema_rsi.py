@@ -73,7 +73,7 @@ if data_source == "Online (Yahoo Finance)":
         except Exception as e:
             st.error(f"Error processing data: {e}")
         if df is not None:
-            st.write("📊 Sample Data", df.head())
+            #st.write("📊 Sample Data", df.head())
 
 # --- Upload Offline CSV Data ---
 elif data_source == "Offline (CSV)":
