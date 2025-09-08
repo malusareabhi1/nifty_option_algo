@@ -73,19 +73,20 @@ if df is not None and not df.empty:
     entry_price = None
 
     for i, row in df.iterrows():
+        timestamp = i  # i is the datetime index
         price = row['Close']
         ema50 = row['EMA50']
         rsi = row['RSI']
-
+    
         if position is None:
             if price > ema50 and rsi > 30:
                 position = "LONG"
                 entry_price = price
-                trades.append([row['Datetime'], "BUY", entry_price, None, None])
+                trades.append([timestamp, "BUY", entry_price, None, None])
             elif price < ema50 and rsi < 70:
                 position = "SHORT"
                 entry_price = price
-                trades.append([row['Datetime'], "SELL", entry_price, None, None])
+                trades.append([timestamp, "SELL", entry_price, None, None])
         elif position == "LONG" and (price < ema50 or rsi > 70):
             exit_price = price
             pnl = exit_price - entry_price
@@ -98,6 +99,7 @@ if df is not None and not df.empty:
             trades[-1][3] = exit_price
             trades[-1][4] = pnl
             position, entry_price = None, None
+
 
     # Final exit at last candle
     if position is not None:
