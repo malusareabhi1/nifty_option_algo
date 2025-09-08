@@ -20,6 +20,28 @@ def preprocess_dataframe(df):
     # Flatten MultiIndex
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = ['_'.join(col).strip() for col in df.columns.values]
+
+    # Remove second level (ticker) if MultiIndex
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = [col[0] for col in df.columns]  # Keep only first level
+    
+    # Reset index to get Datetime as a column
+    df = df.reset_index()
+    
+    # Rename for consistency
+    df.rename(columns={
+        'Date': 'Datetime',
+        'Adj Close': 'Adj Close',
+        'Open': 'Open',
+        'High': 'High',
+        'Low': 'Low',
+        'Close': 'Close',
+        'Volume': 'Volume'
+    }, inplace=True)
+    
+    # Ensure timezone is India
+    df['Datetime'] = pd.to_datetime(df['Datetime']).dt.tz_localize('UTC').dt.tz_convert('Asia/Kolkata')
+
     if df is not None:
             st.write(df.columns.tolist())
     # Clean column names
