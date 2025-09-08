@@ -24,15 +24,15 @@ def preprocess_dataframe(df):
     # Clean column names
     df.columns = [col.strip().capitalize() for col in df.columns]
 
-    # Find the datetime column
+    # Detect datetime column
     datetime_col = None
     for col in df.columns:
-        if col.lower() in ['datetime', 'date', 'time']:
+        if col.lower() in ['datetime', 'date', 'time', 'timestamp']:
             datetime_col = col
             break
 
     if datetime_col is None:
-        # Try using index if it's datetime
+        # Use index if datetime
         if isinstance(df.index, pd.DatetimeIndex):
             df = df.reset_index().rename(columns={'index':'Datetime'})
             datetime_col = 'Datetime'
@@ -46,12 +46,15 @@ def preprocess_dataframe(df):
     # Drop rows where conversion failed
     df = df.dropna(subset=['Datetime'])
 
-    # Only filter market hours if time exists
+    # Only filter market hours if datetime has a time component
     if df['Datetime'].dt.time.nunique() > 1:
         df = df.set_index('Datetime').between_time("09:15", "15:30").reset_index()
+    else:
+        st.warning("Data does not contain intraday timestamps; skipping market hours filter.")
 
     st.write("Sample Data After Datetime Handling", df.head())
     return df
+
 
 # --- Fetch Online Data ---
 if data_source == "Online (Yahoo Finance)":
