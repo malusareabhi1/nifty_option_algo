@@ -32,20 +32,29 @@ if data_source == "Online (Yahoo Finance)":
         df.columns = [col.capitalize() for col in df.columns]
         # Convert index to IST and reset as column
         # Ensure datetime column exists
+        # Show columns for debugging
+        st.write("🔹 Column names before datetime handling:", df.columns.tolist())
+        
+        # --- Datetime Handling ---
         if 'Datetime' in df.columns:
             df['Datetime'] = pd.to_datetime(df['Datetime'], utc=True).dt.tz_convert('Asia/Kolkata')
         elif 'Date' in df.columns:
             df['Datetime'] = pd.to_datetime(df['Date'], utc=True).dt.tz_convert('Asia/Kolkata')
         else:
-            # If datetime is index (Yahoo Finance)
+            # If datetime is in index (Yahoo Finance)
             df.index = pd.to_datetime(df.index, utc=True).tz_convert('Asia/Kolkata')
             df.reset_index(inplace=True)
             df.rename(columns={'index':'Datetime'}, inplace=True)
-            st.write("📊 Data Sample", df.head())
-            # Filter only NSE market hours
-            # Show column names before processing
-            st.write("🔹 Column names before datetime handling:", df.columns.tolist())
+        
+        # Now set Datetime as index and filter NSE market hours
+        # ⚠️ For intraday data like 5m/15m, 'Date' includes timestamp
+        try:
             df = df.set_index('Datetime').between_time("09:15", "15:30").reset_index()
+        except Exception as e:
+            st.error(f"Could not filter market hours: {e}")
+        
+        # Show processed sample
+        st.write("🔹 Data Sample after datetime handling:", df.head())
 
 
 elif data_source == "Offline (CSV)":
