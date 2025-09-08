@@ -19,7 +19,9 @@ df = None  # Initialize DataFrame
 def preprocess_dataframe(df):
     # Flatten MultiIndex if present
     if isinstance(df.columns, pd.MultiIndex):
-        df.columns = ['_'.join(col).strip() for col in df.columns.values]
+        #df.columns = ['_'.join(col).strip() for col in df.columns.values]
+        df.columns = df.columns.str.replace(r'_.*', '', regex=True)
+        df.columns = [col.capitalize() for col in df.columns]
 
     # Clean column names
     df.columns = [col.strip().capitalize() for col in df.columns]
@@ -65,8 +67,7 @@ if data_source == "Online (Yahoo Finance)":
 
     if st.sidebar.button("Fetch Online Data"):
         df = yf.download(ticker, start=start_date, end=end_date, interval=interval)
-        df.columns = df.columns.str.replace(r'_.*', '', regex=True)
-        df.columns = [col.capitalize() for col in df.columns]
+        
         try:
             df = preprocess_dataframe(df)
         except Exception as e:
