@@ -23,8 +23,8 @@ if data_source == "Online (Yahoo Finance)":
     # 🔹 Standardize column names
     df.columns = [col.capitalize() for col in df.columns]
 
-        df.reset_index(inplace=True)
-        st.write("Sample Data", df.head())
+    df.reset_index(inplace=True)
+    st.write("Sample Data", df.head())
 
 elif data_source == "Offline (CSV)":
     file = st.file_uploader("Upload CSV File", type=["csv"])
