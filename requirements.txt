@@ -8,4 +8,4 @@ twilio
 requests
 nsepython
 ta
-matplotlib.pyplot
+matplotlib
