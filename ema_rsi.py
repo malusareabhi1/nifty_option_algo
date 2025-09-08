@@ -41,7 +41,7 @@ if data_source == "Online (Yahoo Finance)":
             df.index = pd.to_datetime(df.index, utc=True).tz_convert('Asia/Kolkata')
             df.reset_index(inplace=True)
             df.rename(columns={'index':'Datetime'}, inplace=True)
-
+            st.write("📊 Data Sample", df.head())
             # Filter only NSE market hours
             df = df.set_index('Datetime').between_time("09:15", "15:30").reset_index()
 
