@@ -3,7 +3,7 @@ import pandas as pd
 import yfinance as yf
 from datetime import datetime, timedelta
 import plotly.graph_objects as go
-import ta  # For EMA and RSI
+import ta  # EMA & RSI indicators
 
 # --- Page Config ---
 st.set_page_config(page_title="EMA + RSI Intraday Strategy", layout="wide")
@@ -13,60 +13,55 @@ st.title("📈 EMA + RSI Intraday Momentum Strategy")
 st.sidebar.header("⚙️ Parameters")
 data_source = st.sidebar.radio("Data Source:", ["Online (Yahoo Finance)", "Offline (CSV)"])
 
-df = None
+ticker, start_date, end_date, interval = None, None, None, None
+file = None
 
-# --- Fetch Data ---
 if data_source == "Online (Yahoo Finance)":
     ticker = st.sidebar.text_input("Ticker Symbol", "^NSEI")
     start_date = st.sidebar.date_input("Start Date", datetime.now() - timedelta(days=5))
     end_date = st.sidebar.date_input("End Date", datetime.now())
     interval = st.sidebar.selectbox("Interval", ["5m", "15m", "30m", "1h"])
-    
-    if st.sidebar.button("Fetch Online Data"):
-        df = yf.download(ticker, start=start_date, end=end_date, interval=interval)
-        # Flatten MultiIndex if needed
-        if isinstance(df.columns, pd.MultiIndex):
-            df.columns = ['_'.join(col).strip() for col in df.columns.values]
-        # Clean column names
-        df.columns = df.columns.str.replace(r'_.*', '', regex=True)
-        df.columns = [col.capitalize() for col in df.columns]
-        # Convert index to IST and reset as column
-        # Ensure datetime column exists
-        # Show columns for debugging
-        st.write("🔹 Column names before datetime handling:", df.columns.tolist())
-        
-        # --- Datetime Handling ---
-        if 'Datetime' in df.columns:
-            df['Datetime'] = pd.to_datetime(df['Datetime'], utc=True).dt.tz_convert('Asia/Kolkata')
-        elif 'Date' in df.columns:
-            df['Datetime'] = pd.to_datetime(df['Date'], utc=True).dt.tz_convert('Asia/Kolkata')
-        else:
-            # If datetime is in index (Yahoo Finance)
-            df.index = pd.to_datetime(df.index, utc=True).tz_convert('Asia/Kolkata')
-            df.reset_index(inplace=True)
-            df.rename(columns={'index':'Datetime'}, inplace=True)
-        
-        # Now set Datetime as index and filter NSE market hours
-        # ⚠️ For intraday data like 5m/15m, 'Date' includes timestamp
-        try:
-            df = df.set_index('Datetime').between_time("09:15", "15:30").reset_index()
-        except Exception as e:
-            st.error(f"Could not filter market hours: {e}")
-        
-        # Show processed sample
-        st.write("🔹 Data Sample after datetime handling:", df.head())
-
-
 elif data_source == "Offline (CSV)":
     file = st.sidebar.file_uploader("Upload CSV File", type=["csv"])
-    if file is not None:
-        df = pd.read_csv(file)
-        df.columns = df.columns.str.replace(r'_.*', '', regex=True)
-        df.columns = [col.capitalize() for col in df.columns]
-        if "Datetime" in df.columns:
-            df["Datetime"] = pd.to_datetime(df["Datetime"])
-            df = df.set_index("Datetime").between_time("09:15", "15:30").reset_index()
-        st.write("📊 Data Sample", df.head())
+
+# --- Fetch & Preprocess Data ---
+df = None
+
+def preprocess_dataframe(df):
+    # Flatten MultiIndex if needed
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = ['_'.join(col).strip() for col in df.columns.values]
+    # Clean column names
+    df.columns = df.columns.str.replace(r'_.*', '', regex=True)
+    df.columns = [col.capitalize() for col in df.columns]
+
+    # Datetime handling
+    if 'Datetime' in df.columns:
+        df['Datetime'] = pd.to_datetime(df['Datetime'], utc=True).dt.tz_convert('Asia/Kolkata')
+    elif 'Date' in df.columns:
+        df['Datetime'] = pd.to_datetime(df['Date'], utc=True).dt.tz_convert('Asia/Kolkata')
+    elif 'Timestamp' in df.columns:
+        df['Datetime'] = pd.to_datetime(df['Timestamp'], utc=True).dt.tz_convert('Asia/Kolkata')
+    else:
+        # Yahoo Finance case: index is datetime
+        df = df.copy()
+        df.index = pd.to_datetime(df.index, utc=True).tz_convert('Asia/Kolkata')
+        df.reset_index(inplace=True)
+        df.rename(columns={'index':'Datetime'}, inplace=True)
+
+    # Filter NSE market hours
+    df = df.set_index('Datetime').between_time("09:15", "15:30").reset_index()
+    return df
+
+if data_source == "Online (Yahoo Finance)" and st.sidebar.button("Fetch Online Data"):
+    df = yf.download(ticker, start=start_date, end=end_date, interval=interval)
+    df = preprocess_dataframe(df)
+    st.write("📊 Data Sample", df.head())
+
+elif data_source == "Offline (CSV)" and file is not None:
+    df = pd.read_csv(file)
+    df = preprocess_dataframe(df)
+    st.write("📊 Data Sample", df.head())
 
 # --- Strategy Logic ---
 if df is not None and not df.empty:
@@ -77,7 +72,7 @@ if df is not None and not df.empty:
     df['EMA50'] = ta.trend.EMAIndicator(df['Close'], window=50).ema_indicator()
     df['RSI'] = ta.momentum.RSIIndicator(df['Close'], window=14).rsi()
 
-    # --- Trade Logic ---
+    # --- Trade Execution ---
     trades = []
     position = None
     entry_price = None
@@ -87,6 +82,9 @@ if df is not None and not df.empty:
         price = row['Close']
         ema50 = row['EMA50']
         rsi = row['RSI']
+
+        if pd.isna(ema50) or pd.isna(rsi):
+            continue  # skip incomplete rows
 
         if position is None:
             if price > ema50 and rsi > 30:
@@ -141,11 +139,10 @@ if df is not None and not df.empty:
             close=df['Close'],
             name="Candles"
         )])
-        # Plot EMAs
+        # EMAs
         fig.add_trace(go.Scatter(x=df['Datetime'], y=df['EMA20'], mode='lines', name='EMA20', line=dict(color='blue')))
         fig.add_trace(go.Scatter(x=df['Datetime'], y=df['EMA50'], mode='lines', name='EMA50', line=dict(color='orange')))
-
-        # Add Buy/Sell markers
+        # Buy/Sell markers
         for _, trade in trade_log.iterrows():
             color = "green" if trade["Signal"]=="BUY" else "red"
             symbol = "triangle-up" if trade["Signal"]=="BUY" else "triangle-down"
@@ -158,6 +155,5 @@ if df is not None and not df.empty:
                 textposition="top center" if trade["Signal"]=="BUY" else "bottom center",
                 name=trade["Signal"]
             ))
-
         fig.update_layout(template="plotly_white", xaxis_rangeslider_visible=False, height=600)
         st.plotly_chart(fig, use_container_width=True)
