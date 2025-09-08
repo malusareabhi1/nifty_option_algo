@@ -20,7 +20,8 @@ def preprocess_dataframe(df):
     # Flatten MultiIndex
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = ['_'.join(col).strip() for col in df.columns.values]
-
+    if df is not None:
+            st.write(df.columns.tolist())
     # Clean column names
     df.columns = [col.strip().capitalize() for col in df.columns]
 
