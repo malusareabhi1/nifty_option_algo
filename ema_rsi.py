@@ -20,37 +20,38 @@ def preprocess_dataframe(df):
     # Flatten MultiIndex if present
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = ['_'.join(col).strip() for col in df.columns.values]
-    
+
     # Clean column names
-    df.columns = df.columns.str.replace(r'_.*', '', regex=True)
-    df.columns = [col.capitalize() for col in df.columns]
+    df.columns = [col.strip().capitalize() for col in df.columns]
 
-    # Handle datetime
-    if 'Datetime' in df.columns:
-        df['Datetime'] = pd.to_datetime(df['Datetime'], errors='coerce', utc=True).dt.tz_convert('Asia/Kolkata')
-    elif 'Date' in df.columns:
-        df['Datetime'] = pd.to_datetime(df['Date'], errors='coerce', utc=True).dt.tz_convert('Asia/Kolkata')
-    elif isinstance(df.index, pd.DatetimeIndex):
-        if df.index.tz is None:
-            df.index = df.index.tz_localize('UTC').tz_convert('Asia/Kolkata')
+    # Find the datetime column
+    datetime_col = None
+    for col in df.columns:
+        if col.lower() in ['datetime', 'date', 'time']:
+            datetime_col = col
+            break
+
+    if datetime_col is None:
+        # Try using index if it's datetime
+        if isinstance(df.index, pd.DatetimeIndex):
+            df = df.reset_index().rename(columns={'index':'Datetime'})
+            datetime_col = 'Datetime'
         else:
-            df.index = df.index.tz_convert('Asia/Kolkata')
-        df = df.reset_index().rename(columns={'index':'Datetime'})
-    else:
-        st.error("No datetime information found in the data!")
-        return df
+            st.error("No datetime information found in the data!")
+            return df
 
-    # Drop rows where Datetime conversion failed
+    # Convert to datetime
+    df['Datetime'] = pd.to_datetime(df[datetime_col], errors='coerce', utc=True).dt.tz_convert('Asia/Kolkata')
+
+    # Drop rows where conversion failed
     df = df.dropna(subset=['Datetime'])
 
-    # Only filter market hours if there is a time component
+    # Only filter market hours if time exists
     if df['Datetime'].dt.time.nunique() > 1:
         df = df.set_index('Datetime').between_time("09:15", "15:30").reset_index()
 
     st.write("Sample Data After Datetime Handling", df.head())
     return df
-
-
 
 # --- Fetch Online Data ---
 if data_source == "Online (Yahoo Finance)":
