@@ -40,14 +40,15 @@ if "df" in locals() and not df.empty:
             df["Datetime"] = pd.to_datetime(df["Datetime"])
             df.set_index("Datetime", inplace=True)
 
-    # Extract opening range (first 15 minutes)
+   # Extract opening range (first 15 minutes)
     opening_range = df.between_time("09:15", "09:30")
-    OR_high = opening_range["High"].max()
-    OR_low = opening_range["Low"].min()
-
-    # Get latest price
-    latest_price = df["Close"].iloc[-1]
-
+    
+    OR_high = float(opening_range["High"].max())
+    OR_low = float(opening_range["Low"].min())
+    
+    # Get latest price (last available close)
+    latest_price = float(df["Close"].iloc[-1])
+    
     # ORB condition
     if latest_price > OR_high:
         signal = "BUY"
