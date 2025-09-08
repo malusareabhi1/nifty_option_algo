@@ -67,7 +67,7 @@ if "df" in locals() and not df.empty:
     OR_low = float(opening_range["Low_^nsei"].min())
     
     # Get latest price (last available close)
-    latest_price = float(df["Close"].iloc[-1])
+    latest_price = float(df["Close_^nsei"].iloc[-1])
     
     # ORB condition
     if latest_price > OR_high:
