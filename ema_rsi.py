@@ -97,8 +97,23 @@ if data_source == "Online (Yahoo Finance)":
     if st.sidebar.button("Fetch Online Data"):
         df = yf.download(ticker, start=start_date, end=end_date, interval=interval)
         st.write("📊 Sample Data", df.head())
-        if df is not None:
-            st.write(df.columns.tolist())
+        # Reset index to make Datetime a column
+        df = df.reset_index()
+        
+        # Rename columns to standard names
+        df.rename(columns={
+            'Date': 'Datetime',
+            'Open': 'Open',
+            'High': 'High',
+            'Low': 'Low',
+            'Close': 'Close',
+            'Adj Close': 'Adj Close',
+            'Volume': 'Volume'
+        }, inplace=True)
+        
+        # Convert Datetime to IST
+        df['Datetime'] = pd.to_datetime(df['Datetime']).dt.tz_localize('UTC').dt.tz_convert('Asia/Kolkata')
+
         try:
             df = preprocess_dataframe(df)
         except Exception as e:
