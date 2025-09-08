@@ -44,7 +44,13 @@ elif data_source == "Offline (CSV)":
     if file is not None:
         df = pd.read_csv(file)
         # Try to normalize column names
-        df.columns = [col.strip().capitalize() for col in df.columns]
+        #df.columns = [col.strip().capitalize() for col in df.columns]
+        # 🔹 Clean column names: remove suffixes like _^nsei
+        df.columns = df.columns.str.replace(r'_.*', '', regex=True)
+        
+        # 🔹 Capitalize first letter (Open, High, Low, Close, Volume)
+        df.columns = [col.capitalize() for col in df.columns]
+
         if "Datetime" in df.columns:
             df["Datetime"] = pd.to_datetime(df["Datetime"])
             df.set_index("Datetime", inplace=True)
@@ -63,11 +69,11 @@ if "df" in locals() and not df.empty:
    # Extract opening range (first 15 minutes)
     opening_range = df.between_time("09:15", "09:30")
     
-    OR_high = float(opening_range["High_^nsei"].max())
-    OR_low = float(opening_range["Low_^nsei"].min())
+    OR_high = float(opening_range["High"].max())
+    OR_low = float(opening_range["Low"].min())
     
     # Get latest price (last available close)
-    latest_price = float(df["Close_^nsei"].iloc[-1])
+    latest_price = float(df["Close"].iloc[-1])
     
     # ORB condition
     if latest_price > OR_high:
