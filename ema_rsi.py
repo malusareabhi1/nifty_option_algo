@@ -30,8 +30,21 @@ if data_source == "Online (Yahoo Finance)":
         df.reset_index(inplace=True)
 
         # Convert to IST
-        df['Datetime'] = pd.to_datetime(df['Datetime'], utc=True).dt.tz_convert('Asia/Kolkata')
-        df = df.set_index("Datetime").between_time("09:15", "15:30").reset_index()
+        #df['Datetime'] = pd.to_datetime(df['Datetime'], utc=True).dt.tz_convert('Asia/Kolkata')
+        #df = df.set_index("Datetime").between_time("09:15", "15:30").reset_index()
+
+        # Ensure datetime column exists
+        if 'Datetime' in df.columns:
+            df['Datetime'] = pd.to_datetime(df['Datetime'], utc=True).dt.tz_convert('Asia/Kolkata')
+            df = df.set_index('Datetime')
+        else:
+            # If index is datetime (from Yahoo Finance)
+            df.index = pd.to_datetime(df.index, utc=True).tz_convert('Asia/Kolkata')
+            df.reset_index(inplace=True)
+            df.rename(columns={'index':'Datetime'}, inplace=True)
+
+# Keep only market hours (09:15–15:30 IST)
+df = df.set_index('Datetime').between_time("09:15", "15:30").reset_index()
         #st.write("📊 Data (IST, NSE Hours Only)", df.head())
 
 elif data_source == "Offline (CSV)":
