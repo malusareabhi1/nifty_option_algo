@@ -19,9 +19,9 @@ df = None  # Initialize DataFrame
 def preprocess_dataframe(df):
     # Flatten MultiIndex if present
     if isinstance(df.columns, pd.MultiIndex):
-        #df.columns = ['_'.join(col).strip() for col in df.columns.values]
-        df.columns = df.columns.str.replace(r'_.*', '', regex=True)
-        df.columns = [col.capitalize() for col in df.columns]
+        df.columns = ['_'.join(col).strip() for col in df.columns.values]
+    df.columns = df.columns.str.replace(r'_.*', '', regex=True)
+    df.columns = [col.capitalize() for col in df.columns]
 
     # Clean column names
     df.columns = [col.strip().capitalize() for col in df.columns]
