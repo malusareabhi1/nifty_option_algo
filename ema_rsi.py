@@ -26,24 +26,31 @@ def preprocess_dataframe(df):
     df.columns = [col.capitalize() for col in df.columns]
 
     # Handle datetime
+    # Ensure datetime column exists
     if 'Datetime' in df.columns:
         df['Datetime'] = pd.to_datetime(df['Datetime'], utc=True).dt.tz_convert('Asia/Kolkata')
     elif 'Date' in df.columns:
         df['Datetime'] = pd.to_datetime(df['Date'], utc=True).dt.tz_convert('Asia/Kolkata')
     else:
         # If index is datetime (Yahoo Finance)
-        if not isinstance(df.index, pd.DatetimeIndex):
-            raise ValueError("No datetime information found in the data!")
-        # Localize if naive
-        if df.index.tz is None:
-            df.index = df.index.tz_localize('UTC').tz_convert('Asia/Kolkata')
+        if isinstance(df.index, pd.DatetimeIndex):
+            if df.index.tz is None:
+                df.index = df.index.tz_localize('UTC').tz_convert('Asia/Kolkata')
+            else:
+                df.index = df.index.tz_convert('Asia/Kolkata')
+            df.reset_index(inplace=True)
+            df.rename(columns={'index':'Datetime'}, inplace=True)
         else:
-            df.index = df.index.tz_convert('Asia/Kolkata')
-        df.reset_index(inplace=True)
-        df.rename(columns={'index': 'Datetime'}, inplace=True)
+            st.error("No datetime information found in the data!")
+    
+    # Now filter NSE market hours (intraday)
+    try:
+        df = df.set_index('Datetime').between_time("09:15", "15:30").reset_index()
+    except Exception as e:
+        st.error(f"Could not filter market hours: {e}")
+    
+    st.write("Sample Data After Datetime Handling", df.head())
 
-    # Filter NSE market hours (intraday)
-    df = df.set_index('Datetime').between_time("09:15", "15:30").reset_index()
     return df
 
 
