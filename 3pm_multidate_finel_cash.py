@@ -24,6 +24,19 @@ def trading_signal_equity(df, quantity=100, return_all_signals=False):
     - Time exit after 16 minutes if no SL hit
     - Single active trade per day
     """
+    # --- Standardize column names ---
+    rename_map = {}
+    for col in df.columns:
+        if col.startswith("Open"):
+            rename_map[col] = "Open"
+        if col.startswith("High"):
+            rename_map[col] = "High"
+        if col.startswith("Low"):
+            rename_map[col] = "Low"
+        if col.startswith("Close"):
+            rename_map[col] = "Close"
+
+    df = df.rename(columns=rename_map)
 
     signals = []
     #spot_price = df['Close'].iloc[-1]
