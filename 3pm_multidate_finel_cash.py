@@ -255,38 +255,29 @@ def trading_signal_equity(df, quantity=100, return_all_signals=False):
 
 def plot_nifty_multiday(df, trading_days):
     """
-    Plots Nifty 15-min candles for multiple trading days with each previous day's 3PM Open/Close
-    marked only on the next trading day and extending only until 3PM candle.
-    
-    Parameters:
-    - df : DataFrame with columns ['Datetime', 'Open_^NSEI', 'High_^NSEI', 'Low_^NSEI', 'Close_^NSEI']
-    - trading_days : list of sorted trading dates (datetime.date)
+    Works for both NIFTY (with ^NSEI suffix) and equity OHLC data.
     """
-    
-    fig = go.Figure()
-    # Suppose df is your stock dataframe
-    df = df.rename(columns={
-        "Open": "Open_^NSEI",
-        "High": "High_^NSEI",
-        "Low": "Low_^NSEI",
-        "Close": "Close_^NSEI"
-    })
-    col_map = {
-        'Open_^NSEI': 'Open',
-        'High_^NSEI': 'High',
-        'Low_^NSEI': 'Low',
-        'Close_^NSEI': 'Close'
+
+    # ✅ Normalize columns once
+    rename_map = {
+        "Open_^NSEI": "Open",
+        "High_^NSEI": "High",
+        "Low_^NSEI": "Low",
+        "Close_^NSEI": "Close"
     }
-    df = df.rename(columns=col_map)
-    
+    df = df.rename(columns=rename_map)
+
+    fig = go.Figure()
+
     for i in range(1, len(trading_days)):
-        day0 = trading_days[i-1]  # Previous day (for Base Zone)
-        day1 = trading_days[i]    # Current day
-        
-        # Filter data for current day only
+        day0 = trading_days[i-1]
+        day1 = trading_days[i]
+
         df_day1 = df[df['Datetime'].dt.date == day1]
-        
-        # Add candlestick trace for current day
+        if df_day1.empty:
+            continue
+
+        # ✅ Use normalized OHLC
         fig.add_trace(go.Candlestick(
             x=df_day1['Datetime'],
             open=df_day1['Open'],
@@ -295,56 +286,48 @@ def plot_nifty_multiday(df, trading_days):
             close=df_day1['Close'],
             name=f"{day1}"
         ))
-        
-        # Get 3 PM candle of previous day (Base Zone)
-        candle_3pm = df[df['Datetime'].dt.date == day0]
-        candle_3pm = candle_3pm[(candle_3pm['Datetime'].dt.hour == 15) &
-                                (candle_3pm['Datetime'].dt.minute == 0)]
-        
+
+        # Previous day 3 PM candle
+        candle_3pm = df[(df['Datetime'].dt.date == day0) &
+                        (df['Datetime'].dt.hour == 15) &
+                        (df['Datetime'].dt.minute == 0)]
+
         if not candle_3pm.empty:
-            open_3pm = candle_3pm.iloc[0]['Open_^NSEI']
-            close_3pm = candle_3pm.iloc[0]['Close_^NSEI']
-            
-            # Get day1 3PM candle time for line end
+            open_3pm = candle_3pm.iloc[0]['Open']
+            close_3pm = candle_3pm.iloc[0]['Close']
+
             day1_3pm_candle = df_day1[(df_day1['Datetime'].dt.hour == 15) &
-                                       (df_day1['Datetime'].dt.minute == 0)]
+                                      (df_day1['Datetime'].dt.minute == 0)]
             if not day1_3pm_candle.empty:
                 x_end = day1_3pm_candle['Datetime'].iloc[0]
                 x_start = df_day1['Datetime'].min()
-                
-                # Horizontal line for Open
+
                 fig.add_shape(
                     type="line",
-                    x0=x_start,
-                    x1=x_end,
-                    y0=open_3pm,
-                    y1=open_3pm,
+                    x0=x_start, x1=x_end,
+                    y0=open_3pm, y1=open_3pm,
                     line=dict(color="blue", width=1, dash="dot"),
                 )
-                
-                # Horizontal line for Close
                 fig.add_shape(
                     type="line",
-                    x0=x_start,
-                    x1=x_end,
-                    y0=close_3pm,
-                    y1=close_3pm,
+                    x0=x_start, x1=x_end,
+                    y0=close_3pm, y1=close_3pm,
                     line=dict(color="red", width=1, dash="dot"),
                 )
-    
-    # Layout adjustments
+
     fig.update_layout(
-        title="Nifty 15-min Candles with Previous Day 3PM Open/Close Lines (to next day 3PM)",
+        title="15-min Candles with Previous Day 3PM Open/Close Lines",
         xaxis_rangeslider_visible=False,
         xaxis=dict(
             rangebreaks=[
-                dict(bounds=["sat", "mon"]),          # Hide weekends
-                dict(bounds=[15.5, 9.25], pattern="hour")  # Hide off-hours
+                dict(bounds=["sat", "mon"]),
+                dict(bounds=[15.5, 9.25], pattern="hour")
             ]
         )
     )
-    
+
     return fig
+
     
 
 ##############################################################################
