@@ -3240,53 +3240,8 @@ for i in range(1, len(unique_days)):
     
     #signal = trading_signal_all_conditions2_improved(day_df)
     
-    #st.write(signal)
-    if signal:
-        #st.write(f"### {day1} → Signal detected: {signal['message']}")
-        #st.table(pd.DataFrame([signal]))
-
-        # Get option chain and trade log
-        result_chain = find_nearest_itm_option()
-        spot_price = signal['spot_price']
-        ot = "CE" if signal["option_type"].upper() == "CALL" else "PE"
-        result = option_chain_finder(result_chain, spot_price, option_type=ot, lots=10, lot_size=75)
-        
-        # Extract the option selected info
-        option_data = result['option_data']
-        strike_price = option_data.get('strikePrice')
-        buy_premium = option_data.get('lastPrice')
-        identifier = option_data.get('identifier')
-
-        # Construct signal log dictionary
-        sig_log = {
-            "Date": day1,  # Add the trading day
-            "Condition Type": signal['condition'],
-            "Entry Time": signal['entry_time'],
-            "Spot Price": spot_price,
-            "Option Selected": ot,
-            "Identifier": identifier,
-            "Strike Price": strike_price,
-            "Buy Premium": buy_premium,
-            "Stoploss (Trailing 10%)": buy_premium * 0.9 if buy_premium else None,
-            "Take Profit (10% rise)": buy_premium * 1.1 if buy_premium else None,
-            "Quantity": signal['quantity'],
-            "Partial Profit Booking Qty (50%)": signal['quantity'] / 2,
-            "Expiry Date": signal['expiry'],
-            "Time Exit (16 mins after entry)": signal['entry_time'] + pd.Timedelta(minutes=16)
-        }
-        # Append to list
-        signal_log_list.append(sig_log)
-        trade_log_df = generate_trade_log_from_option(result, signal)
-        
-        # Drop Trade details column
-        if 'Trade details' in trade_log_df.columns:
-            trade_log_df = trade_log_df.drop(columns=['Trade details'])
-        
-        #st.table(trade_log_df)
-
-        # Append to combined trade log
-        combined_trade_log.append(trade_log_df)
-
+    st.write(signal)
+    
 #df_plot = df[df['Datetime'].dt.date == selected_date]
 # Get all unique trading days in the data within the selected range
 unique_days = sorted(df['Datetime'].dt.date.unique())
