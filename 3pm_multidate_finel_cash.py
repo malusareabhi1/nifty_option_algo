@@ -264,6 +264,13 @@ def plot_nifty_multiday(df, trading_days):
     """
     
     fig = go.Figure()
+    # Suppose df is your stock dataframe
+    df = df.rename(columns={
+        "Open": "Open_^NSEI",
+        "High": "High_^NSEI",
+        "Low": "Low_^NSEI",
+        "Close": "Close_^NSEI"
+    })
     
     for i in range(1, len(trading_days)):
         day0 = trading_days[i-1]  # Previous day (for Base Zone)
