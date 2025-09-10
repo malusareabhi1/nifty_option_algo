@@ -271,6 +271,13 @@ def plot_nifty_multiday(df, trading_days):
         "Low": "Low_^NSEI",
         "Close": "Close_^NSEI"
     })
+    col_map = {
+        'Open_^NSEI': 'Open',
+        'High_^NSEI': 'High',
+        'Low_^NSEI': 'Low',
+        'Close_^NSEI': 'Close'
+    }
+    df = df.rename(columns=col_map)
     
     for i in range(1, len(trading_days)):
         day0 = trading_days[i-1]  # Previous day (for Base Zone)
