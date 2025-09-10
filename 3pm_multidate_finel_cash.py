@@ -180,7 +180,17 @@ trading_days = sorted([d for d in df['Datetime'].dt.date.unique() if start_date 
 fig = plot_nifty_multiday(df, trading_days)
 st.plotly_chart(fig, use_container_width=True)
 
+# Initialize empty list to store signals
+signal_log_list = []
+# ✅ Loop through each day (starting from 2nd day in range)
+for i in range(1, len(unique_days)):
+    day0 = unique_days[i-1]
+    day1 = unique_days[i]
 
+    day_df = df[df['Datetime'].dt.date.isin([day0, day1])]
+
+    # Call your trading signal function
+    signal = trading_signal_all_conditions1(day_df)
 
 #st.write(signal)
 # 2. Fetch option premium data for that strike
