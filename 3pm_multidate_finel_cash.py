@@ -3160,6 +3160,8 @@ if data_source == "Upload CSV":
     else:
         st.stop()
 else:
+       # Text input for any stock symbol
+       selected_stock = st.text_input("Enter Stock Symbol (e.g., RELIANCE.NS)", value="RELIANCE.NS")  
        start_date = st.date_input("Select Start Date", value=datetime.today() - timedelta(days=15))
        end_date = st.date_input("Select End Date", value=datetime.today())
 
@@ -3169,7 +3171,7 @@ if start_date >= end_date:
 
 # ✅ Download full data for range (start-1 day to end)
 download_start = start_date - timedelta(days=1)  # To include previous day for first day
-df = yf.download("^NSEI", start=download_start, end=end_date + timedelta(days=1), interval="15m")
+df = yf.download(selected_stock, start=download_start, end=end_date + timedelta(days=1), interval="15m")
 if df.empty:
     st.warning("No data for selected range")
     st.stop()
