@@ -282,10 +282,10 @@ def plot_nifty_multiday(df, trading_days):
         # Add candlestick trace for current day
         fig.add_trace(go.Candlestick(
             x=df_day1['Datetime'],
-            open=df_day1['Open_^NSEI'],
-            high=df_day1['High_^NSEI'],
-            low=df_day1['Low_^NSEI'],
-            close=df_day1['Close_^NSEI'],
+            open=df_day1['Open'],
+            high=df_day1['High'],
+            low=df_day1['Low'],
+            close=df_day1['Close'],
             name=f"{day1}"
         ))
         
