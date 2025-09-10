@@ -23,7 +23,18 @@ def plot_nifty_multiday(df, trading_days):
             close=df_day['Close'],
             name=str(day)
         ))
-    fig.update_layout(title="Multi-Day 3PM Strategy", xaxis_rangeslider_visible=False)
+
+    # ✅ Hide weekends and non-trading hours
+    fig.update_layout(
+        title="Multi-Day 3PM Strategy",
+        xaxis_rangeslider_visible=False,
+        xaxis=dict(
+            rangebreaks=[
+                dict(bounds=["sat", "mon"]),   # remove weekends
+                dict(bounds=[15.30, 9.15], pattern="hour")  # remove off-market hours
+            ]
+        )
+    )
     return fig
 
 ##################################START To Execute ################################################
