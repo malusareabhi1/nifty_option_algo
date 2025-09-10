@@ -60,6 +60,26 @@ df.columns = ['_'.join(col).strip() for col in df.columns.values]
 df.reset_index(inplace=True)
 df.rename(columns={'index': 'Datetime'}, inplace=True)  # Ensure proper name
 #
+# ✅ Normalize columns for any stock (Yahoo / CSV)
+df.columns = [str(c) for c in df.columns]
+
+rename_map = {}
+for col in df.columns:
+    col_low = col.lower()
+    if 'date' in col_low or 'time' in col_low: rename_map[col] = 'Datetime'
+    elif 'open' in col_low: rename_map[col] = 'Open'
+    elif 'high' in col_low: rename_map[col] = 'High'
+    elif 'low' in col_low: rename_map[col] = 'Low'
+    elif 'close' in col_low: rename_map[col] = 'Close'
+    elif 'volume' in col_low: rename_map[col] = 'Volume'
+df.rename(columns=rename_map, inplace=True)
+
+# ✅ Keep only needed columns
+keep_cols = ['Datetime', 'Open', 'High', 'Low', 'Close']
+df = df[[c for c in keep_cols if c in df.columns]]
+
+# ✅ Ensure datetime type
+df['Datetime'] = pd.to_datetime(df['Datetime'])
 st.write(df.columns)
 #
 #st.write(df.columns.tolist())
