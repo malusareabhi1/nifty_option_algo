@@ -5,10 +5,26 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 
 st.set_page_config(layout="wide")
-st.title("Nifty 3PM Trailing SL and Take Profit  Strategy - Multi-Day Backtest")
+st.title("CASH  3PM Trailing SL and Take Profit  Strategy - Multi-Day Backtest")
 
 
 
+def plot_nifty_multiday(df, trading_days):
+    fig = go.Figure()
+    for day in trading_days:
+        df_day = df[df['Datetime'].dt.date == day]
+        if df_day.empty:
+            continue
+        fig.add_trace(go.Candlestick(
+            x=df_day['Datetime'],
+            open=df_day['Open'],
+            high=df_day['High'],
+            low=df_day['Low'],
+            close=df_day['Close'],
+            name=str(day)
+        ))
+    fig.update_layout(title="Multi-Day 3PM Strategy", xaxis_rangeslider_visible=False)
+    return fig
 
 ##################################START To Execute ################################################
 
