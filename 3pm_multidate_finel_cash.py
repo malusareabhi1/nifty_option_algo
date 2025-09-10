@@ -59,9 +59,10 @@ df.columns = ['_'.join(col).strip() for col in df.columns.values]
 
 df.reset_index(inplace=True)
 df.rename(columns={'index': 'Datetime'}, inplace=True)  # Ensure proper name
-#st.write(df.columns)
 #
-st.write(df.columns.tolist())
+st.write(df.columns)
+#
+#st.write(df.columns.tolist())
 
 # ✅ Normalize columns
 if isinstance(df.columns, pd.MultiIndex):
