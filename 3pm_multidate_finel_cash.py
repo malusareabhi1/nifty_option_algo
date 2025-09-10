@@ -26,7 +26,15 @@ def trading_signal_equity(df, quantity=100, return_all_signals=False):
     """
 
     signals = []
-    spot_price = df['Close'].iloc[-1]
+    #spot_price = df['Close'].iloc[-1]
+    # handle both cases: with or without ^NSEI in column names
+    if 'Close' in df.columns:
+        spot_price = df['Close'].iloc[-1]
+    elif 'Close_^NSEI' in df.columns:
+        spot_price = df['Close_^NSEI'].iloc[-1]
+    else:
+        raise KeyError("No 'Close' column found in dataframe. Available columns: " + str(df.columns.tolist()))
+
 
     # Preprocess
     df = df.copy()
