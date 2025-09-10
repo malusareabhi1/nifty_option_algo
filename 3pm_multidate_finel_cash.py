@@ -11,27 +11,79 @@ st.title("CASH  3PM Trailing SL and Take Profit  Strategy - Multi-Day Backtest")
 
 def plot_nifty_multiday(df, trading_days):
     fig = go.Figure()
-    for day in trading_days:
-        df_day = df[df['Datetime'].dt.date == day]
-        if df_day.empty:
+
+    for i in range(1, len(trading_days)):
+        day0 = trading_days[i - 1]   # Previous day
+        day1 = trading_days[i]       # Current day
+
+        # Filter data for current day
+        df_day1 = df[df['Datetime'].dt.date == day1]
+        if df_day1.empty:
             continue
+
+        # Plot current day candles
         fig.add_trace(go.Candlestick(
-            x=df_day['Datetime'],
-            open=df_day['Open'],
-            high=df_day['High'],
-            low=df_day['Low'],
-            close=df_day['Close'],
-            name=str(day)
+            x=df_day1['Datetime'],
+            open=df_day1['Open'],
+            high=df_day1['High'],
+            low=df_day1['Low'],
+            close=df_day1['Close'],
+            name=str(day1)
         ))
 
-    # ✅ Hide weekends and non-trading hours
+        # Get 3PM candle of previous day
+        candle_3pm = df[
+            (df['Datetime'].dt.date == day0) &
+            (df['Datetime'].dt.hour == 15) &
+            (df['Datetime'].dt.minute == 0)
+        ]
+        if not candle_3pm.empty:
+            open_3pm = candle_3pm.iloc[0]['Open']
+            close_3pm = candle_3pm.iloc[0]['Close']
+
+            # Day1 session range
+            x_start = df_day1['Datetime'].min()
+            day1_3pm = df_day1[
+                (df_day1['Datetime'].dt.hour == 15) &
+                (df_day1['Datetime'].dt.minute == 0)
+            ]
+            if not day1_3pm.empty:
+                x_end = day1_3pm['Datetime'].iloc[0]
+            else:
+                x_end = df_day1['Datetime'].max()
+
+            # 🔵 Line for 3PM Open (mark as "High")
+            fig.add_shape(
+                type="line",
+                x0=x_start, x1=x_end,
+                y0=open_3pm, y1=open_3pm,
+                line=dict(color="blue", width=1, dash="dot"),
+            )
+            fig.add_annotation(
+                x=x_end, y=open_3pm, text="3PM Open", 
+                showarrow=False, font=dict(color="blue", size=10)
+            )
+
+            # 🔴 Line for 3PM Close (mark as "Low")
+            fig.add_shape(
+                type="line",
+                x0=x_start, x1=x_end,
+                y0=close_3pm, y1=close_3pm,
+                line=dict(color="red", width=1, dash="dot"),
+            )
+            fig.add_annotation(
+                x=x_end, y=close_3pm, text="3PM Close", 
+                showarrow=False, font=dict(color="red", size=10)
+            )
+
+    # Layout adjustments
     fig.update_layout(
-        title="Multi-Day 3PM Strategy",
+        title="Multi-Day 3PM Strategy (Prev Day 3PM Open = High, Close = Low)",
         xaxis_rangeslider_visible=False,
         xaxis=dict(
             rangebreaks=[
-                dict(bounds=["sat", "mon"]),   # remove weekends
-                dict(bounds=[15.30, 9.15], pattern="hour")  # remove off-market hours
+                dict(bounds=["sat", "mon"]),   # skip weekends
+                dict(bounds=[15.5, 9.25], pattern="hour")  # skip off-hours
             ]
         )
     )
@@ -91,7 +143,7 @@ df = df[[c for c in keep_cols if c in df.columns]]
 
 # ✅ Ensure datetime type
 df['Datetime'] = pd.to_datetime(df['Datetime'])
-st.write(df.columns)
+#st.write(df.columns)
 #
 #st.write(df.columns.tolist())
 
