@@ -418,7 +418,7 @@ for i in range(1, len(unique_days)):
 
     if signal:   # append only if signal generated
         # ✅ Calculate PnL
-        entry_price = signal.get("buy_price", None)
+        entry_price = signal.get("entry_price", None)
         exit_price = signal.get("exit_price", None)
         qty = signal.get("quantity", 1)
 
