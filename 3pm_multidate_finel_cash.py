@@ -403,6 +403,9 @@ st.plotly_chart(fig, use_container_width=True)
 
 # Initialize empty list to store signals
 signal_log_list = []
+# ✅ Initialize trade log list
+trade_log = []
+
 # ✅ Loop through each day (starting from 2nd day in range)
 for i in range(1, len(unique_days)):
     day0 = unique_days[i-1]
