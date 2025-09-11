@@ -87,7 +87,7 @@ def trading_signal_equity(df, quantity=100, return_all_signals=False):
     def monitor_trade(sig):
         current_sl = sig.get('stoploss')
         entry_dt = sig['entry_time']
-        exit_deadline = entry_dt + timedelta(minutes=20)
+        exit_deadline = entry_dt + timedelta(minutes=25)
 
         if day1_after_915.empty:
             sig['exit_price'] = sig['entry_price']
