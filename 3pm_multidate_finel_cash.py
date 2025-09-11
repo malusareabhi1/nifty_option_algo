@@ -404,9 +404,9 @@ st.plotly_chart(fig, use_container_width=True)
 # Initialize empty list to store signals
 signal_log_list = []
 # ✅ Initialize trade log list
+# ✅ Initialize trade log list
 trade_log = []
 
-# ✅ Loop through each day (starting from 2nd day in range)
 for i in range(1, len(unique_days)):
     day0 = unique_days[i-1]
     day1 = unique_days[i]
@@ -415,22 +415,28 @@ for i in range(1, len(unique_days)):
 
     # Call your trading signal function
     signal = trading_signal_equity(day_df)
-    #st.write(signal.table)
-    #st.write(pd.DataFrame([signal]))
+
     if signal:   # append only if signal generated
+        # ✅ Calculate PnL
+        entry_price = signal.get("buy_price", None)
+        exit_price = signal.get("exit_price", None)
+        qty = signal.get("quantity", 1)
+
+        if entry_price and exit_price:
+            signal["PnL"] = round((exit_price - entry_price) * qty, 2)
+        else:
+            signal["PnL"] = None
+
         trade_log.append(signal)
 
 # ✅ Convert to DataFrame once and display full log
 if trade_log:
     trade_log_df = pd.DataFrame(trade_log)
-    st.subheader("Trade Log")
+    st.subheader("Trade Log with PnL")
     st.dataframe(trade_log_df, use_container_width=True)
+
+    # ✅ Summary
+    total_pnl = trade_log_df["PnL"].sum()
+    st.metric("Total PnL", f"{total_pnl:,.2f}")
 else:
     st.info("No trades found in the selected period.")
-#st.write(signal)
-# 2. Fetch option premium data for that strike
-#option_df = get_option_data_realtime(signal['spot_price'], signal['expiry'], signal['strike'])  # 15m candles
-
-# 3. Track exit
-#trade_result = track_trade_exit(signal, option_df)
-#st.write(trade_result)
