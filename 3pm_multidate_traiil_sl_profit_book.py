@@ -3097,16 +3097,17 @@ for i in range(1, len(unique_days)):
             print("⚠️ No option data found, skipping order placement.")
         else:
             option_data = result['option_data']  # your logic continues here
+            option_data = result['option_data']
+            strike_price = option_data.get('strikePrice')
+            buy_premium = option_data.get('lastPrice')
+            identifier = option_data.get('identifier')
     # place order or process further
 
             
     # place order or process further
 
         # Extract the option selected info
-        option_data = result['option_data']
-        strike_price = option_data.get('strikePrice')
-        buy_premium = option_data.get('lastPrice')
-        identifier = option_data.get('identifier')
+        
 
         # Construct signal log dictionary
         sig_log = {
