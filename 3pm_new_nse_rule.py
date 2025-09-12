@@ -3147,18 +3147,34 @@ import requests
 
 # ✅ Function to fetch and process option chain
 def fetch_option_chain(symbol="NIFTY"):
-    s = requests.Session()
+    """
+    Fetch NSE Option Chain data with browser-like headers and working session.
+    Handles 403 by using proper cookies and User-Agent.
+    """
     url_home = "https://www.nseindia.com"
     url_oc = f"https://www.nseindia.com/api/option-chain-indices?symbol={symbol}"
+
     headers = {
-        "User-Agent": "Mozilla/5.0",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Accept-Encoding": "gzip, deflate, br"
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/120.0.0.0 Safari/537.36"
+        ),
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-US,en;q=0.9",
+        "referer": "https://www.nseindia.com/option-chain"
     }
-    s.get(url_home, headers=headers, timeout=5)
-    r = s.get(url_oc, headers=headers, timeout=5)
-    r.raise_for_status()
-    return r.json()
+
+    s = requests.Session()
+
+    # 🔑 Get cookies first by visiting the NSE homepage
+    try:
+        s.get(url_home, headers=headers, timeout=5)
+        r = s.get(url_oc, headers=headers, timeout=5)
+        r.raise_for_status()
+        return r.json()
+    except requests.exceptions.RequestException as e:
+        raise RuntimeError(f"Error fetching option chain: {e}")
 
 def option_chain_to_df(option_chain, expiry=None):
     df_list = []
