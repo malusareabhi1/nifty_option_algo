@@ -3116,7 +3116,7 @@ for i in range(1, len(unique_days)):
             "Entry Time": signal['entry_time'],
             "Spot Price": spot_price,
             "Option Selected": ot,
-            "Identifier": identifier,
+            #"Identifier": identifier,
             "Strike Price": strike_price,
             "Buy Premium": buy_premium,
             "Stoploss (Trailing 10%)": buy_premium * 0.9 if buy_premium else None,
