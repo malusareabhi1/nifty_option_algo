@@ -3066,6 +3066,7 @@ for i in range(1, len(unique_days)):
 
     # Call your trading signal function
     signal = trading_signal_all_conditions1(day_df)
+    st.write("Type of signal:", type(signal))
     #
     st.write("signal  Columns:", signal.columns)
     st.write(signal.head())
