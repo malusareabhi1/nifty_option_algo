@@ -3143,13 +3143,15 @@ if signal_log_list:
 else:
     st.info("No signals generated for the selected period.")
 ##########################################################################################
+from functools import lru_cache
+import pandas as pd
 import requests
 
-# ✅ Function to fetch and process option chain
-def fetch_option_chain(symbol="NIFTY"):
+@lru_cache(maxsize=10)
+def fetch_option_chain_cached(symbol="NIFTY", date_key=None):
     """
-    Fetch NSE Option Chain data with browser-like headers and working session.
-    Handles 403 by using proper cookies and User-Agent.
+    Fetch NSE Option Chain data with caching.
+    `date_key` is used as cache key (str: 'YYYY-MM-DD').
     """
     url_home = "https://www.nseindia.com"
     url_oc = f"https://www.nseindia.com/api/option-chain-indices?symbol={symbol}"
@@ -3174,7 +3176,7 @@ def fetch_option_chain(symbol="NIFTY"):
         r.raise_for_status()
         return r.json()
     except requests.exceptions.RequestException as e:
-        raise RuntimeError(f"Error fetching option chain: {e}")
+        raise RuntimeError(f"Error fetching option chain for {symbol} on {date_key}: {e}")
 
 def option_chain_to_df(option_chain, expiry=None):
     df_list = []
@@ -3223,7 +3225,11 @@ for i in range(1, len(unique_days)):
 
     day_df = df[df['Datetime'].dt.date.isin([day0, day1])]
 
-    signal = trading_signal_all_conditions1(day_df)
+    # ✅ Fetch option chain once per day (cached)
+    option_chain_data = fetch_option_chain_cached(symbol="NIFTY", date_key=str(day1))
+
+    # Call your trading signal function and pass option chain if needed
+    signal = trading_signal_all_conditions1(day_df, option_chain_data)
 
     if signal is None:
         continue
