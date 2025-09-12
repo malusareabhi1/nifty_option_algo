@@ -3076,9 +3076,9 @@ for i in range(1, len(unique_days)):
             st.write("Raw signal dictionary:", signal)
     else:
         signal_df = signal
-    st.write("Type of signal:", type(signal_df))
+    #st.write("Type of signal:", type(signal_df))
     #
-    st.write("signal  Columns:", signal_df.columns)
+    #st.write("signal  Columns:", signal_df.columns)
     st.write(signal_df.head())
     #signal = trading_signal_all_conditions2(day_df) 
 
