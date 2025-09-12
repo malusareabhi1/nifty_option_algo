@@ -3066,10 +3066,19 @@ for i in range(1, len(unique_days)):
 
     # Call your trading signal function
     signal = trading_signal_all_conditions1(day_df)
-    st.write("Type of signal:", type(signal))
+    if isinstance(signal, dict):
+        try:
+            signal_df = pd.DataFrame(signal)
+            st.write("signal converted to DataFrame:", signal_df.head())
+        except Exception as e:
+            st.error(f"Cannot convert signal to DataFrame: {e}")
+            st.write("Raw signal dictionary:", signal_df)
+    else:
+        signal_df = signal
+    st.write("Type of signal:", type(signal_df))
     #
-    st.write("signal  Columns:", signal.columns)
-    st.write(signal.head())
+    st.write("signal  Columns:", signal_df.columns)
+    st.write(signal_df.head())
     #signal = trading_signal_all_conditions2(day_df) 
 
     #signal = trading_signal_all_conditions2_newlogic(day_df)  
