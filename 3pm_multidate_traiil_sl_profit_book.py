@@ -3079,7 +3079,7 @@ for i in range(1, len(unique_days)):
     #st.write("Type of signal:", type(signal_df))
     #
     #st.write("signal  Columns:", signal_df.columns)
-    st.write(signal_df.head())
+    #st.write(signal_df.head())
     #signal = trading_signal_all_conditions2(day_df) 
 
     #signal = trading_signal_all_conditions2_newlogic(day_df)  
@@ -3105,6 +3105,7 @@ for i in range(1, len(unique_days)):
         ot = "CE" if signal["option_type"].upper() == "CALL" else "PE"
         result = option_chain_finder(result_chain, spot_price, option_type=ot, lots=10, lot_size=75)
         #st.write(result)
+        st.write("Type of result:", type(result))
         st.write("result  Columns:", result.columns)
         st.write(result.head())
         #result = option_chain_finder(result_chain, spot_price, option_type=ot, lots=10, lot_size=75)
