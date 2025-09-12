@@ -3091,8 +3091,8 @@ for i in range(1, len(unique_days)):
         spot_price = signal['spot_price']
         ot = "CE" if signal["option_type"].upper() == "CALL" else "PE"
         result = option_chain_finder(result_chain, spot_price, option_type=ot, lots=10, lot_size=75)
-        st.write(result)
-        result = option_chain_finder(result_chain, spot_price, option_type=ot, lots=10, lot_size=75)
+        #st.write(result)
+        #result = option_chain_finder(result_chain, spot_price, option_type=ot, lots=10, lot_size=75)
         if result is None:
             print("⚠️ No option data found, skipping order placement.")
         else:
@@ -3180,16 +3180,21 @@ else:
 
 ##################################################################################
 # ✅ Combine all logs into one DataFrame
-if combined_trade_log:
-    all_trades = pd.concat(combined_trade_log, ignore_index=True)
-    st.write("### Combined Trade Log for Selected Period")
-    st.dataframe(all_trades)
+# ✅ Combine all logs into one DataFrame only if there are valid DataFrames
+if combined_trade_log and any(isinstance(df, pd.DataFrame) and not df.empty for df in combined_trade_log):
+    valid_logs = [df for df in combined_trade_log if isinstance(df, pd.DataFrame) and not df.empty]
+    if valid_logs:
+        all_trades = pd.concat(valid_logs, ignore_index=True)
+        st.write("### Combined Trade Log for Selected Period")
+        st.dataframe(all_trades)
 
-    # ✅ Download button
-    csv = all_trades.to_csv(index=False).encode('utf-8')
-    st.download_button(label="Download Trade Log CSV", data=csv, file_name="multi_day_trade_log.csv", mime="text/csv")
+        csv = all_trades.to_csv(index=False).encode('utf-8')
+        st.download_button(label="Download Trade Log CSV", data=csv, file_name="multi_day_trade_log.csv", mime="text/csv")
+    else:
+        st.info("No valid trade logs were generated for this date range.")
 else:
-    st.write("No trade signals found for the selected period.")
+    st.info("No trade signals found for the selected period.")
+
 
 ##################################################################################
 
