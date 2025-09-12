@@ -3125,7 +3125,8 @@ for i in range(1, len(unique_days)):
 # ✅ Convert all collected signals into DataFrame
 if signal_log_list:
     signal_log_df = pd.DataFrame(signal_log_list)
-
+    st.write("Signal Log")
+    st.dataframe(signal_log_df, use_container_width=True)
     # Optional: reorder columns for cleaner display
     cols_order = ['entry_time','condition','option_type','buy_price','stoploss',
                   'exit_price','status','message','spot_price','quantity','expiry']
