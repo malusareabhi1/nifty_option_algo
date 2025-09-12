@@ -3197,7 +3197,8 @@ else:
 
 
 ##################################################################################
-
+st.write("Signal Log Columns:", signal_log_df.columns)
+st.write(signal_log_df.head())
 if signal_log_list:
     # Compute PnL and Exit Reason
     signal_log_df_with_pnl = compute_trade_pnl(signal_log_df, df)
