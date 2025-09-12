@@ -3077,24 +3077,34 @@ for i in range(1, len(unique_days)):
     else:
         signal_df = signal
 
-    #st.write("signal converted to DataFrame:", signal_df)
-    #st.write("Type of signal:", type(signal_df))
-    #
-    #st.write("signal  Columns:", signal_df.columns)
-    #st.write(signal_df.head())
-    #signal = trading_signal_all_conditions2(day_df) 
+    if signal is None:
+        continue
 
-    #signal = trading_signal_all_conditions2_newlogic(day_df)  
-    #signal = trading_signal_all_conditions_2_improved(day_df) 
-    
-#######################################################################################
-    
+    # If function returns a dict (single signal)
+    if isinstance(signal, dict):
+        signal_log_list.append(signal)
+
+    # If function returns a list of signals
+    elif isinstance(signal, list):
+        signal_log_list.extend(signal)
+
+# ✅ Convert all collected signals into DataFrame
+if signal_log_list:
+    signal_log_df = pd.DataFrame(signal_log_list)
+
+    # Optional: reorder columns for cleaner display
+    cols_order = ['entry_time','condition','option_type','buy_price','stoploss',
+                  'exit_price','status','message','spot_price','quantity','expiry']
+    signal_log_df = signal_log_df[[c for c in cols_order if c in signal_log_df.columns]]
+
+    # ✅ Display in table instead of row-by-row
+    st.dataframe(signal_log_df, use_container_width=True)
+
+    # ✅ Also allow CSV download
+    csv = signal_log_df.to_csv(index=False).encode("utf-8")
+    st.download_button("Download Signal Log (CSV)", data=csv, file_name="signal_log.csv", mime="text/csv")
+
+else:
+    st.info("No signals generated for the selected period.")
 
    
-#st.write(signal)
-# 2. Fetch option premium data for that strike
-#option_df = get_option_data_realtime(signal['spot_price'], signal['expiry'], signal['strike'])  # 15m candles
-
-# 3. Track exit
-#trade_result = track_trade_exit(signal, option_df)
-#st.write(trade_result)
