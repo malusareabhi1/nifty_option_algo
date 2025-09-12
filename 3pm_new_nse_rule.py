@@ -3070,7 +3070,7 @@ for i in range(1, len(unique_days)):
         try:
             # Wrap dict into a list to create a single-row DataFrame
             signal_df = pd.DataFrame([signal])
-            st.write("signal converted to DataFrame:", signal_df)
+            #st.write("signal converted to DataFrame:", signal_df)
         except Exception as e:
             st.error(f"Cannot convert signal to DataFrame: {e}")
             st.write("Raw signal dictionary:", signal)
