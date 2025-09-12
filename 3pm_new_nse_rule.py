@@ -2986,6 +2986,24 @@ def trading_signal_all_conditions_2_improved(df, quantity=10*750, return_all_sig
             base_low = price_low  # ✅ Flip support (Base Low updates)
 
     return signals if return_all_signals else (signals[-1] if signals else None)
+    
+###################################################################################################    
+
+def get_nearest_itm_strike(spot_price, option_type):
+    """Return nearest ITM strike for NIFTY (50-point strikes)."""
+    nearest_strike = round(spot_price / 50) * 50
+
+    if option_type == "CALL":
+        # ITM CALL means strike < spot
+        if nearest_strike >= spot_price:
+            nearest_strike -= 50
+    elif option_type == "PUT":
+        # ITM PUT means strike > spot
+        if nearest_strike <= spot_price:
+            nearest_strike += 50
+
+    return nearest_strike
+
 
 ##################################START To Execute ################################################
 
@@ -3079,7 +3097,23 @@ for i in range(1, len(unique_days)):
 
     if signal is None:
         continue
+     # Convert dict -> list
+    signal_list = [signal] if isinstance(signal, dict) else signal
 
+    for sig in signal_list:
+        # ✅ Get ITM strike based on signal's option type and spot price
+        if "spot_price" not in sig:
+            sig["spot_price"] = day_df['Close_^NSEI'].iloc[-1]
+
+        if "option_type" in sig:
+            sig["itm_strike"] = get_nearest_itm_strike(sig["spot_price"], sig["option_type"])
+
+        # Calculate nearest expiry (next Thursday)
+        today = day1
+        expiry = today + timedelta((3 - today.weekday()) % 7)
+        sig["expiry"] = expiry
+
+        signal_log_list.append(sig)
     # If function returns a dict (single signal)
     if isinstance(signal, dict):
         signal_log_list.append(signal)
@@ -3107,5 +3141,7 @@ if signal_log_list:
 
 else:
     st.info("No signals generated for the selected period.")
+##########################################################################################
+
 
    
