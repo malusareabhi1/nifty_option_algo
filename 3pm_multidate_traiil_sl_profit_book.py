@@ -689,7 +689,7 @@ def get_live_nifty_option_chain():
 #st.write(option_chain_df.head())
 
 ################################################################################################
-def find_nearest_itm_option():
+def find_nearest_itm_option_old():
     import nsepython
     from nsepython import nse_optionchain_scrapper
 
@@ -718,6 +718,47 @@ def find_nearest_itm_option():
     option_chain_df['expiryDate'] = pd.to_datetime(option_chain_df['expiryDate'])
     #st.write(option_chain_df.head())
     return  option_chain_df
+##############################################################.
+
+
+
+def find_nearest_itm_option():
+    import pandas as pd
+    from nsepython import nse_optionchain_scrapper
+
+    try:
+        option_chain = nse_optionchain_scrapper('NIFTY')
+    except Exception as e:
+        print(f"❌ Error fetching option chain: {e}")
+        return pd.DataFrame()  # return empty DataFrame
+
+    # Check if 'records' and 'data' exist
+    if not isinstance(option_chain, dict) or 'records' not in option_chain or 'data' not in option_chain['records']:
+        print("⚠️ Option chain response does not have expected structure.")
+        print(f"Received: {option_chain}")
+        return pd.DataFrame()
+
+    df = []
+    for item in option_chain['records']['data']:
+        strike = item.get('strikePrice')
+        expiry = item.get('expiryDate')
+        if 'CE' in item:
+            ce = item['CE']
+            ce['strikePrice'] = strike
+            ce['expiryDate'] = expiry
+            ce['optionType'] = 'CE'
+            df.append(ce)
+        if 'PE' in item:
+            pe = item['PE']
+            pe['strikePrice'] = strike
+            pe['expiryDate'] = expiry
+            pe['optionType'] = 'PE'
+            df.append(pe)
+
+    option_chain_df = pd.DataFrame(df)
+    if not option_chain_df.empty:
+        option_chain_df['expiryDate'] = pd.to_datetime(option_chain_df['expiryDate'])
+    return option_chain_df
 
 
 
