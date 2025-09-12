@@ -3131,8 +3131,14 @@ for i in range(1, len(unique_days)):
         trade_log_df = generate_trade_log_from_option(result, signal)
         
         # Drop Trade details column
-        if 'Trade details' in trade_log_df.columns:
-            trade_log_df = trade_log_df.drop(columns=['Trade details'])
+        if trade_log_df is not None:
+            if 'Trade details' in trade_log_df.columns:
+                trade_log_df = trade_log_df.drop(columns=['Trade details'])
+        
+            # Append to combined trade log
+            combined_trade_log.append(trade_log_df)
+        else:
+            st.warning(f"No trade log generated for {day1}. Skipping.")
         
         #st.table(trade_log_df)
 
