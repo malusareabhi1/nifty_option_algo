@@ -3143,6 +3143,113 @@ if signal_log_list:
 else:
     st.info("No signals generated for the selected period.")
 ##########################################################################################
+import requests
+
+# ✅ Function to fetch and process option chain
+def fetch_option_chain(symbol="NIFTY"):
+    s = requests.Session()
+    url_home = "https://www.nseindia.com"
+    url_oc = f"https://www.nseindia.com/api/option-chain-indices?symbol={symbol}"
+    headers = {
+        "User-Agent": "Mozilla/5.0",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br"
+    }
+    s.get(url_home, headers=headers, timeout=5)
+    r = s.get(url_oc, headers=headers, timeout=5)
+    r.raise_for_status()
+    return r.json()
+
+def option_chain_to_df(option_chain, expiry=None):
+    df_list = []
+    records = option_chain.get("records", {}).get("data", [])
+    for rec in records:
+        if expiry and rec.get("expiryDate") != expiry:
+            continue
+        strike = rec.get("strikePrice")
+        if 'CE' in rec:
+            ce = rec['CE']
+            ce['strikePrice'] = strike
+            ce['optionType'] = "CE"
+            ce['expiryDate'] = rec.get("expiryDate")
+            df_list.append(ce)
+        if 'PE' in rec:
+            pe = rec['PE']
+            pe['strikePrice'] = strike
+            pe['optionType'] = "PE"
+            pe['expiryDate'] = rec.get("expiryDate")
+            df_list.append(pe)
+    return pd.DataFrame(df_list)
+
+def get_itm_contract(df_oc, spot_price, option_type="CE"):
+    df2 = df_oc[df_oc['optionType'] == option_type]
+    if option_type == "CE":
+        df_itm = df2[df2['strikePrice'] <= spot_price]
+        if df_itm.empty:
+            return None
+        selected = df_itm.iloc[df_itm['strikePrice'].sub(spot_price).abs().idxmin()]
+    else:
+        df_itm = df2[df2['strikePrice'] >= spot_price]
+        if df_itm.empty:
+            return None
+        selected = df_itm.iloc[df_itm['strikePrice'].sub(spot_price).abs().idxmin()]
+    return {
+        "strike": selected['strikePrice'],
+        "optionType": selected['optionType'],
+        "ltp": selected.get('lastPrice'),
+        "expiryDate": selected.get('expiryDate')
+    }
+
+# ✅ Inside your signal loop
+for i in range(1, len(unique_days)):
+    day0 = unique_days[i-1]
+    day1 = unique_days[i]
+
+    day_df = df[df['Datetime'].dt.date.isin([day0, day1])]
+
+    signal = trading_signal_all_conditions1(day_df)
+
+    if signal is None:
+        continue
+
+    # Ensure signal is dict
+    if isinstance(signal, dict):
+        spot_price = signal.get("spot_price")
+        option_type = signal.get("option_type")  # "CE" or "PE"
+
+        try:
+            oc = fetch_option_chain("NIFTY")
+            df_oc = option_chain_to_df(oc)
+            itm = get_itm_contract(df_oc, spot_price, option_type)
+            if itm:
+                signal["itm_strike"] = itm["strike"]
+                signal["itm_ltp"] = itm["ltp"]
+                signal["expiry"] = itm["expiryDate"]
+        except Exception as e:
+            signal["itm_strike"] = None
+            signal["itm_ltp"] = None
+            signal["expiry"] = None
+            st.warning(f"Could not fetch option chain: {e}")
+
+        signal_log_list.append(signal)
+
+    elif isinstance(signal, list):
+        for sig in signal:
+            spot_price = sig.get("spot_price")
+            option_type = sig.get("option_type")
+            try:
+                oc = fetch_option_chain("NIFTY")
+                df_oc = option_chain_to_df(oc)
+                itm = get_itm_contract(df_oc, spot_price, option_type)
+                if itm:
+                    sig["itm_strike"] = itm["strike"]
+                    sig["itm_ltp"] = itm["ltp"]
+                    sig["expiry"] = itm["expiryDate"]
+            except:
+                sig["itm_strike"] = None
+                sig["itm_ltp"] = None
+                sig["expiry"] = None
+            signal_log_list.append(sig)
 
 
    
