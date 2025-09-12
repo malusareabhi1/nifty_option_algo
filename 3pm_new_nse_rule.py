@@ -3077,7 +3077,7 @@ for i in range(1, len(unique_days)):
     else:
         signal_df = signal
 
-    st.write("signal converted to DataFrame:", signal_df)
+    #st.write("signal converted to DataFrame:", signal_df)
     #st.write("Type of signal:", type(signal_df))
     #
     #st.write("signal  Columns:", signal_df.columns)
