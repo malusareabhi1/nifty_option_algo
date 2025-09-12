@@ -765,7 +765,7 @@ def find_nearest_itm_option():
 ##################################################################################
 import pandas as pd
 
-def option_chain_finder(option_chain_df, spot_price, option_type, lots=10, lot_size=75):
+def option_chain_finder_old(option_chain_df, spot_price, option_type, lots=10, lot_size=75):
     """
     Find nearest ITM option in option chain DataFrame.
 
@@ -830,6 +830,50 @@ def option_chain_finder(option_chain_df, spot_price, option_type, lots=10, lot_s
         'total_quantity': total_qty,
         'option_data': option_row
     }
+
+##############################################################
+
+
+def option_chain_finder(option_chain_df, spot_price, option_type="CE", lots=1, lot_size=50):
+    import pandas as pd
+    
+    # ✅ Guard clause to avoid KeyError
+    if option_chain_df.empty:
+        print("⚠️ option_chain_df is empty — no option chain data available.")
+        return None
+    
+    if "expiryDate" not in option_chain_df.columns:
+        print("⚠️ expiryDate column missing in option_chain_df.")
+        print(option_chain_df.head())  # for debugging
+        return None
+
+    # ✅ Ensure expiryDate is datetime
+    if not pd.api.types.is_datetime64_any_dtype(option_chain_df['expiryDate']):
+        option_chain_df['expiryDate'] = pd.to_datetime(option_chain_df['expiryDate'], errors='coerce')
+
+    # ✅ Filter for nearest expiry
+    nearest_expiry = option_chain_df['expiryDate'].min()
+    df_nearest = option_chain_df[option_chain_df['expiryDate'] == nearest_expiry]
+
+    # ✅ Find nearest strike (ITM)
+    df_nearest['strike_diff'] = abs(df_nearest['strikePrice'] - spot_price)
+    df_nearest = df_nearest.sort_values(by='strike_diff')
+    
+    selected_option = df_nearest[df_nearest['optionType'] == option_type].head(1)
+    
+    if selected_option.empty:
+        print("⚠️ No matching option found for given type.")
+        return None
+    
+    # ✅ Add lot calculation
+    selected_option['lots'] = lots
+    selected_option['lot_size'] = lot_size
+    selected_option['total_qty'] = lots * lot_size
+
+    return selected_option
+
+
+
 
 ###########################################################
 
