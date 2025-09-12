@@ -3098,6 +3098,7 @@ if signal_log_list:
     signal_log_df = signal_log_df[[c for c in cols_order if c in signal_log_df.columns]]
 
     # ✅ Display in table instead of row-by-row
+    st.write("Signal Log")
     st.dataframe(signal_log_df, use_container_width=True)
 
     # ✅ Also allow CSV download
