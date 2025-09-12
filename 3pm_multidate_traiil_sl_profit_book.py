@@ -3092,6 +3092,16 @@ for i in range(1, len(unique_days)):
         ot = "CE" if signal["option_type"].upper() == "CALL" else "PE"
         result = option_chain_finder(result_chain, spot_price, option_type=ot, lots=10, lot_size=75)
         st.write(result)
+        result = option_chain_finder(result_chain, spot_price, option_type=ot, lots=10, lot_size=75)
+        if result is None:
+            print("⚠️ No option data found, skipping order placement.")
+        else:
+            option_data = result['option_data']  # your logic continues here
+    # place order or process further
+
+            
+    # place order or process further
+
         # Extract the option selected info
         option_data = result['option_data']
         strike_price = option_data.get('strikePrice')
