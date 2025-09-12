@@ -3091,7 +3091,7 @@ for i in range(1, len(unique_days)):
         spot_price = signal['spot_price']
         ot = "CE" if signal["option_type"].upper() == "CALL" else "PE"
         result = option_chain_finder(result_chain, spot_price, option_type=ot, lots=10, lot_size=75)
-        
+        st.write(result)
         # Extract the option selected info
         option_data = result['option_data']
         strike_price = option_data.get('strikePrice')
