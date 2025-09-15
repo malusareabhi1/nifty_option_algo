@@ -3307,43 +3307,25 @@ for i in range(1, len(unique_days)):
     #option_chain_data = fetch_option_chain_cached(symbol="NIFTY", date_key=str(day1))
     # ✅ Fetch option chain once per day
     # ✅ Fetch Zerodha option chain once per day
-option_chain_data = fetch_option_chain_zerodha(symbol="NIFTY", date_key=str(day1))
-if option_chain_data is None:
-    st.warning(f"Skipping {day1} — Zerodha option chain not available.")
-    continue
-
-# ✅ Call trading signal function
-signal = trading_signal_all_conditions1(day_df)
-
-if signal is None:
-    continue
-
-# ✅ Attach ITM data
-if isinstance(signal, dict):
-    spot_price = signal.get("spot_price")
-    option_type = signal.get("option_type")
-
-    itm = get_itm_contract(option_chain_data, spot_price, option_type)
-    if itm:
-        signal.update({
-            "itm_strike": itm["strike"],
-            "itm_ltp": itm["ltp"],
-            "expiry": itm["expiryDate"],
-            "tradingsymbol": itm["tradingsymbol"],
-            "token": itm["instrument_token"]
-        })
-    else:
-        signal.update({"itm_strike": None, "itm_ltp": None, "expiry": None})
-
-    signal_log_list.append(signal)
-
-elif isinstance(signal, list):
-    for sig in signal:
-        spot_price = sig.get("spot_price")
-        option_type = sig.get("option_type")
+    option_chain_data = fetch_option_chain_zerodha(symbol="NIFTY", date_key=str(day1))
+    if option_chain_data is None:
+        st.warning(f"Skipping {day1} — Zerodha option chain not available.")
+        continue
+    
+    # ✅ Call trading signal function
+    signal = trading_signal_all_conditions1(day_df)
+    
+    if signal is None:
+        continue
+    
+    # ✅ Attach ITM data
+    if isinstance(signal, dict):
+        spot_price = signal.get("spot_price")
+        option_type = signal.get("option_type")
+    
         itm = get_itm_contract(option_chain_data, spot_price, option_type)
         if itm:
-            sig.update({
+            signal.update({
                 "itm_strike": itm["strike"],
                 "itm_ltp": itm["ltp"],
                 "expiry": itm["expiryDate"],
@@ -3351,8 +3333,26 @@ elif isinstance(signal, list):
                 "token": itm["instrument_token"]
             })
         else:
-            sig.update({"itm_strike": None, "itm_ltp": None, "expiry": None})
-
-        signal_log_list.append(sig)
+            signal.update({"itm_strike": None, "itm_ltp": None, "expiry": None})
+    
+        signal_log_list.append(signal)
+    
+    elif isinstance(signal, list):
+        for sig in signal:
+            spot_price = sig.get("spot_price")
+            option_type = sig.get("option_type")
+            itm = get_itm_contract(option_chain_data, spot_price, option_type)
+            if itm:
+                sig.update({
+                    "itm_strike": itm["strike"],
+                    "itm_ltp": itm["ltp"],
+                    "expiry": itm["expiryDate"],
+                    "tradingsymbol": itm["tradingsymbol"],
+                    "token": itm["instrument_token"]
+                })
+            else:
+                sig.update({"itm_strike": None, "itm_ltp": None, "expiry": None})
+    
+            signal_log_list.append(sig)
 
    
