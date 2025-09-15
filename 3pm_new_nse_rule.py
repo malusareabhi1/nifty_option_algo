@@ -3147,11 +3147,14 @@ from functools import lru_cache
 import pandas as pd
 import requests
 
+from functools import lru_cache
+import requests
+
 @lru_cache(maxsize=10)
 def fetch_option_chain_cached(symbol="NIFTY", date_key=None):
     """
     Fetch NSE Option Chain data with caching.
-    `date_key` is used as cache key (str: 'YYYY-MM-DD').
+    Handles 403/timeout gracefully (returns None).
     """
     url_home = "https://www.nseindia.com"
     url_oc = f"https://www.nseindia.com/api/option-chain-indices?symbol={symbol}"
@@ -3169,14 +3172,21 @@ def fetch_option_chain_cached(symbol="NIFTY", date_key=None):
 
     s = requests.Session()
 
-    # 🔑 Get cookies first by visiting the NSE homepage
     try:
+        # 1️⃣ Get cookies
         s.get(url_home, headers=headers, timeout=5)
+
+        # 2️⃣ Get option chain data
         r = s.get(url_oc, headers=headers, timeout=5)
-        r.raise_for_status()
+        if r.status_code != 200:
+            print(f"⚠️ NSE returned {r.status_code} for {symbol} on {date_key}")
+            return None
+
         return r.json()
+
     except requests.exceptions.RequestException as e:
-        raise RuntimeError(f"Error fetching option chain for {symbol} on {date_key}: {e}")
+        print(f"⚠️ Could not fetch option chain for {symbol} on {date_key}: {e}")
+        return None
 
 def option_chain_to_df(option_chain, expiry=None):
     df_list = []
@@ -3226,7 +3236,12 @@ for i in range(1, len(unique_days)):
     day_df = df[df['Datetime'].dt.date.isin([day0, day1])]
 
     # ✅ Fetch option chain once per day (cached)
+    #option_chain_data = fetch_option_chain_cached(symbol="NIFTY", date_key=str(day1))
+    # ✅ Fetch option chain once per day
     option_chain_data = fetch_option_chain_cached(symbol="NIFTY", date_key=str(day1))
+    if option_chain_data is None:
+        st.warning(f"Skipping {day1} — Option Chain not available.")
+        continue  # ✅ skip to next day instead of crashing
 
     # Call your trading signal function and pass option chain if needed
     signal = trading_signal_all_conditions1(day_df, option_chain_data)
