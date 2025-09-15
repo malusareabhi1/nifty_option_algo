@@ -3149,7 +3149,7 @@ import requests
 
 from functools import lru_cache
 import requests
-
+#####################################################################################################
 @lru_cache(maxsize=10)
 def fetch_option_chain_cached(symbol="NIFTY", date_key=None):
     """
@@ -3187,7 +3187,7 @@ def fetch_option_chain_cached(symbol="NIFTY", date_key=None):
     except requests.exceptions.RequestException as e:
         print(f"⚠️ Could not fetch option chain for {symbol} on {date_key}: {e}")
         return None
-
+####################################################################################################
 def option_chain_to_df(option_chain, expiry=None):
     df_list = []
     records = option_chain.get("records", {}).get("data", [])
@@ -3227,7 +3227,75 @@ def get_itm_contract(df_oc, spot_price, option_type="CE"):
         "ltp": selected.get('lastPrice'),
         "expiryDate": selected.get('expiryDate')
     }
+#######################################################################################################
 
+
+from functools import lru_cache
+
+@lru_cache(maxsize=10)
+def fetch_option_chain_zerodha(symbol="NIFTY", date_key=None):
+    try:
+        instruments = kite.instruments("NFO")
+        df = pd.DataFrame(instruments)
+        df = df[(df['name'] == symbol) & (df['segment'] == "NFO-OPT")]
+        if df.empty:
+            print(f"[⚠️] No option contracts found for {symbol} on {date_key}")
+            return None
+
+        latest_expiry = sorted(df['expiry'].unique())[0]
+        df = df[df['expiry'] == latest_expiry]
+
+        # Get LTPs
+        tokens = df.set_index("tradingsymbol")["instrument_token"].to_dict()
+        ltps = kite.ltp(tokens.values())
+        df["ltp"] = df["tradingsymbol"].map(lambda x: ltps[tokens[x]]["last_price"])
+
+        return df  # return DataFrame directly
+    except Exception as e:
+        print(f"[⚠️] Skipping {date_key} — Zerodha OC fetch failed ({e})")
+        return None
+
+###################################################################################################
+
+
+
+
+def get_itm_contract(df_oc, spot_price, option_type="CE"):
+    """
+    Select the closest ITM option (CE/PE) from Zerodha option chain DataFrame.
+    df_oc: DataFrame returned by fetch_option_chain_zerodha()
+    spot_price: current NIFTY spot price
+    option_type: "CE" or "PE"
+    """
+    # Filter only CE or PE
+    df_filtered = df_oc[df_oc['instrument_type'] == option_type].copy()
+    if df_filtered.empty:
+        return None
+
+    # ITM selection logic
+    if option_type == "CE":
+        df_itm = df_filtered[df_filtered['strike'] <= spot_price]
+        if df_itm.empty:
+            return None
+        selected = df_itm.iloc[df_itm['strike'].sub(spot_price).abs().idxmin()]
+    else:  # PE
+        df_itm = df_filtered[df_filtered['strike'] >= spot_price]
+        if df_itm.empty:
+            return None
+        selected = df_itm.iloc[df_itm['strike'].sub(spot_price).abs().idxmin()]
+
+    return {
+        "strike": selected['strike'],
+        "optionType": selected['instrument_type'],
+        "ltp": selected['ltp'],
+        "expiryDate": selected['expiry'],
+        "tradingsymbol": selected['tradingsymbol'],
+        "instrument_token": selected['instrument_token']
+    }
+
+
+
+###################################################################################################
 # ✅ Inside your signal loop
 for i in range(1, len(unique_days)):
     day0 = unique_days[i-1]
@@ -3238,55 +3306,53 @@ for i in range(1, len(unique_days)):
     # ✅ Fetch option chain once per day (cached)
     #option_chain_data = fetch_option_chain_cached(symbol="NIFTY", date_key=str(day1))
     # ✅ Fetch option chain once per day
-    option_chain_data = fetch_option_chain_cached(symbol="NIFTY", date_key=str(day1))
-    if option_chain_data is None:
-        st.warning(f"Skipping {day1} — Option Chain not available.")
-        continue  # ✅ skip to next day instead of crashing
+    # ✅ Fetch Zerodha option chain once per day
+option_chain_data = fetch_option_chain_zerodha(symbol="NIFTY", date_key=str(day1))
+if option_chain_data is None:
+    st.warning(f"Skipping {day1} — Zerodha option chain not available.")
+    continue
 
-    # Call your trading signal function and pass option chain if needed
-    signal = trading_signal_all_conditions1(day_df, option_chain_data)
+# ✅ Call trading signal function
+signal = trading_signal_all_conditions1(day_df)
 
-    if signal is None:
-        continue
+if signal is None:
+    continue
 
-    # Ensure signal is dict
-    if isinstance(signal, dict):
-        spot_price = signal.get("spot_price")
-        option_type = signal.get("option_type")  # "CE" or "PE"
+# ✅ Attach ITM data
+if isinstance(signal, dict):
+    spot_price = signal.get("spot_price")
+    option_type = signal.get("option_type")
 
-        try:
-            oc = fetch_option_chain("NIFTY")
-            df_oc = option_chain_to_df(oc)
-            itm = get_itm_contract(df_oc, spot_price, option_type)
-            if itm:
-                signal["itm_strike"] = itm["strike"]
-                signal["itm_ltp"] = itm["ltp"]
-                signal["expiry"] = itm["expiryDate"]
-        except Exception as e:
-            signal["itm_strike"] = None
-            signal["itm_ltp"] = None
-            signal["expiry"] = None
-            st.warning(f"Could not fetch option chain: {e}")
+    itm = get_itm_contract(option_chain_data, spot_price, option_type)
+    if itm:
+        signal.update({
+            "itm_strike": itm["strike"],
+            "itm_ltp": itm["ltp"],
+            "expiry": itm["expiryDate"],
+            "tradingsymbol": itm["tradingsymbol"],
+            "token": itm["instrument_token"]
+        })
+    else:
+        signal.update({"itm_strike": None, "itm_ltp": None, "expiry": None})
 
-        signal_log_list.append(signal)
+    signal_log_list.append(signal)
 
-    elif isinstance(signal, list):
-        for sig in signal:
-            spot_price = sig.get("spot_price")
-            option_type = sig.get("option_type")
-            try:
-                oc = fetch_option_chain("NIFTY")
-                df_oc = option_chain_to_df(oc)
-                itm = get_itm_contract(df_oc, spot_price, option_type)
-                if itm:
-                    sig["itm_strike"] = itm["strike"]
-                    sig["itm_ltp"] = itm["ltp"]
-                    sig["expiry"] = itm["expiryDate"]
-            except:
-                sig["itm_strike"] = None
-                sig["itm_ltp"] = None
-                sig["expiry"] = None
-            signal_log_list.append(sig)
+elif isinstance(signal, list):
+    for sig in signal:
+        spot_price = sig.get("spot_price")
+        option_type = sig.get("option_type")
+        itm = get_itm_contract(option_chain_data, spot_price, option_type)
+        if itm:
+            sig.update({
+                "itm_strike": itm["strike"],
+                "itm_ltp": itm["ltp"],
+                "expiry": itm["expiryDate"],
+                "tradingsymbol": itm["tradingsymbol"],
+                "token": itm["instrument_token"]
+            })
+        else:
+            sig.update({"itm_strike": None, "itm_ltp": None, "expiry": None})
 
+        signal_log_list.append(sig)
 
    
