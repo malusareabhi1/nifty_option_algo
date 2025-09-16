@@ -10,6 +10,20 @@ st.set_page_config(layout="wide")
 st.title("Nifty 3PM Trailing SL and Take Profit  Strategy - Multi-Day Backtest")
 
 
+def get_nearest_itm_strike(spot_price, option_type):
+    """Return nearest ITM strike for NIFTY (50-point strikes)."""
+    nearest_strike = round(spot_price / 50) * 50
+
+    if option_type == "CALL":
+        # ITM CALL means strike < spot
+        if nearest_strike >= spot_price:
+            nearest_strike -= 50
+    elif option_type == "PUT":
+        # ITM PUT means strike > spot
+        if nearest_strike <= spot_price:
+            nearest_strike += 50
+
+    return nearest_strike
 
 def plot_nifty_multiday(df, trading_days):
     """
