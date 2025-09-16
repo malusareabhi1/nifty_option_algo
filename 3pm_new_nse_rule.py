@@ -3235,6 +3235,7 @@ from functools import lru_cache
 @lru_cache(maxsize=10)
 def fetch_option_chain_zerodha(symbol="NIFTY", date_key=None):
     try:
+        # Always refresh instruments (don’t cache forever)
         instruments = kite.instruments("NFO")
         df = pd.DataFrame(instruments)
         df = df[(df['name'] == symbol) & (df['segment'] == "NFO-OPT")]
@@ -3243,25 +3244,25 @@ def fetch_option_chain_zerodha(symbol="NIFTY", date_key=None):
             print(f"[⚠️] No option contracts found for {symbol} on {date_key}")
             return None
 
-        # Pick nearest expiry >= date_key
-        if date_key:
-            expiry_list = sorted(df['expiry'].unique())
-            expiry = None
-            for e in expiry_list:
-                if e >= pd.to_datetime(date_key):
-                    expiry = e
-                    break
-            if expiry is None:  # fallback: latest available
-                expiry = expiry_list[-1]
-        else:
-            expiry = sorted(df['expiry'].unique())[0]
+        # Pick the nearest valid expiry (>= date_key)
+        expiry_list = sorted(df['expiry'].unique())
+        date_key = pd.to_datetime(date_key).normalize() if date_key else pd.Timestamp.today().normalize()
 
+        expiry = None
+        for e in expiry_list:
+            if e >= date_key:
+                expiry = e
+                break
+        if expiry is None:  # fallback: latest available
+            expiry = expiry_list[-1]
+
+        # Filter for that expiry
         df = df[df['expiry'] == expiry]
 
         # Map tradingsymbol -> instrument_token
         tokens = df.set_index("tradingsymbol")["instrument_token"].to_dict()
 
-        # Get LTPs safely
+        # Fetch LTPs
         try:
             ltps = kite.ltp(list(tokens.values()))
             df["ltp"] = df["tradingsymbol"].map(
@@ -3271,11 +3272,13 @@ def fetch_option_chain_zerodha(symbol="NIFTY", date_key=None):
             print(f"[⚠️] LTP fetch failed for {symbol} on {date_key}: {e}")
             df["ltp"] = None
 
+        print(f"[ℹ️] Using expiry {expiry.date()} for {symbol} on {date_key.date()}")
         return df
 
     except Exception as e:
         print(f"[⚠️] Skipping {date_key} — Zerodha OC fetch failed ({e})")
         return None
+
 
 ###################################################################################################
 
