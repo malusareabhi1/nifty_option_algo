@@ -556,19 +556,60 @@ else:
 
 from kiteconnect import KiteConnect
 
-API_KEY = "your_api_key"
-API_SECRET = "your_api_secret"
+import os
 
-kite = KiteConnect(api_key=API_KEY)
-# Generate login URL
-login_url = kite.login_url()
-st.write(f"Login here: {login_url}")
+st.set_page_config(layout="centered")
+st.title("🔐 Zerodha Kite API Login")
 
-# After login, you’ll get request_token → exchange for access_token
-# Normally you’ll do this once and save access_token securely
-data = kite.generate_session("your_request_token", api_secret=API_SECRET)
-kite.set_access_token(data["access_token"])
+# Step 1: Take API Key & Secret from user
+st.subheader("Step 1: Enter your API Credentials")
+api_key = st.text_input("API Key", type="password")
+api_secret = st.text_input("API Secret", type="password")
 
+if api_key and api_secret:
+    kite = KiteConnect(api_key=api_key)
+
+    # Step 2: Generate login link
+    login_url = kite.login_url()
+    st.markdown(f"### Step 2: [Click here to Login to Zerodha]({login_url})", unsafe_allow_html=True)
+
+    # Step 3: Request Token input
+    request_token = st.text_input("Step 3: Paste the Request Token here (from redirect URL)")
+
+    # Step 4: Generate Access Token
+    if st.button("Generate Access Token"):
+        if not request_token:
+            st.error("⚠️ Please paste your Request Token")
+        else:
+            try:
+                session_data = kite.generate_session(request_token, api_secret=api_secret)
+                access_token = session_data["access_token"]
+
+                # Set access token
+                kite.set_access_token(access_token)
+
+                # Save session to file
+                with open("access_token.txt", "w") as f:
+                    f.write(access_token)
+
+                st.success("✅ Zerodha Login Successful!")
+                st.code(access_token, language="bash")
+
+            except Exception as e:
+                st.error(f"Login failed: {e}")
+
+    # Step 5: Restore Saved Session
+    if st.button("Use Saved Session"):
+        if os.path.exists("access_token.txt"):
+            with open("access_token.txt", "r") as f:
+                access_token = f.read().strip()
+                kite.set_access_token(access_token)
+                st.success("✅ Session Restored, Access Token Loaded")
+                st.code(access_token, language="bash")
+        else:
+            st.warning("⚠️ No saved session found. Please login first.")
+else:
+    st.info("👆 Please enter your API Key & API Secret to continue.")
 
 
 ################################################################################################
