@@ -616,24 +616,44 @@ else:
 profile = kite.profile()
 st.write("Logged in as:", profile["user_name"])
 
-instruments = kite.instruments("NFO")
-df = pd.DataFrame(instruments)
-df = df[(df['name'] == "NIFTY") & (df['segment'] == "NFO-OPT")]
-st.dataframe(df.head())
+# --- Fetch Option Chain ---
+def get_option_chain(symbol="NIFTY"):
+    try:
+        instruments = kite.instruments("NFO")
+        df = pd.DataFrame(instruments)
 
-spot_price = kite.ltp("NSE:NIFTY 50")["NSE:NIFTY 50"]["last_price"]
+        # Filter only options for given symbol
+        df = df[(df["name"] == symbol) & (df["segment"] == "NFO-OPT")]
+        if df.empty:
+            st.warning(f"No option contracts found for {symbol}")
+            return None
 
-# Example: ITM Call strike
-nearest_strike = round(spot_price / 50) * 50 - 50
-expiry = sorted(df["expiry"].unique())[0]  # nearest expiry
+        # Nearest expiry
+        expiry = sorted(df["expiry"].unique())[0]
+        df = df[df["expiry"] == expiry]
 
-tradingsymbol = df[
-    (df["expiry"] == expiry) &
-    (df["strike"] == nearest_strike) &
-    (df["instrument_type"] == "CE")
-]["tradingsymbol"].iloc[0]
+        # Get LTPs
+        tokens = df.set_index("tradingsymbol")["instrument_token"].to_dict()
+        ltps = kite.ltp(tokens.values())
+        df["ltp"] = df["tradingsymbol"].map(lambda x: ltps[tokens[x]]["last_price"])
 
-st.write("Selected ITM Call:", tradingsymbol)
+        # Build Option Chain format
+        ce = df[df["instrument_type"] == "CE"][["strike", "ltp"]].rename(columns={"ltp": "CE_LTP"})
+        pe = df[df["instrument_type"] == "PE"][["strike", "ltp"]].rename(columns={"ltp": "PE_LTP"})
+
+        option_chain = pd.merge(ce, pe, on="strike", how="outer").sort_values("strike").reset_index(drop=True)
+        return option_chain
+
+    except Exception as e:
+        st.error(f"Error fetching option chain: {e}")
+        return None
+
+
+st.title("📊 NIFTY Option Chain (Zerodha API)")
+
+oc = get_option_chain("NIFTY")
+if oc is not None:
+    st.dataframe(oc, use_container_width=True)
 
 
 
