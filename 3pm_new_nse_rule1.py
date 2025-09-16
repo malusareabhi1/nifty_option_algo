@@ -615,3 +615,26 @@ else:
 ################################################################################################
 profile = kite.profile()
 st.write("Logged in as:", profile["user_name"])
+
+instruments = kite.instruments("NFO")
+df = pd.DataFrame(instruments)
+df = df[(df['name'] == "NIFTY") & (df['segment'] == "NFO-OPT")]
+st.dataframe(df.head())
+
+spot_price = kite.ltp("NSE:NIFTY 50")["NSE:NIFTY 50"]["last_price"]
+
+# Example: ITM Call strike
+nearest_strike = round(spot_price / 50) * 50 - 50
+expiry = sorted(df["expiry"].unique())[0]  # nearest expiry
+
+tradingsymbol = df[
+    (df["expiry"] == expiry) &
+    (df["strike"] == nearest_strike) &
+    (df["instrument_type"] == "CE")
+]["tradingsymbol"].iloc[0]
+
+st.write("Selected ITM Call:", tradingsymbol)
+
+
+
+
