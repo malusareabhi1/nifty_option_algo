@@ -88,7 +88,24 @@ def plot_nifty_multiday(df, trading_days):
     
     return fig
 
+####################################################################################################################
+def get_recent_swing(current_time):
+        """
+        Return scalar swing_high, swing_low from last 10 candles before current_time.
+        If insufficient data return (np.nan, np.nan).
+        """
+        recent_data = df[(df['Date'] == day1) & (df['Datetime'] < current_time)].tail(10)
+        if recent_data.empty:
+            return np.nan, np.nan
+        # ensure scalar float values (not Series)
+        swing_high = recent_data['High_^NSEI'].max()
+        swing_low = recent_data['Low_^NSEI'].min()
+        # convert numpy scalars to python floats when possible
+        swing_high = float(swing_high) if not pd.isna(swing_high) else np.nan
+        swing_low = float(swing_low) if not pd.isna(swing_low) else np.nan
+        return swing_high, swing_low
 
+#####################################################################################################################
 def get_nearest_weekly_expiry(today):
     """
     Placeholder: implement your own logic to find nearest weekly expiry date
