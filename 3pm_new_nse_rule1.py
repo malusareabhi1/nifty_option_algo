@@ -3,7 +3,9 @@ import pandas as pd
 import yfinance as yf
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
-
+import numpy as np
+import pandas as pd
+from datetime import timedelta
 st.set_page_config(layout="wide")
 st.title("Nifty 3PM Trailing SL and Take Profit  Strategy - Multi-Day Backtest")
 
