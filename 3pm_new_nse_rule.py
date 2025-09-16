@@ -3238,19 +3238,41 @@ def fetch_option_chain_zerodha(symbol="NIFTY", date_key=None):
         instruments = kite.instruments("NFO")
         df = pd.DataFrame(instruments)
         df = df[(df['name'] == symbol) & (df['segment'] == "NFO-OPT")]
+
         if df.empty:
             print(f"[⚠️] No option contracts found for {symbol} on {date_key}")
             return None
 
-        latest_expiry = sorted(df['expiry'].unique())[0]
-        df = df[df['expiry'] == latest_expiry]
+        # Pick nearest expiry >= date_key
+        if date_key:
+            expiry_list = sorted(df['expiry'].unique())
+            expiry = None
+            for e in expiry_list:
+                if e >= pd.to_datetime(date_key):
+                    expiry = e
+                    break
+            if expiry is None:  # fallback: latest available
+                expiry = expiry_list[-1]
+        else:
+            expiry = sorted(df['expiry'].unique())[0]
 
-        # Get LTPs
+        df = df[df['expiry'] == expiry]
+
+        # Map tradingsymbol -> instrument_token
         tokens = df.set_index("tradingsymbol")["instrument_token"].to_dict()
-        ltps = kite.ltp(tokens.values())
-        df["ltp"] = df["tradingsymbol"].map(lambda x: ltps[tokens[x]]["last_price"])
 
-        return df  # return DataFrame directly
+        # Get LTPs safely
+        try:
+            ltps = kite.ltp(list(tokens.values()))
+            df["ltp"] = df["tradingsymbol"].map(
+                lambda x: ltps.get(tokens[x], {}).get("last_price", None)
+            )
+        except Exception as e:
+            print(f"[⚠️] LTP fetch failed for {symbol} on {date_key}: {e}")
+            df["ltp"] = None
+
+        return df
+
     except Exception as e:
         print(f"[⚠️] Skipping {date_key} — Zerodha OC fetch failed ({e})")
         return None
