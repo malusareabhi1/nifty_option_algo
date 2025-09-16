@@ -9,3 +9,4 @@ requests
 nsepython
 ta
 matplotlib
+KiteConnect
