@@ -412,7 +412,8 @@ def trading_signal_all_conditions1(df, quantity=10*75, return_all_signals=False)
 
 
 
-#####################################################################################################################
+
+##############################################  START  #######################################################################
 
 
 
@@ -551,5 +552,23 @@ if signal_log_list:
 
 else:
     st.info("No signals generated for the selected period.")
+
+
+from kiteconnect import KiteConnect
+
+API_KEY = "your_api_key"
+API_SECRET = "your_api_secret"
+
+kite = KiteConnect(api_key=API_KEY)
+# Generate login URL
+login_url = kite.login_url()
+st.write(f"Login here: {login_url}")
+
+# After login, you’ll get request_token → exchange for access_token
+# Normally you’ll do this once and save access_token securely
+data = kite.generate_session("your_request_token", api_secret=API_SECRET)
+kite.set_access_token(data["access_token"])
+
+
 
 ################################################################################################
