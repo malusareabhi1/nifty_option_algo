@@ -87,6 +87,14 @@ def plot_nifty_multiday(df, trading_days):
     )
     
     return fig
+
+
+def get_nearest_weekly_expiry(today):
+    """
+    Placeholder: implement your own logic to find nearest weekly expiry date
+    For demo, returns today + 7 days (Saturday)
+    """
+    return today + pd.Timedelta(days=7)
 ######################################################################################################################
 
 
