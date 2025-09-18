@@ -66,6 +66,10 @@ if st.sidebar.button("Fetch & Analyze"):
                 height=500
             )
             st.plotly_chart(fig, use_container_width=True)
+             # Display downloaded data table
+            st.markdown("**Downloaded Data (OHLCV):**")
+            st.dataframe(df[['Datetime', 'Open', 'High', 'Low', 'Close', 'Volume']].tail(20))  # show last 20 rows
+
 
             # Basic pattern detection
             df['HigherHigh'] = df['High'] > df['High'].shift(1)
