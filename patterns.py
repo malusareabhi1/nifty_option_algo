@@ -13,16 +13,20 @@ st.title("📊 Multi-Timeframe Chart Pattern Finder & Trend Predictor")
 st.sidebar.header("Input Parameters")
 ticker = st.sidebar.text_input("Enter Stock/Index Symbol (e.g. SBIN.NS, NIFTY50)", value="SBIN.NS")
 
-# Valid timeframes
 timeframe_options = ['1m','5m','15m','30m','60m','1d','1wk','1mo']
 default_timeframes = ['15m','60m','1d']
 timeframes = st.sidebar.multiselect("Timeframes to analyze (multiple)", options=timeframe_options, default=default_timeframes)
 
+# Convert to datetime for safe comparison
 start_date = st.sidebar.date_input("Start Date", value=datetime.now() - timedelta(days=30))
 end_date = st.sidebar.date_input("End Date", value=datetime.now())
 
+# FIX: convert date -> datetime at 00:00 for start, 23:59 for end
+start_date = datetime.combine(start_date, datetime.min.time())
+end_date = datetime.combine(end_date, datetime.max.time())
+
 if st.sidebar.button("Fetch & Analyze"):
-    st.info(f"Fetching data for {ticker} from {start_date} to {end_date}...")
+    st.info(f"Fetching data for {ticker} from {start_date.date()} to {end_date.date()}...")
 
     for tf in timeframes:
         try:
@@ -37,12 +41,17 @@ if st.sidebar.button("Fetch & Analyze"):
                 continue
 
             df.dropna(inplace=True)
-            df.reset_index(inplace=True)  # important for Plotly
-            df['Datetime'] = pd.to_datetime(df['Datetime']) if 'Datetime' in df.columns else pd.to_datetime(df['Date'], errors='coerce')
+            df.reset_index(inplace=True)
+
+            # Ensure datetime column exists
+            if 'Datetime' not in df.columns:
+                df.rename(columns={"Date": "Datetime"}, inplace=True)
+
+            df['Datetime'] = pd.to_datetime(df['Datetime'])
 
             st.subheader(f"Timeframe: {tf}")
 
-            # Candlestick chart
+            # Plot candlestick chart
             fig = go.Figure(data=[go.Candlestick(
                 x=df['Datetime'],
                 open=df['Open'],
@@ -58,7 +67,7 @@ if st.sidebar.button("Fetch & Analyze"):
             )
             st.plotly_chart(fig, use_container_width=True)
 
-            # Basic pattern detection: Higher Highs / Lower Lows
+            # Basic pattern detection
             df['HigherHigh'] = df['High'] > df['High'].shift(1)
             df['LowerLow'] = df['Low'] < df['Low'].shift(1)
 
