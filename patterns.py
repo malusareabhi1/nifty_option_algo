@@ -66,7 +66,7 @@ if st.sidebar.button("Fetch & Analyze"):
             # ✅ Filter only working days (Mon-Fri)
             df = df[df['Datetime'].dt.dayofweek < 5]
             # ✅ Drop holidays (no trading activity)
-            df = df[df['Volume'] > 0]
+            #df = df[df['Volume'] > 0]
 
             st.subheader(f"Timeframe: {tf}")
 
