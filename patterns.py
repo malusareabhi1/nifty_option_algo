@@ -101,6 +101,10 @@ if st.sidebar.button("Fetch & Analyze"):
 
             st.subheader(f"Timeframe: {tf}")
 
+            # Detect patterns
+            patterns = detect_patterns(df)
+
+
            # Plot chart without weekend/holiday gaps
             fig = go.Figure(data=[go.Candlestick(
                 x=df['Datetime'],
