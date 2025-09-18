@@ -3105,8 +3105,8 @@ for i in range(1, len(unique_days)):
         ot = "CE" if signal["option_type"].upper() == "CALL" else "PE"
         result = option_chain_finder(result_chain, spot_price, option_type=ot, lots=10, lot_size=75)
         #st.write(result)
-        st.write("Type of result:", type(result))
-        st.write("result  Columns:", result.columns)
+        #st.write("Type of result:", type(result))
+        #st.write("result  Columns:", result.columns)
         st.write(result.head())
         #result = option_chain_finder(result_chain, spot_price, option_type=ot, lots=10, lot_size=75)
         if result is None:
