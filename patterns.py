@@ -70,7 +70,7 @@ if st.sidebar.button("Fetch & Analyze"):
 
             st.subheader(f"Timeframe: {tf}")
 
-            # Plot candlestick chart
+           # Plot chart without weekend/holiday gaps
             fig = go.Figure(data=[go.Candlestick(
                 x=df['Datetime'],
                 open=df['Open'],
@@ -78,13 +78,16 @@ if st.sidebar.button("Fetch & Analyze"):
                 low=df['Low'],
                 close=df['Close']
             )])
-
+            
             fig.update_layout(
-                title=f"{ticker} - {tf} Chart",
+                title=f"{ticker} - {tf} Chart (Trading Days Only, No Gaps)",
                 xaxis_rangeslider_visible=False,
+                xaxis=dict(type='category'),  # ✅ Treat each candle as a category -> removes gaps
                 height=500
             )
+            
             st.plotly_chart(fig, use_container_width=True)
+
              # Display downloaded data table
             #st.markdown("**Downloaded Data (OHLCV):**")
             #st.dataframe(df[['Datetime', 'Open', 'High', 'Low', 'Close', 'Volume']].tail(20))  # show last 20 rows
