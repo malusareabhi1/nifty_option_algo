@@ -13,9 +13,9 @@ st.title("📊 Multi-Timeframe Chart Pattern Finder & Trend Predictor")
 st.sidebar.header("Input Parameters")
 ticker = st.sidebar.text_input("Enter Stock/Index Symbol (e.g. SBIN.NS, NIFTY50)", value="SBIN.NS")
 
-# FIXED: Ensure default values exist in options
+# Valid timeframes
 timeframe_options = ['1m','5m','15m','30m','60m','1d','1wk','1mo']
-default_timeframes = ['15m','60m','1d']  # changed '1h' -> '60m' to match options
+default_timeframes = ['15m','60m','1d']
 timeframes = st.sidebar.multiselect("Timeframes to analyze (multiple)", options=timeframe_options, default=default_timeframes)
 
 start_date = st.sidebar.date_input("Start Date", value=datetime.now() - timedelta(days=30))
@@ -26,36 +26,49 @@ if st.sidebar.button("Fetch & Analyze"):
 
     for tf in timeframes:
         try:
-            df = yf.download(ticker, start=start_date, end=end_date, interval=tf)
+            # Auto adjust max range for intraday intervals
+            max_days = 59 if tf != "1m" else 6
+            adjusted_start = max(start_date, datetime.now() - timedelta(days=max_days))
+
+            df = yf.download(ticker, start=adjusted_start, end=end_date, interval=tf)
+
             if df.empty:
-                st.warning(f"No data for {tf} timeframe.")
+                st.warning(f"No data found for {tf} (try a smaller date range).")
                 continue
 
             df.dropna(inplace=True)
+            df.reset_index(inplace=True)  # important for Plotly
+            df['Datetime'] = pd.to_datetime(df['Datetime']) if 'Datetime' in df.columns else pd.to_datetime(df['Date'], errors='coerce')
 
             st.subheader(f"Timeframe: {tf}")
 
-            # Plot candlestick chart
-            fig = go.Figure(data=[go.Candlestick(x=df.index,
-                                                 open=df['Open'],
-                                                 high=df['High'],
-                                                 low=df['Low'],
-                                                 close=df['Close'])])
-            fig.update_layout(title=f"{ticker} - {tf} Chart", xaxis_rangeslider_visible=False)
+            # Candlestick chart
+            fig = go.Figure(data=[go.Candlestick(
+                x=df['Datetime'],
+                open=df['Open'],
+                high=df['High'],
+                low=df['Low'],
+                close=df['Close']
+            )])
+
+            fig.update_layout(
+                title=f"{ticker} - {tf} Chart",
+                xaxis_rangeslider_visible=False,
+                height=500
+            )
             st.plotly_chart(fig, use_container_width=True)
 
-            # Simple pattern detection example: Higher Highs / Lower Lows
+            # Basic pattern detection: Higher Highs / Lower Lows
             df['HigherHigh'] = df['High'] > df['High'].shift(1)
             df['LowerLow'] = df['Low'] < df['Low'].shift(1)
 
             hh_count = df['HigherHigh'].sum()
             ll_count = df['LowerLow'].sum()
 
-            trend = "Bullish" if hh_count > ll_count else "Bearish"
-
-            st.markdown(f"**Detected Trend:** `{trend}`  | Higher Highs: {hh_count}, Lower Lows: {ll_count}")
+            trend = "📈 Bullish" if hh_count > ll_count else "📉 Bearish"
+            st.markdown(f"**Detected Trend:** {trend}  | HH: {hh_count}, LL: {ll_count}")
 
         except Exception as e:
-            st.error(f"Error fetching data for {tf}: {e}")
+            st.error(f"Error fetching or plotting data for {tf}: {e}")
 else:
     st.info("Select parameters and click 'Fetch & Analyze' to start.")
