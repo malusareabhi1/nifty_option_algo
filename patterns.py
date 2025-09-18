@@ -47,6 +47,17 @@ if st.sidebar.button("Fetch & Analyze"):
             df.dropna(inplace=True)
             df.reset_index(inplace=True)
 
+            # ✅ Normalize column names to standard OHLCV
+            rename_map = {}
+            for col in df.columns:
+                if "Open" in col: rename_map[col] = "Open"
+                elif "High" in col: rename_map[col] = "High"
+                elif "Low" in col: rename_map[col] = "Low"
+                elif "Close" in col: rename_map[col] = "Close"
+                elif "Volume" in col: rename_map[col] = "Volume"
+                elif col in ["Date"]: rename_map[col] = "Datetime"
+            df.rename(columns=rename_map, inplace=True)
+
             # Ensure datetime column exists
             if 'Datetime' not in df.columns:
                 df.rename(columns={"Date": "Datetime"}, inplace=True)
