@@ -25,6 +25,37 @@ end_date = st.sidebar.date_input("End Date", value=datetime.now())
 start_date = datetime.combine(start_date, datetime.min.time())
 end_date = datetime.combine(end_date, datetime.max.time())
 
+def detect_patterns(df):
+    """Detect simple candlestick patterns and return markers with descriptions."""
+    patterns = []
+
+    for i in range(1, len(df)):
+        o, h, l, c = df.loc[i, ['Open','High','Low','Close']]
+        prev_o, prev_c = df.loc[i-1, ['Open','Close']]
+
+        # Bullish Engulfing
+        if c > o and prev_c < prev_o and c > prev_o and o < prev_c:
+            patterns.append((df.loc[i,'Datetime'], c, "🟢 Bullish Engulfing"))
+
+        # Bearish Engulfing
+        if c < o and prev_c > prev_o and c < prev_o and o > prev_c:
+            patterns.append((df.loc[i,'Datetime'], c, "🔴 Bearish Engulfing"))
+
+        # Doji (close ~ open)
+        if abs(c - o) <= (h - l) * 0.1:
+            patterns.append((df.loc[i,'Datetime'], c, "⚪ Doji"))
+
+        # Hammer
+        if (h - l) > 3 * (o - c) and (min(o, c) - l) / (h - l) > 0.6:
+            patterns.append((df.loc[i,'Datetime'], c, "🔨 Hammer"))
+
+        # Shooting Star
+        if (h - l) > 3 * (o - c) and (h - max(o, c)) / (h - l) > 0.6:
+            patterns.append((df.loc[i,'Datetime'], c, "💫 Shooting Star"))
+
+    return patterns
+
+
 if st.sidebar.button("Fetch & Analyze"):
     st.info(f"Fetching data for {ticker} from {start_date.date()} to {end_date.date()}...")
 
@@ -78,7 +109,18 @@ if st.sidebar.button("Fetch & Analyze"):
                 low=df['Low'],
                 close=df['Close']
             )])
-            
+
+            # Add pattern markers
+            for dt, price, label in patterns:
+                fig.add_trace(go.Scatter(
+                    x=[dt], y=[price],
+                    mode="markers+text",
+                    marker=dict(size=8, color="yellow", symbol="star"),
+                    text=[label],
+                    textposition="top center",
+                    showlegend=False
+                ))
+                
             fig.update_layout(
                 title=f"{ticker} - {tf} Chart (Trading Days Only, No Gaps)",
                 xaxis_rangeslider_visible=False,
@@ -87,6 +129,13 @@ if st.sidebar.button("Fetch & Analyze"):
             )
             
             st.plotly_chart(fig, use_container_width=True)
+            # Show detected patterns list
+            if patterns:
+                st.markdown("### 📌 Detected Patterns")
+                pat_df = pd.DataFrame(patterns, columns=["Datetime", "Price", "Pattern"])
+                st.dataframe(pat_df.tail(20))
+            else:
+                st.info("No major patterns detected in this timeframe.")
 
              # Display downloaded data table
             #st.markdown("**Downloaded Data (OHLCV):**")
