@@ -63,6 +63,8 @@ if st.sidebar.button("Fetch & Analyze"):
                 df.rename(columns={"Date": "Datetime"}, inplace=True)
 
             df['Datetime'] = pd.to_datetime(df['Datetime'])
+            # ✅ Filter only working days (Mon-Fri)
+            df = df[df['Datetime'].dt.dayofweek < 5]
 
             st.subheader(f"Timeframe: {tf}")
 
