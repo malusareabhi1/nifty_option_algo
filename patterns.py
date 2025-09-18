@@ -40,6 +40,10 @@ if st.sidebar.button("Fetch & Analyze"):
                 st.warning(f"No data found for {tf} (try a smaller date range).")
                 continue
 
+            # ✅ FIX: Flatten multi-index columns if they exist
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = ['_'.join(col).strip() for col in df.columns.values]
+
             df.dropna(inplace=True)
             df.reset_index(inplace=True)
 
