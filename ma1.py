@@ -21,6 +21,9 @@ def fetch_data(symbol, interval):
     start = end - timedelta(days=7)
     data = yf.download(symbol, start=start, end=end, interval=interval)
     data.reset_index(inplace=True)
+    #df.reset_index(inplace=True)  # Moves the index into a column
+    data.rename(columns={'Date': 'Datetime'}, inplace=True)  # Ensure consistent naming
+
     return data
 
 df = fetch_data(symbol, interval)
