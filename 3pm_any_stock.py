@@ -385,6 +385,7 @@ mode = st.selectbox("Mode", ["Auto (Index+Equity)", "Equity Only (no options)"])
 
 start_date = st.date_input("Select Start Date", value=datetime.today().date() - timedelta(days=15))
 end_date = st.date_input("Select End Date", value=datetime.today().date())
+
 if start_date >= end_date:
     st.warning("End date must be after start date")
     st.stop()
