@@ -10,3 +10,4 @@ nsepython
 ta
 matplotlib
 KiteConnect
+openpyxl
