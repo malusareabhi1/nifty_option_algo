@@ -21,22 +21,66 @@ FNO_SYMBOLS = ["RELIANCE","TCS","INFY","HDFCBANK","ICICIBANK","SBIN",
 DATA_FILE = "FnO_History.xlsx"
 
 # --- Fetch F&O Data ---
+import requests
+import json
+#import time
+
+# Persistent session
+session = requests.Session()
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "application/json, text/plain, */*",
+    "Referer": "https://www.nseindia.com/",
+    "Accept-Language": "en-US,en;q=0.9",
+}
+
+INDEX_SYMBOLS = ["NIFTY", "BANKNIFTY"]
+
+def safe_get_json(url, retries=3, delay=2):
+    """Helper function to safely fetch and parse JSON from NSE."""
+    for _ in range(retries):
+        try:
+            resp = session.get(url, headers=HEADERS, timeout=10)
+            if resp.status_code == 200 and resp.text.strip().startswith("{"):
+                return resp.json()
+        except Exception:
+            pass
+        time.sleep(delay)
+    return None
+
 def fetch_data(symbol):
     data = {"Symbol": symbol, "Futures Price": None, "Call OI": None, "Put OI": None, "PCR": None, "Direction": None}
     try:
+        # --- Fetch Futures Data ---
         fut_url = f"https://www.nseindia.com/api/quote-derivative?symbol={symbol}"
-        fut_resp = session.get(fut_url, headers=HEADERS).json()
-        data["Futures Price"] = fut_resp["stocks"][0]["marketDeptOrderBook"]["tradeInfo"]["lastPrice"]
+        fut_resp = safe_get_json(fut_url)
+        if fut_resp and "stocks" in fut_resp:
+            data["Futures Price"] = fut_resp["stocks"][0]["marketDeptOrderBook"]["tradeInfo"]["lastPrice"]
+        else:
+            data["Direction"] = "Error: Futures data unavailable"
+            return data
 
-        opt_url = f"https://www.nseindia.com/api/option-chain-indices?symbol={symbol}" if symbol in INDEX_SYMBOLS else f"https://www.nseindia.com/api/option-chain-equities?symbol={symbol}"
-        opt_resp = session.get(opt_url, headers=HEADERS).json()
+        # --- Fetch Option Chain Data ---
+        if symbol in INDEX_SYMBOLS:
+            opt_url = f"https://www.nseindia.com/api/option-chain-indices?symbol={symbol}"
+        else:
+            opt_url = f"https://www.nseindia.com/api/option-chain-equities?symbol={symbol}"
+
+        opt_resp = safe_get_json(opt_url)
+        if not opt_resp or "records" not in opt_resp:
+            data["Direction"] = "Error: Option chain data unavailable"
+            return data
+
         records = opt_resp["records"]["data"]
         call_oi = sum(d["CE"]["openInterest"] for d in records if "CE" in d)
         put_oi = sum(d["PE"]["openInterest"] for d in records if "PE" in d)
         data["Call OI"] = call_oi
         data["Put OI"] = put_oi
-        data["PCR"] = round(put_oi / call_oi,2) if call_oi else None
+        data["PCR"] = round(put_oi / call_oi, 2) if call_oi else None
 
+        # --- Direction Logic ---
         pcr = data["PCR"]
         if pcr is None:
             data["Direction"] = "Data Error"
@@ -48,9 +92,12 @@ def fetch_data(symbol):
             data["Direction"] = "Bearish / Weak"
         else:
             data["Direction"] = "Sideways"
+
     except Exception as e:
-        data["Direction"] = f"Error: {e}"
+        data["Direction"] = f"Error: {str(e)}"
+
     return data
+
 
 # --- Fetch Live Data ---
 st.info("Fetching live F&O data... may take 30-60 sec")
