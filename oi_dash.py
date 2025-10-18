@@ -109,10 +109,10 @@ df_today["Date"] = datetime.now().strftime("%Y-%m-%d")
 
 # --- Save Historical Data ---
 if os.path.exists(DATA_FILE):
-    df_history = pd.read_excel(DATA_FILE)
-    df_history = pd.concat([df_history, df_today], ignore_index=True)
+    df_history = pd.read_excel(DATA_FILE, engine="openpyxl")
 else:
-    df_history = df_today.copy()
+    st.error(f"Data file not found: {DATA_FILE}")
+    df_history = pd.DataFrame()  # fallback empty dataframe
 
 df_history.to_excel(DATA_FILE, index=False)
 
