@@ -1695,6 +1695,22 @@ elif MENU == "Dashboard":
             plot_candles(filtered_df, title="NIFTY 15-Min Candlestick (Last 2 Days)")
 
     st.divider()
+    def fetch_zerodha_data():
+        kite = st.session_state.kite
+    
+        try:
+            funds = kite.margins()["equity"]["available"]["cash"]
+            holdings = kite.holdings()
+            positions = kite.positions()["net"]
+            orders = kite.orders()
+    
+            return funds, holdings, positions, orders
+    
+        except Exception as e:
+            st.error(f"Error fetching Zerodha data: {e}")
+            return 0, [], [], []
+
+    
     
     if st.session_state.api_status.get("Zerodha"):
 
