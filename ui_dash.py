@@ -1393,13 +1393,72 @@ elif MENU == "Strategies":
             plot_candles(df, title=f"{st.session_state.selected_strategy} – Price")
         if "PnL" in df.columns:
             plot_equity_curve(df["PnL"], title=f"{st.session_state.selected_strategy} – Equity")
+#--------------------------------------------------------------------------------------------------------
+
+from kiteconnect import KiteConnect
+
+elif MENU == "Zerodha Broker API":
+    st.title("Zerodha Broker Integration")
+
+    if "kite" not in st.session_state:
+        st.session_state.kite = None
+
+    st.text_input("API Key", key="z_key")
+    st.text_input("API Secret", type="password", key="z_secret")
+
+    # Step 1: Initialize Kite
+    if st.button("Generate Login URL"):
+        try:
+            kite = KiteConnect(api_key=st.session_state.z_key)
+            login_url = kite.login_url()
+
+            st.session_state.kite = kite
+            st.session_state.api_status["Zerodha"] = False
+
+            st.success("Login URL generated. Open it, login & paste Request Token.")
+            st.write("👉 Login URL:")
+            st.code(login_url)
+        except Exception as e:
+            st.error(e)
+
+    request_token = st.text_input("Enter Request Token")
+
+    # Step 2: Generate Access Token
+    if st.button("Connect Zerodha"):
+        try:
+            kite = st.session_state.kite
+
+            data = kite.generate_session(
+                request_token=request_token,
+                api_secret=st.session_state.z_secret,
+            )
+
+            kite.set_access_token(data["access_token"])
+
+            # Save for dashboard
+            st.session_state.kite = kite
+            st.session_state.api_status["Zerodha"] = True
+            st.session_state.connected_broker = "Zerodha"
+
+            st.success("🎉 Zerodha Connected Successfully!")
+
+        except Exception as e:
+            st.error(f"Login failed: {e}")
+
+    # Status Panel
+    st.subheader("Connection Status")
+    for name, ok in st.session_state.api_status.items():
+        badge = f"<span class='badge {'success' if ok else 'danger'}'>{'Connected' if ok else 'Not Connected'}</span>"
+        st.markdown(f"**{name}**: {badge}", unsafe_allow_html=True)
+
+
 
        
 
 # ------------------------------------------------------------
 # Zerodha Broker API Broker API
 # ------------------------------------------------------------
-elif MENU == "Zerodha Broker API":
+elif MENU == "Zerodha1 Broker API":
     st.title("Broker Integrations")
     st.write("Connect your broker to enable paper/live trading. This demo stores states locally. Replace with secure key vault in production.")
 
