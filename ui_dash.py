@@ -6443,7 +6443,7 @@ if menu == "Dashboard":
     st.write(st.session_state.paper_positions or "No paper positions yet.")
 
 # --- Paper Trade UI ---
-if menu == "Paper Trade":
+if MENU == "Paper Trade":
     st.title("Paper Trade — NIFTY Options (Simulated)")
     st.write("This is a local paper-trade simulator. No real orders are sent to broker when using paper mode.")
 
