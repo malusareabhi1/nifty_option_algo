@@ -1395,9 +1395,10 @@ elif MENU == "Strategies":
             plot_equity_curve(df["PnL"], title=f"{st.session_state.selected_strategy} – Equity")
 #--------------------------------------------------------------------------------------------------------
 
-from kiteconnect import KiteConnect
+
 
 elif MENU == "Zerodha Broker API":
+    from kiteconnect import KiteConnect
     st.title("Zerodha Broker Integration")
 
     if "kite" not in st.session_state:
