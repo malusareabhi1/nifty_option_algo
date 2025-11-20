@@ -1397,9 +1397,9 @@ elif MENU == "Strategies":
        
 
 # ------------------------------------------------------------
-# Broker API
+# Zerodha Broker API Broker API
 # ------------------------------------------------------------
-elif MENU == "Broker API":
+elif MENU == "Zerodha Broker API":
     st.title("Broker Integrations")
     st.write("Connect your broker to enable paper/live trading. This demo stores states locally. Replace with secure key vault in production.")
 
@@ -1442,6 +1442,64 @@ elif MENU == "Broker API":
             badge = f"<span class='badge {'success' if ok else 'danger'}'>{'Connected' if ok else 'Not Connected'}</span>"
             st.markdown(f"**{name}**: {badge}", unsafe_allow_html=True)
         st.caption("Replace demo handlers with actual OAuth/API calls. Store tokens securely.")
+
+# ------------------------------------------------------------
+# Groww Broker API
+# ------------------------------------------------------------
+elif MENU == "Groww Broker API":
+    import os
+    import json
+    import streamlit as st
+    from groww import GrowwHttpClient
+
+    st.title("Groww Broker API")
+    st.write("Connect your Groww account for live/paper trading. This is a demo integration.")
+
+    gcol1, gcol2 = st.columns(2)
+
+    # Init session state
+    if "groww_status" not in st.session_state:
+        st.session_state.groww_status = False
+        st.session_state.groww_client = None
+
+    with gcol1:
+        st.subheader("Groww Login")
+        st.text_input("Groww Client ID", key="g_client_id")
+        st.text_input("Groww Password", type="password", key="g_password")
+        st.text_input("Groww PIN", type="password", key="g_pin")
+
+        if st.button("Connect Groww"):
+            try:
+                client = GrowwHttpClient()
+
+                login_res = client.login(
+                    st.session_state.g_client_id,
+                    st.session_state.g_password,
+                    st.session_state.g_pin
+                )
+
+                if login_res.get("success"):
+                    st.session_state.groww_status = True
+                    st.session_state.groww_client = client
+                    st.success("Groww connected successfully!")
+                else:
+                    st.error("Groww login failed. Check credentials.")
+
+            except Exception as e:
+                st.error(f"Error: {e}")
+
+    with gcol2:
+        st.subheader("Connection Status")
+        status = st.session_state.groww_status
+        badge = (
+            "<span class='badge success'>Connected</span>"
+            if status else
+            "<span class='badge danger'>Not Connected</span>"
+        )
+        st.markdown(f"**Groww**: {badge}", unsafe_allow_html=True)
+
+        st.caption("Login via Groww API (demo). Store tokens securely for production.")
+
 
 # ------------------------------------------------------------
 # Dashboard (Main Trading Panel)
