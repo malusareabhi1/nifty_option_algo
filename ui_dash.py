@@ -950,7 +950,7 @@ with st.sidebar:
 
     MENU = st.radio(
         "Navigate",
-        ["Home", "Strategies", "Zerodha Broker API","Groww Broker API", "Dashboard","Backtest","Live Trade","Paper Trade", "Products", "Support"],
+        ["Home", "Strategies", "Zerodha Broker API","Groww Broker API", "Dashboard","Backtest","Live Trade","Paper Trade", "Products", "Support","Logout"],
         index=0,
     )
 
@@ -6206,6 +6206,27 @@ elif MENU =="Live Trade":
 
 
 
+elif MENU == "Logout":
+    st.title("Logout")
+
+    if st.button("Logout from All Brokers"):
+        # Clear broker connections
+        st.session_state.connected_broker = None
+        st.session_state.api_status = {
+            "Zerodha": False,
+            "Fyers": False,
+            "AliceBlue": False
+        }
+
+        # Remove Zerodha kite object if present
+        if "kite" in st.session_state:
+            st.session_state.kite = None
+
+        st.success("You have been logged out successfully.")
+        st.info("Please reconnect your broker from the 'Zerodha Broker API' menu.")
+
+    st.write("---")
+    st.caption("Your session is now cleared. Safe exit 👋")
 
 
 # ------------------------------------------------------------
