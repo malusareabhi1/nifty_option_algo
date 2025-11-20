@@ -11,4 +11,4 @@ ta
 matplotlib
 KiteConnect
 openpyxl
-groww
+GrowwHttpClient
