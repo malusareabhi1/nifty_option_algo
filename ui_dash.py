@@ -4869,7 +4869,7 @@ elif MENU == "Support":
 
 
     #######################################################################################################
-elif MENU =="Live Trade"
+elif MENU =="Live Trade":
     st.set_page_config(layout="wide")
     # Place at the very top of your script (or just before plotting)
     st_autorefresh(interval=60000, limit=None, key="refresh")
