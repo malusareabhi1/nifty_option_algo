@@ -6206,6 +6206,24 @@ elif MENU =="Live Trade":
             st.success("Kite session connected. Ready to place trade.")
             #st.write("Available keys:", list(result['option_data'].index))
 #-----------------------------------------------------------------------------------------------------------------------------------------
+            def convert_to_kite_symbol(identifier):
+                # Example identifier: OPTIDXNIFTY25-11-2025CE26200
+                x = identifier.replace("OPTIDX", "")  # Remove OPTIDX
+                
+                # Convert 25-11-2025 → 25NOV25
+                parts = x.split("-")
+                day = parts[0][-2:]
+                month = datetime.datetime.strptime(parts[1], "%m").strftime("%b").upper()
+                year = parts[2][:2]
+            
+                # Final:
+                # NIFTY + 25NOV25 + CE + strike
+                underlying = x[:5]
+                strike = x[-5:]
+                option_type = x[-7:-5]
+    
+                return f"{underlying}{day}{month}{year}{option_type}{strike}"
+
             # ---- PLACE ORDER IN ZERODHA ----
             try:
                 tradingsymbol = result['option_data']['identifier'].replace("OPTIDX", "")
