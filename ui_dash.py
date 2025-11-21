@@ -6207,6 +6207,37 @@ elif MENU =="Live Trade":
             #st.write("Available keys:", list(result['option_data'].index))
 #-----------------------------------------------------------------------------------------------------------------------------------------
             import datetime
+           
+
+            def parse_expiry(expiry):
+                if expiry is None:
+                    raise ValueError("Expiry is None")
+                
+                expiry = str(expiry).strip()
+            
+                formats = [
+                    "%Y-%m-%d",
+                    "%d-%b-%Y",
+                    "%d-%b-%y",
+                    "%d-%m-%Y",
+                    "%d %b %Y",
+                    "%d%b%Y",
+                    "%Y-%m-%dT%H:%M:%S",
+                ]
+            
+                for fmt in formats:
+                    try:
+                        return datetime.datetime.strptime(expiry, fmt)
+                    except:
+                        pass
+                
+                raise ValueError(f"Unknown expiry format: {expiry}")
+
+            d = parse_expiry(expiry)
+            expiry_fmt = d.strftime("%d%b%y").upper()
+            symbol = f"{underlying}{expiry_fmt}{int(strike)}{otype}"
+
+
 
             def build_nfo_symbol(underlying, expiryDate, strikePrice, optionType):
                 """
