@@ -6191,9 +6191,48 @@ elif MENU =="Live Trade":
     # Example P&L calculation
 
     #buy_price = result['option_data']['lastPrice']
-   # exit_reason = signal.get("status", "Open")  # from signal
+    # exit_reason = signal.get("status", "Open")  # from signal
     #exit_price = signal.get("exit_price", None)
+
+    # -------------------------
+    # PLACE ORDER IF CONNECTED
+    # -------------------------
+    st.write("### Live Trading Section")
     
+    if signal:
+        if "kite" in st.session_state and st.session_state.kite:
+            kite = st.session_state.kite
+            
+            st.success("Kite session connected. Ready to place trade.")
+            
+            # Extract option symbol & quantity
+            option_symbol = result['option_data']['tradingsymbol']
+            qty = result['total_quantity']
+            ltp = result['option_data']['lastPrice']
+            
+            st.write(f"Placing order for: **{option_symbol}**")
+            st.write(f"Quantity: {qty}, LTP: {ltp}")
+            
+            if st.button("🚀 PLACE BUY ORDER IN ZERODHA"):
+                try:
+                    order_id = kite.place_order(
+                        tradingsymbol=option_symbol,
+                        exchange=kite.EXCHANGE_NFO,
+                        transaction_type=kite.TRANSACTION_TYPE_BUY,
+                        quantity=qty,
+                        order_type=kite.ORDER_TYPE_MARKET,
+                        variety=kite.VARIETY_REGULAR,
+                        product=kite.PRODUCT_MIS  # or CNC/NRML based on your logic
+                    )
+                    st.success(f"Order Placed Successfully! Order ID: {order_id}")
+                
+                except Exception as e:
+                    st.error(f"Order Failed: {e}")
+        else:
+            st.warning("Kite session not connected. Please login first to place live orders.")
+    else:
+        st.info("No trade signal today. No live trade executed.")
+
     
     
     
