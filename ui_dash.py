@@ -6206,7 +6206,7 @@ elif MENU =="Live Trade":
             st.success("Kite session connected. Ready to place trade.")
             #st.write("Available keys:", list(result['option_data'].index))
 #-----------------------------------------------------------------------------------------------------------------------------------------
-            def nse_to_kite_symbol(identifier: str) -> str:
+            def nse_to_kite_symbol0(identifier: str) -> str:
                 """
                 Convert NSE Option Chain identifier (OPTIDX...) into Kite tradingsymbol.
                 Example:
@@ -6244,6 +6244,33 @@ elif MENU =="Live Trade":
                 tradingsymbol = f"{symbol}{expiry}{opt_type}{strike}"
             
                 return tradingsymbol
+
+            def nse_to_kite_symbol(identifier: str) -> str:
+                """
+                Convert NSE Option Chain identifier into Zerodha tradingsymbol.
+                Supports weekly and monthly expiry.
+                """
+            
+                identifier = identifier.replace("OPTIDX", "")
+            
+                import re
+                pattern = r"([A-Z]+)(\d{2})-(\d{2})-(\d{4})(CE|PE)([\d\.]+)"
+                match = re.match(pattern, identifier)
+                if not match:
+                    return None
+            
+                symbol, day, month, year, opt_type, strike = match.groups()
+            
+                # Format expiry → DDMMMYY
+                import datetime
+                d = datetime.datetime.strptime(f"{day}-{month}-{year}", "%d-%m-%Y")
+                expiry = d.strftime("%d%b%y").upper()
+            
+                # Clean strike
+                strike = strike.replace(".00", "").replace(".0", "")
+            
+                return f"{symbol}{expiry}{opt_type}{strike}"
+
 
             def convert_to_kite_symbol(identifier):
                 # Example identifier: OPTIDXNIFTY25-11-2025CE26200
