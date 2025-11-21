@@ -6155,8 +6155,8 @@ elif MENU =="Live Trade":
         df_option = pd.DataFrame([result['option_data']]).T
         df_option.columns = ["Value"]  # Rename column for clarity
         
-        #st.table(df_option)
-        st.write(df_option)
+        st.table(df_option)
+        #st.write(df_option)
         #st.table(pd.DataFrame([result['option_data']]))
     
         st.write(f"Total Quantity: {result['total_quantity']}")
@@ -6441,7 +6441,7 @@ elif MENU=="Paper Trade":
         st.write(st.session_state.paper_orders or "No paper orders yet.")
         st.write("Paper Positions:")
         st.write(st.session_state.paper_positions or "No paper positions yet.")
-    
+    #-------------------------------------------------------------------------------------------------------------------------------------------------------
     # --- Paper Trade UI ---
     if MENU == "Paper Trade":
         st.title("Paper Trade — NIFTY Options (Simulated)")
