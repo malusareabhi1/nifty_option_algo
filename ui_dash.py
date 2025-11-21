@@ -6204,9 +6204,21 @@ elif MENU =="Live Trade":
             kite = st.session_state.kite
             
             st.success("Kite session connected. Ready to place trade.")
-            st.write("Available keys:", list(result['option_data'].index))
-
+            #st.write("Available keys:", list(result['option_data'].index))
+#-----------------------------------------------------------------------------------------------------------------------------------------
+            option_data = result["option_data"]
+            underlying = "NIFTY"      # or "BANKNIFTY"
             
+            expiry = option_data["expiryDate"]
+            strike = option_data["strikePrice"]
+            otype  = option_data["optionType"]   # CE/PE
+            
+            option_symbol = build_nfo_symbol(underlying, expiry, strike, otype)
+            
+            st.success(f"Generated Trading Symbol: {option_symbol}")
+
+
+ #-------------------------------------------------------------------------------------------------------------------------------------------------           
             # Extract option symbol & quantity
             option_symbol = result['option_data']['tradingsymbol']
             qty = result['total_quantity']
