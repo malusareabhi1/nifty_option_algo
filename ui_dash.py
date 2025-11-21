@@ -6207,9 +6207,33 @@ elif MENU =="Live Trade":
             #st.write("Available keys:", list(result['option_data'].index))
 #-----------------------------------------------------------------------------------------------------------------------------------------
             import datetime
+            def parse_expiry_any(expiry):
+            #import datetime
+        
+            expiry = str(expiry).strip()
+        
+            fmts = [
+                "%Y-%m-%d",
+                "%d-%m-%Y",
+                "%d-%b-%Y",
+                "%d-%b-%y",
+                "%d%b%Y",
+                "%d%b%y",
+                "%d %b %Y",
+                "%Y-%m-%dT%H:%M:%S",
+            ]
+        
+            for f in fmts:
+                try:
+                    return datetime.datetime.strptime(expiry, f)
+                except:
+                    pass
+        
+            raise ValueError(f"Unknown expiry format → {expiry}")
+
            
 
-            def parse_expiry(expiry):
+            def parse_expiry_any(expiry):
                 if expiry is None:
                     raise ValueError("Expiry is None")
                 
