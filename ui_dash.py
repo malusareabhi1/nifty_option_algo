@@ -6233,10 +6233,10 @@ elif MENU =="Live Trade":
                 
                 raise ValueError(f"Unknown expiry format: {expiry}")
 
-            d = parse_expiry(expiry)
-            expiry_fmt = d.strftime("%d%b%y").upper()
-            symbol = f"{underlying}{expiry_fmt}{int(strike)}{otype}"
-            st.error(f"Expiry RAW VALUE → {repr(expiry)}")
+                d = parse_expiry(expiry)
+                expiry_fmt = d.strftime("%d%b%y").upper()
+                symbol = f"{underlying}{expiry_fmt}{int(strike)}{otype}"
+                st.error(f"Expiry RAW VALUE → {repr(expiry)}")
 
 
 
