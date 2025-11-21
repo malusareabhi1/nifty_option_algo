@@ -6462,7 +6462,7 @@ elif MENU=="Paper Trade":
             if use_paper:
                 order = place_paper_order(symbol=symbol, qty=int(qty), side=side, order_type=ord_type, price=(price if price > 0 else None))
                 st.success(f"Paper order placed: {order['order_id']}")
-                st.write(order)
+                #st.write(order)
             else:
                 kite = get_kite()
                 if kite is None:
