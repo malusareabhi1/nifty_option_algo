@@ -6204,6 +6204,8 @@ elif MENU =="Live Trade":
             kite = st.session_state.kite
             
             st.success("Kite session connected. Ready to place trade.")
+            st.write("Available keys:", list(result['option_data'].index))
+
             
             # Extract option symbol & quantity
             option_symbol = result['option_data']['tradingsymbol']
