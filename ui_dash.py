@@ -6236,6 +6236,7 @@ elif MENU =="Live Trade":
             d = parse_expiry(expiry)
             expiry_fmt = d.strftime("%d%b%y").upper()
             symbol = f"{underlying}{expiry_fmt}{int(strike)}{otype}"
+            st.error(f"Expiry RAW VALUE → {repr(expiry)}")
 
 
 
