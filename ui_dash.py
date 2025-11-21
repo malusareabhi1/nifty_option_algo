@@ -6206,316 +6206,316 @@ elif MENU =="Live Trade":
 
 elif MENU=="Paper Trade":
     # Put this inside your Streamlit app file (e.g. ui_dash.py)
-# Required packages: streamlit, kiteconnect, streamlit-autorefresh
-# pip install kiteconnect streamlit-autorefresh
-
-import streamlit as st
-from kiteconnect import KiteConnect
-from streamlit_autorefresh import st_autorefresh
-import time
-import uuid
-
-# --- Initialize session state defaults ---
-if "api_status" not in st.session_state:
-    st.session_state.api_status = {"Zerodha": False, "Fyers": False, "AliceBlue": False}
-if "connected_broker" not in st.session_state:
-    st.session_state.connected_broker = None
-if "kite" not in st.session_state:
-    st.session_state.kite = None
-if "paper_orders" not in st.session_state:
-    st.session_state.paper_orders = []
-if "paper_positions" not in st.session_state:
-    st.session_state.paper_positions = {}
-if "use_paper" not in st.session_state:
-    st.session_state.use_paper = True  # default to paper mode
-
-# Utility: safe getter for session kite
-def get_kite():
-    return st.session_state.get("kite", None)
-
-# --- Helper: fetch Zerodha data safely ---
-def fetch_zerodha_data():
-    kite = get_kite()
-    if kite is None:
-        return {
-            "error": "No kite client in session. Connect Zerodha and provide access token.",
-            "funds": None,
-            "holdings": None,
-            "positions": None,
-            "orders": None,
-        }
-    out = {"error": None, "funds": None, "holdings": None, "positions": None, "orders": None}
-    try:
-        # margins() might vary across kite versions — return raw output if structure unexpected
-        try:
-            out["funds"] = kite.margins()  # often returns dict; show raw so user can inspect
-        except Exception as e:
-            out["funds"] = {"error": f"Unable to fetch margins: {e}"}
-
-        try:
-            holdings = kite.holdings()
-            out["holdings"] = holdings
-        except Exception as e:
-            out["holdings"] = {"error": f"Unable to fetch holdings: {e}"}
-
-        try:
-            positions = kite.positions()
-            # positions may contain 'net' and 'day' subkeys depending on version
-            out["positions"] = positions
-        except Exception as e:
-            out["positions"] = {"error": f"Unable to fetch positions: {e}"}
-
-        try:
-            orders = kite.orders()
-            out["orders"] = orders
-        except Exception as e:
-            out["orders"] = {"error": f"Unable to fetch orders: {e}"}
-    except Exception as e:
-        out["error"] = f"Unexpected error while fetching: {e}"
-    return out
-
-# --- Helper: local paper-trade order placement (simulated) ---
-def place_paper_order(symbol, qty, side="BUY", order_type="MARKET", price=None, product="MIS"):
-    # Create a simulated order id and append to paper_orders
-    oid = str(uuid.uuid4())[:8]
-    ts = int(time.time())
-    order = {
-        "order_id": oid,
-        "symbol": symbol,
-        "qty": qty,
-        "side": side,
-        "order_type": order_type,
-        "price": price,
-        "product": product,
-        "status": "COMPLETE" if order_type == "MARKET" else "OPEN",
-        "filled_qty": qty if order_type == "MARKET" else 0,
-        "avg_price": price if price else "market",
-        "timestamp": ts,
-    }
-    st.session_state.paper_orders.append(order)
-
-    # update positions (very simple: net qty)
-    pos = st.session_state.paper_positions.get(symbol, {"qty": 0, "avg_price": 0.0})
-    if side == "BUY":
-        new_qty = pos["qty"] + qty
-        # naive avg price calc (if avg_price is numeric)
-        try:
-            prev_tot = pos["avg_price"] * pos["qty"]
-            new_avg = (prev_tot + (price or 0) * qty) / new_qty if new_qty != 0 else 0
-        except Exception:
-            new_avg = price or 0
-        st.session_state.paper_positions[symbol] = {"qty": new_qty, "avg_price": new_avg}
-    else:  # SELL
-        new_qty = pos["qty"] - qty
-        st.session_state.paper_positions[symbol] = {"qty": new_qty, "avg_price": pos.get("avg_price", 0)}
-
-    return order
-
-# --- UI: Sidebar menu with Logout ---
-menu = st.sidebar.selectbox("Menu", ["Home", "Zerodha Broker API", "Dashboard", "Paper Trade", "Logout"])
-
-# If logout chosen, clear relevant session state
-if menu == "Logout":
-    # remove sensitive session keys
-    for k in ["kite", "connected_broker", "api_status"]:
-        if k in st.session_state:
-            del st.session_state[k]
-    # clear paper-trade state optionally
-    st.session_state.paper_orders = []
-    st.session_state.paper_positions = {}
-    st.success("Logged out and session cleared.")
-    st.stop()
-
-# --- Zerodha Broker API page ---
-if menu == "Zerodha Broker API":
-    st.title("Broker Integrations")
-    st.write("Connect your broker to enable paper/live trading. For production store tokens securely.")
-
-    brokers = ["Zerodha", "Fyers", "AliceBlue"]
-    bcol1, bcol2 = st.columns(2)
-    with bcol1:
-        sel = st.selectbox("Broker", brokers, index=0)
-        if sel == "Zerodha":
-            api_key = st.text_input("API Key", key="z_key")
-            api_secret = st.text_input("API Secret (optional)", type="password", key="z_secret")
-            access_token = st.text_input(
-                "Access Token (paste here for demo) — for production use OAuth flow",
-                key="z_access_token",
-            )
-
-            st.checkbox("Use paper trading (simulate)", value=st.session_state.use_paper, key="use_paper_checkbox")
-            st.session_state.use_paper = st.session_state.use_paper_checkbox
-
-            st.markdown("<div class='button-teal'>", unsafe_allow_html=True)
-            if st.button("Connect Zerodha"):
-                if not api_key:
-                    st.error("Please provide API Key.")
-                else:
-                    try:
-                        kite = KiteConnect(api_key=api_key)
-                        # If you already have access_token you can set it directly:
-                        if access_token:
-                            kite.set_access_token(access_token)
-                        # store client
-                        st.session_state.kite = kite
-                        st.session_state.api_status["Zerodha"] = True
-                        st.session_state.connected_broker = "Zerodha"
-                        st.success("Zerodha client stored in session.")
-                    except Exception as e:
-                        st.session_state.api_status["Zerodha"] = False
-                        st.error(f"Failed to create Kite client: {e}")
-            st.markdown("</div>", unsafe_allow_html=True)
-
-        elif sel == "Fyers":
-            st.text_input("Client ID", key="f_id")
-            st.text_input("Secret Key", type="password", key="f_secret")
-            if st.button("Connect Fyers"):
-                st.session_state.api_status["Fyers"] = True
-                st.session_state.connected_broker = "Fyers"
-                st.success("Fyers connected (demo)")
-        elif sel == "AliceBlue":
-            st.text_input("User ID", key="a_id")
-            st.text_input("API Key", type="password", key="a_key")
-            if st.button("Connect AliceBlue"):
-                st.session_state.api_status["AliceBlue"] = True
-                st.session_state.connected_broker = "AliceBlue"
-                st.success("AliceBlue connected (demo)")
-
-    # Connection status on right column
-    with bcol2:
-        st.subheader("Connection Status")
-        for name, ok in st.session_state.api_status.items():
-            badge_class = "success" if ok else "danger"
-            badge_text = "Connected" if ok else "Not Connected"
-            st.markdown(f"**{name}**: <span class='badge {badge_class}'>{badge_text}</span>", unsafe_allow_html=True)
-        st.caption("For demo we store Kite object in session_state. In production use secure secrets store.")
-
-# --- Dashboard: display funds, holdings, positions, orders ---
-if menu == "Dashboard":
-    st.title("Zerodha Dashboard")
-    st.write("Shows funds, holdings, positions and orders (live) or simulated paper-trade state.")
-
-    # optional autorefresh (every 60 seconds)
-    try:
-        st_autorefresh(interval=60 * 1000, limit=None, key="refresh")
-    except Exception:
-        # if import or usage failed, ignore and continue
-        pass
-
-    data = fetch_zerodha_data()
-    if data.get("error"):
-        st.warning(data["error"])
-
-    # show funds block
-    st.subheader("Funds / Margins")
-    if data["funds"] is None:
-        st.info("No funds fetched. Connect Zerodha or paste access token.")
-    else:
-        st.json(data["funds"])
-
-    # holdings
-    st.subheader("Holdings")
-    if data["holdings"] is None:
-        st.info("No holdings fetched.")
-    else:
-        st.write(data["holdings"])
-
-    # positions
-    st.subheader("Positions")
-    if data["positions"] is None:
-        st.info("No positions fetched.")
-    else:
-        st.write(data["positions"])
-
-    # orders
-    st.subheader("Orders")
-    if data["orders"] is None:
-        st.info("No orders fetched.")
-    else:
-        st.write(data["orders"])
-
-    # Also show paper-trade state if paper mode
-    st.subheader("Paper-trade state (local simulation)")
-    st.write("Use Paper Trade menu to place simulated orders.")
-    st.write("Paper Orders:")
-    st.write(st.session_state.paper_orders or "No paper orders yet.")
-    st.write("Paper Positions:")
-    st.write(st.session_state.paper_positions or "No paper positions yet.")
-
-# --- Paper Trade UI ---
-if MENU == "Paper Trade":
-    st.title("Paper Trade — NIFTY Options (Simulated)")
-    st.write("This is a local paper-trade simulator. No real orders are sent to broker when using paper mode.")
-
-    use_paper = st.checkbox("Use paper trading (simulate)", value=st.session_state.use_paper)
-    st.session_state.use_paper = use_paper
-
-    with st.form("paper_order_form"):
-        symbol = st.text_input("Symbol (e.g. NIFTY22NOV23000CE)", value="NIFTY23NOV23000CE")
-        qty = st.number_input("Quantity", value=1, step=1)
-        side = st.selectbox("Side", ["BUY", "SELL"])
-        ord_type = st.selectbox("Order Type", ["MARKET", "LIMIT"])
-        price = st.number_input("Limit Price (if LIMIT)", value=0.0, step=0.1)
-        submitted = st.form_submit_button("Place Order (paper)")
-
-    if submitted:
-        if use_paper:
-            order = place_paper_order(symbol=symbol, qty=int(qty), side=side, order_type=ord_type, price=(price if price > 0 else None))
-            st.success(f"Paper order placed: {order['order_id']}")
-            st.write(order)
-        else:
-            kite = get_kite()
-            if kite is None:
-                st.error("No kite client available — connect Zerodha first or use paper mode.")
-            else:
-                # Example real order (commented out by default)
-                try:
-                    # real_order = kite.place_order(
-                    #     variety=kite.VARIETY_REGULAR,
-                    #     exchange="NFO",  # or "NSE" depending on instrument
-                    #     tradingsymbol=symbol,
-                    #     transaction_type=side,
-                    #     quantity=int(qty),
-                    #     product="MIS",
-                    #     order_type=ord_type,
-                    #     price=price if ord_type == "LIMIT" and price>0 else None,
-                    # )
-                    # st.success(f"Live order placed: {real_order}")
-                    st.info("Live order placement is disabled in this demo. Uncomment and ensure credentials to enable.")
-                except Exception as e:
-                    st.error(f"Failed to place live order: {e}")
-
-    st.markdown("---")
-    st.subheader("Paper Orders Log")
-    st.write(st.session_state.paper_orders or "No paper orders yet.")
-
-    st.subheader("Paper Positions")
-    st.write(st.session_state.paper_positions or "No paper positions.")
-
-
-
-#-------------------------------------
-elif MENU == "Logout":
-    st.title("Logout")
-
-    if st.button("Logout from All Brokers"):
-        # Clear broker connections
+    # Required packages: streamlit, kiteconnect, streamlit-autorefresh
+    # pip install kiteconnect streamlit-autorefresh
+    
+    import streamlit as st
+    from kiteconnect import KiteConnect
+    from streamlit_autorefresh import st_autorefresh
+    import time
+    import uuid
+    
+    # --- Initialize session state defaults ---
+    if "api_status" not in st.session_state:
+        st.session_state.api_status = {"Zerodha": False, "Fyers": False, "AliceBlue": False}
+    if "connected_broker" not in st.session_state:
         st.session_state.connected_broker = None
-        st.session_state.api_status = {
-            "Zerodha": False,
-            "Fyers": False,
-            "AliceBlue": False
+    if "kite" not in st.session_state:
+        st.session_state.kite = None
+    if "paper_orders" not in st.session_state:
+        st.session_state.paper_orders = []
+    if "paper_positions" not in st.session_state:
+        st.session_state.paper_positions = {}
+    if "use_paper" not in st.session_state:
+        st.session_state.use_paper = True  # default to paper mode
+    
+    # Utility: safe getter for session kite
+    def get_kite():
+        return st.session_state.get("kite", None)
+    
+    # --- Helper: fetch Zerodha data safely ---
+    def fetch_zerodha_data():
+        kite = get_kite()
+        if kite is None:
+            return {
+                "error": "No kite client in session. Connect Zerodha and provide access token.",
+                "funds": None,
+                "holdings": None,
+                "positions": None,
+                "orders": None,
+            }
+        out = {"error": None, "funds": None, "holdings": None, "positions": None, "orders": None}
+        try:
+            # margins() might vary across kite versions — return raw output if structure unexpected
+            try:
+                out["funds"] = kite.margins()  # often returns dict; show raw so user can inspect
+            except Exception as e:
+                out["funds"] = {"error": f"Unable to fetch margins: {e}"}
+    
+            try:
+                holdings = kite.holdings()
+                out["holdings"] = holdings
+            except Exception as e:
+                out["holdings"] = {"error": f"Unable to fetch holdings: {e}"}
+    
+            try:
+                positions = kite.positions()
+                # positions may contain 'net' and 'day' subkeys depending on version
+                out["positions"] = positions
+            except Exception as e:
+                out["positions"] = {"error": f"Unable to fetch positions: {e}"}
+    
+            try:
+                orders = kite.orders()
+                out["orders"] = orders
+            except Exception as e:
+                out["orders"] = {"error": f"Unable to fetch orders: {e}"}
+        except Exception as e:
+            out["error"] = f"Unexpected error while fetching: {e}"
+        return out
+    
+    # --- Helper: local paper-trade order placement (simulated) ---
+    def place_paper_order(symbol, qty, side="BUY", order_type="MARKET", price=None, product="MIS"):
+        # Create a simulated order id and append to paper_orders
+        oid = str(uuid.uuid4())[:8]
+        ts = int(time.time())
+        order = {
+            "order_id": oid,
+            "symbol": symbol,
+            "qty": qty,
+            "side": side,
+            "order_type": order_type,
+            "price": price,
+            "product": product,
+            "status": "COMPLETE" if order_type == "MARKET" else "OPEN",
+            "filled_qty": qty if order_type == "MARKET" else 0,
+            "avg_price": price if price else "market",
+            "timestamp": ts,
         }
-
-        # Remove Zerodha kite object if present
-        if "kite" in st.session_state:
-            st.session_state.kite = None
-
-        st.success("You have been logged out successfully.")
-        st.info("Please reconnect your broker from the 'Zerodha Broker API' menu.")
-
-    st.write("---")
-    st.caption("Your session is now cleared. Safe exit 👋")
+        st.session_state.paper_orders.append(order)
+    
+        # update positions (very simple: net qty)
+        pos = st.session_state.paper_positions.get(symbol, {"qty": 0, "avg_price": 0.0})
+        if side == "BUY":
+            new_qty = pos["qty"] + qty
+            # naive avg price calc (if avg_price is numeric)
+            try:
+                prev_tot = pos["avg_price"] * pos["qty"]
+                new_avg = (prev_tot + (price or 0) * qty) / new_qty if new_qty != 0 else 0
+            except Exception:
+                new_avg = price or 0
+            st.session_state.paper_positions[symbol] = {"qty": new_qty, "avg_price": new_avg}
+        else:  # SELL
+            new_qty = pos["qty"] - qty
+            st.session_state.paper_positions[symbol] = {"qty": new_qty, "avg_price": pos.get("avg_price", 0)}
+    
+        return order
+    
+    # --- UI: Sidebar menu with Logout ---
+    menu = st.sidebar.selectbox("Menu", ["Home", "Zerodha Broker API", "Dashboard", "Paper Trade", "Logout"])
+    
+    # If logout chosen, clear relevant session state
+    if menu == "Logout":
+        # remove sensitive session keys
+        for k in ["kite", "connected_broker", "api_status"]:
+            if k in st.session_state:
+                del st.session_state[k]
+        # clear paper-trade state optionally
+        st.session_state.paper_orders = []
+        st.session_state.paper_positions = {}
+        st.success("Logged out and session cleared.")
+        st.stop()
+    
+    # --- Zerodha Broker API page ---
+    if menu == "Zerodha Broker API":
+        st.title("Broker Integrations")
+        st.write("Connect your broker to enable paper/live trading. For production store tokens securely.")
+    
+        brokers = ["Zerodha", "Fyers", "AliceBlue"]
+        bcol1, bcol2 = st.columns(2)
+        with bcol1:
+            sel = st.selectbox("Broker", brokers, index=0)
+            if sel == "Zerodha":
+                api_key = st.text_input("API Key", key="z_key")
+                api_secret = st.text_input("API Secret (optional)", type="password", key="z_secret")
+                access_token = st.text_input(
+                    "Access Token (paste here for demo) — for production use OAuth flow",
+                    key="z_access_token",
+                )
+    
+                st.checkbox("Use paper trading (simulate)", value=st.session_state.use_paper, key="use_paper_checkbox")
+                st.session_state.use_paper = st.session_state.use_paper_checkbox
+    
+                st.markdown("<div class='button-teal'>", unsafe_allow_html=True)
+                if st.button("Connect Zerodha"):
+                    if not api_key:
+                        st.error("Please provide API Key.")
+                    else:
+                        try:
+                            kite = KiteConnect(api_key=api_key)
+                            # If you already have access_token you can set it directly:
+                            if access_token:
+                                kite.set_access_token(access_token)
+                            # store client
+                            st.session_state.kite = kite
+                            st.session_state.api_status["Zerodha"] = True
+                            st.session_state.connected_broker = "Zerodha"
+                            st.success("Zerodha client stored in session.")
+                        except Exception as e:
+                            st.session_state.api_status["Zerodha"] = False
+                            st.error(f"Failed to create Kite client: {e}")
+                st.markdown("</div>", unsafe_allow_html=True)
+    
+            elif sel == "Fyers":
+                st.text_input("Client ID", key="f_id")
+                st.text_input("Secret Key", type="password", key="f_secret")
+                if st.button("Connect Fyers"):
+                    st.session_state.api_status["Fyers"] = True
+                    st.session_state.connected_broker = "Fyers"
+                    st.success("Fyers connected (demo)")
+            elif sel == "AliceBlue":
+                st.text_input("User ID", key="a_id")
+                st.text_input("API Key", type="password", key="a_key")
+                if st.button("Connect AliceBlue"):
+                    st.session_state.api_status["AliceBlue"] = True
+                    st.session_state.connected_broker = "AliceBlue"
+                    st.success("AliceBlue connected (demo)")
+    
+        # Connection status on right column
+        with bcol2:
+            st.subheader("Connection Status")
+            for name, ok in st.session_state.api_status.items():
+                badge_class = "success" if ok else "danger"
+                badge_text = "Connected" if ok else "Not Connected"
+                st.markdown(f"**{name}**: <span class='badge {badge_class}'>{badge_text}</span>", unsafe_allow_html=True)
+            st.caption("For demo we store Kite object in session_state. In production use secure secrets store.")
+    
+    # --- Dashboard: display funds, holdings, positions, orders ---
+    if menu == "Dashboard":
+        st.title("Zerodha Dashboard")
+        st.write("Shows funds, holdings, positions and orders (live) or simulated paper-trade state.")
+    
+        # optional autorefresh (every 60 seconds)
+        try:
+            st_autorefresh(interval=60 * 1000, limit=None, key="refresh")
+        except Exception:
+            # if import or usage failed, ignore and continue
+            pass
+    
+        data = fetch_zerodha_data()
+        if data.get("error"):
+            st.warning(data["error"])
+    
+        # show funds block
+        st.subheader("Funds / Margins")
+        if data["funds"] is None:
+            st.info("No funds fetched. Connect Zerodha or paste access token.")
+        else:
+            st.json(data["funds"])
+    
+        # holdings
+        st.subheader("Holdings")
+        if data["holdings"] is None:
+            st.info("No holdings fetched.")
+        else:
+            st.write(data["holdings"])
+    
+        # positions
+        st.subheader("Positions")
+        if data["positions"] is None:
+            st.info("No positions fetched.")
+        else:
+            st.write(data["positions"])
+    
+        # orders
+        st.subheader("Orders")
+        if data["orders"] is None:
+            st.info("No orders fetched.")
+        else:
+            st.write(data["orders"])
+    
+        # Also show paper-trade state if paper mode
+        st.subheader("Paper-trade state (local simulation)")
+        st.write("Use Paper Trade menu to place simulated orders.")
+        st.write("Paper Orders:")
+        st.write(st.session_state.paper_orders or "No paper orders yet.")
+        st.write("Paper Positions:")
+        st.write(st.session_state.paper_positions or "No paper positions yet.")
+    
+    # --- Paper Trade UI ---
+    if MENU == "Paper Trade":
+        st.title("Paper Trade — NIFTY Options (Simulated)")
+        st.write("This is a local paper-trade simulator. No real orders are sent to broker when using paper mode.")
+    
+        use_paper = st.checkbox("Use paper trading (simulate)", value=st.session_state.use_paper)
+        st.session_state.use_paper = use_paper
+    
+        with st.form("paper_order_form"):
+            symbol = st.text_input("Symbol (e.g. NIFTY22NOV23000CE)", value="NIFTY23NOV23000CE")
+            qty = st.number_input("Quantity", value=1, step=1)
+            side = st.selectbox("Side", ["BUY", "SELL"])
+            ord_type = st.selectbox("Order Type", ["MARKET", "LIMIT"])
+            price = st.number_input("Limit Price (if LIMIT)", value=0.0, step=0.1)
+            submitted = st.form_submit_button("Place Order (paper)")
+    
+        if submitted:
+            if use_paper:
+                order = place_paper_order(symbol=symbol, qty=int(qty), side=side, order_type=ord_type, price=(price if price > 0 else None))
+                st.success(f"Paper order placed: {order['order_id']}")
+                st.write(order)
+            else:
+                kite = get_kite()
+                if kite is None:
+                    st.error("No kite client available — connect Zerodha first or use paper mode.")
+                else:
+                    # Example real order (commented out by default)
+                    try:
+                        # real_order = kite.place_order(
+                        #     variety=kite.VARIETY_REGULAR,
+                        #     exchange="NFO",  # or "NSE" depending on instrument
+                        #     tradingsymbol=symbol,
+                        #     transaction_type=side,
+                        #     quantity=int(qty),
+                        #     product="MIS",
+                        #     order_type=ord_type,
+                        #     price=price if ord_type == "LIMIT" and price>0 else None,
+                        # )
+                        # st.success(f"Live order placed: {real_order}")
+                        st.info("Live order placement is disabled in this demo. Uncomment and ensure credentials to enable.")
+                    except Exception as e:
+                        st.error(f"Failed to place live order: {e}")
+    
+        st.markdown("---")
+        st.subheader("Paper Orders Log")
+        st.write(st.session_state.paper_orders or "No paper orders yet.")
+    
+        st.subheader("Paper Positions")
+        st.write(st.session_state.paper_positions or "No paper positions.")
+    
+    
+    
+    #-------------------------------------
+    elif MENU == "Logout":
+        st.title("Logout")
+    
+        if st.button("Logout from All Brokers"):
+            # Clear broker connections
+            st.session_state.connected_broker = None
+            st.session_state.api_status = {
+                "Zerodha": False,
+                "Fyers": False,
+                "AliceBlue": False
+            }
+    
+            # Remove Zerodha kite object if present
+            if "kite" in st.session_state:
+                st.session_state.kite = None
+    
+            st.success("You have been logged out successfully.")
+            st.info("Please reconnect your broker from the 'Zerodha Broker API' menu.")
+    
+        st.write("---")
+        st.caption("Your session is now cleared. Safe exit 👋")
 
 
 # ------------------------------------------------------------
