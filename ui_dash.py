@@ -6206,95 +6206,29 @@ elif MENU =="Live Trade":
             st.success("Kite session connected. Ready to place trade.")
             #st.write("Available keys:", list(result['option_data'].index))
 #-----------------------------------------------------------------------------------------------------------------------------------------
-            import datetime
-            def parse_expiry_any(expiry):
-                import datetime
-            
-                expiry = str(expiry).strip()
-            
-                fmts = [
-                    "%Y-%m-%d",
-                    "%d-%m-%Y",
-                    "%d-%b-%Y",
-                    "%d-%b-%y",
-                    "%d%b%Y",
-                    "%d%b%y",
-                    "%d %b %Y",
-                    "%Y-%m-%dT%H:%M:%S",
-                ]
-            
-                for f in fmts:
-                    try:
-                        return datetime.datetime.strptime(expiry, f)
-                    except:
-                        pass
-            
-                raise ValueError(f"Unknown expiry format → {expiry}")
-
-           
-
-            def parse_expiry_any(expiry):
-                if expiry is None:
-                    raise ValueError("Expiry is None")
+            # ---- PLACE ORDER IN ZERODHA ----
+            try:
+                tradingsymbol = result['option_data']['identifier'].replace("OPTIDX", "")
+                # Example: NIFTY25-11-2025CE26200 (correct format)
                 
-                expiry = str(expiry).strip()
+                order = kite.place_order(
+                    variety="regular",
+                    exchange="NFO",
+                    tradingsymbol=tradingsymbol,
+                    transaction_type="BUY",
+                    quantity=result["total_quantity"],
+                    product="MIS",
+                    order_type="MARKET"
+                )
             
-                formats = [
-                    "%Y-%m-%d",
-                    "%d-%b-%Y",
-                    "%d-%b-%y",
-                    "%d-%m-%Y",
-                    "%d %b %Y",
-                    "%d%b%Y",
-                    "%Y-%m-%dT%H:%M:%S",
-                ]
-            
-                for fmt in formats:
-                    try:
-                        return datetime.datetime.strptime(expiry, fmt)
-                    except:
-                        pass
+                st.success(f"Order Placed Successfully! Order ID: {order}")
+                st.write(f"**Executed:** {tradingsymbol}")
+                st.write(f"**Qty:** {result['total_quantity']}")
+                st.write(f"**Side:** BUY")
                 
-                raise ValueError(f"Unknown expiry format: {expiry}")
-
-                d = parse_expiry(expiry)
-                expiry_fmt = d.strftime("%d%b%y").upper()
-                symbol = f"{underlying}{expiry_fmt}{int(strike)}{otype}"
-                st.error(f"Expiry RAW VALUE → {repr(expiry)}")
-
-
-
-            def build_nfo_symbol(underlying, expiryDate, strikePrice, optionType):
-                """
-                underlying: NIFTY or BANKNIFTY
-                expiryDate: '2024-11-28'
-                strikePrice: int
-                optionType: CE / PE
-                """
+            except Exception as e:
+                st.error(f"Order Failed: {e}")
             
-                try:
-                    d = datetime.datetime.strptime(expiryDate, "%Y-%m-%d")
-                except:
-                    # Some NSE APIs give DD-MMM-YYYY
-                    d = datetime.datetime.strptime(expiryDate, "%d-%b-%Y")
-            
-                # Zerodha format: DDMMMYY (e.g. 28NOV24)
-                expiry_fmt = d.strftime("%d%b%y").upper()
-            
-                return f"{underlying}{expiry_fmt}{int(strikePrice)}{optionType}"
-            #----------------------------------------------------------------------
-            option_data = result["option_data"]
-
-            underlying = "NIFTY"
-            expiry = str(option_data["expiryDate"]).strip()
-            strike = option_data["strikePrice"]
-            otype  = option_data["optionType"]  # CE / PE
-            
-            st.write("Expiry raw value:", expiry)
-            
-            option_symbol = build_nfo_symbol(underlying, expiry, strike, otype)
-            
-            st.success(f"Trading Symbol: {option_symbol}")
 
 
 
