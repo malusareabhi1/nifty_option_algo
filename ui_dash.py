@@ -6487,12 +6487,19 @@ elif MENU=="Paper Trade":
     
         st.markdown("---")
         st.subheader("Paper Orders Log")
-        st.write(st.session_state.paper_orders or "No paper orders yet.")
-        st.table(paper_orders)
+        #st.write(st.session_state.paper_orders or "No paper orders yet.")
+        paper_orders = st.session_state.get("paper_orders", [])
+
+        if paper_orders:
+            df = pd.DataFrame(paper_orders)
+            st.dataframe(df, use_container_width=True)
+        else:
+            st.info("No paper orders yet.")
+        #st.table(paper_orders)
     
         st.subheader("Paper Positions")
         st.write(st.session_state.paper_positions or "No paper positions.")
-        st.table(paper_positions)
+        #st.table(paper_positions)
     
     
     
