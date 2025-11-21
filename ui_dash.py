@@ -4420,6 +4420,7 @@ elif MENU == "Zerodha Broker API":
             st.success("Login URL generated. Open it, login & paste Request Token.")
             st.write("👉 Login URL:")
             st.code(login_url)
+            st.markdown(f"[🔗 Open Zerodha Login]({login_url})", unsafe_allow_html=True)
         except Exception as e:
             st.error(e)
 
