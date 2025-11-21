@@ -6206,6 +6206,27 @@ elif MENU =="Live Trade":
             st.success("Kite session connected. Ready to place trade.")
             #st.write("Available keys:", list(result['option_data'].index))
 #-----------------------------------------------------------------------------------------------------------------------------------------
+            import datetime
+
+            def build_nfo_symbol(underlying, expiryDate, strikePrice, optionType):
+                """
+                underlying: NIFTY or BANKNIFTY
+                expiryDate: '2024-11-28'
+                strikePrice: int
+                optionType: CE / PE
+                """
+            
+                try:
+                    d = datetime.datetime.strptime(expiryDate, "%Y-%m-%d")
+                except:
+                    # Some NSE APIs give DD-MMM-YYYY
+                    d = datetime.datetime.strptime(expiryDate, "%d-%b-%Y")
+            
+                # Zerodha format: DDMMMYY (e.g. 28NOV24)
+                expiry_fmt = d.strftime("%d%b%y").upper()
+            
+                return f"{underlying}{expiry_fmt}{int(strikePrice)}{optionType}"
+            #----------------------------------------------------------------------
             option_data = result["option_data"]
             underlying = "NIFTY"      # or "BANKNIFTY"
             
