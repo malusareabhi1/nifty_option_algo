@@ -6206,6 +6206,45 @@ elif MENU =="Live Trade":
             st.success("Kite session connected. Ready to place trade.")
             #st.write("Available keys:", list(result['option_data'].index))
 #-----------------------------------------------------------------------------------------------------------------------------------------
+            def nse_to_kite_symbol(identifier: str) -> str:
+                """
+                Convert NSE Option Chain identifier (OPTIDX...) into Kite tradingsymbol.
+                Example:
+                OPTIDXNIFTY28-11-2024CE22000.00 -> NIFTY28NOV24CE22000
+                """
+            
+                # Remove prefix
+                if identifier.startswith("OPTIDX"):
+                    identifier = identifier.replace("OPTIDX", "")
+                else:
+                    return None  # Invalid identifier
+            
+                # Example: NIFTY28-11-2024CE22000.00
+                # Split expiry & others
+                import re
+            
+                # Regex: NIFTY + date + CE/PE + strike
+                pattern = r"([A-Z]+)(\d{2})-(\d{2})-(\d{4})(CE|PE)([\d\.]+)"
+                match = re.match(pattern, identifier)
+            
+                if not match:
+                    return None
+            
+                symbol, day, month, year, opt_type, strike = match.groups()
+            
+                # Convert expiry to Kite format: DD-MMM-YYYY -> DDMMMYY
+                import datetime
+                d = datetime.datetime.strptime(f"{day}-{month}-{year}", "%d-%m-%Y")
+                expiry = d.strftime("%d%b%y").upper()  # e.g. 28NOV24
+            
+                # Remove decimal from strike
+                strike = strike.replace(".00", "")
+            
+                # Final tradingsymbol
+                tradingsymbol = f"{symbol}{expiry}{opt_type}{strike}"
+            
+                return tradingsymbol
+
             def convert_to_kite_symbol(identifier):
                 # Example identifier: OPTIDXNIFTY25-11-2025CE26200
                 x = identifier.replace("OPTIDX", "")  # Remove OPTIDX
