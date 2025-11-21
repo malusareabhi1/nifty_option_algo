@@ -6488,9 +6488,11 @@ elif MENU=="Paper Trade":
         st.markdown("---")
         st.subheader("Paper Orders Log")
         st.write(st.session_state.paper_orders or "No paper orders yet.")
+        st.table(paper_orders)
     
         st.subheader("Paper Positions")
         st.write(st.session_state.paper_positions or "No paper positions.")
+        st.table(paper_positions)
     
     
     
