@@ -6228,15 +6228,18 @@ elif MENU =="Live Trade":
                 return f"{underlying}{expiry_fmt}{int(strikePrice)}{optionType}"
             #----------------------------------------------------------------------
             option_data = result["option_data"]
-            underlying = "NIFTY"      # or "BANKNIFTY"
-            
-            expiry = option_data["expiryDate"]
+
+            underlying = "NIFTY"
+            expiry = str(option_data["expiryDate"]).strip()
             strike = option_data["strikePrice"]
-            otype  = option_data["optionType"]   # CE/PE
+            otype  = option_data["optionType"]  # CE / PE
+            
+            st.write("Expiry raw value:", expiry)
             
             option_symbol = build_nfo_symbol(underlying, expiry, strike, otype)
             
-            st.success(f"Generated Trading Symbol: {option_symbol}")
+            st.success(f"Trading Symbol: {option_symbol}")
+
 
 
  #-------------------------------------------------------------------------------------------------------------------------------------------------           
