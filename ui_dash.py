@@ -6511,8 +6511,8 @@ elif MENU=="Paper Trade":
     
     
     
-    #-------------------------------------
-    elif MENU == "Logout":
+#-------------------------------------
+elif MENU == "Logout":
         st.title("Logout")
     
         if st.button("Logout from All Brokers"):
@@ -6532,7 +6532,7 @@ elif MENU=="Paper Trade":
             st.info("Please reconnect your broker from the 'Zerodha Broker API' menu.")
     
         st.write("---")
-        st.caption("Your session is now cleared. Safe exit 👋")
+        st.caption("Your session is now cleared. Safe exit 👋")    
 
 
 # ------------------------------------------------------------
