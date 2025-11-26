@@ -6191,6 +6191,8 @@ elif MENU =="Live Trade":
     #st.write("###  Signal")
     #st.write(signal)
     if signal:
+        if "kite" in st.session_state and st.session_state.kite:
+                kite = st.session_state.kite
         # Exclude unwanted keys
         exclude_cols = ["stoploss", "quantity", "expiry", "exit_price"]
         
