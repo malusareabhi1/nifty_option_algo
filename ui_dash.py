@@ -6698,8 +6698,11 @@ elif MENU == "My Account":
         # Session State
         # ---------------------------
         if st.session_state.api_status.get("Zerodha"):
+            kite = st.session_state.kite 
             def fetch_zerodha_data():
                 kite = st.session_state.kite
+                # IMPORTANT: make kite available everywhere below
+     
             
                 try:
                     funds = kite.margins()["equity"]["available"]["cash"]
