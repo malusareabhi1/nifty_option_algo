@@ -6263,16 +6263,15 @@ elif MENU =="Live Trade":
             
                 symbol, day, month, year, opt_type, strike = match.groups()
             
-                # Format expiry → DDMMMYY (Zerodha format)
                 import datetime
                 d = datetime.datetime.strptime(f"{day}-{month}-{year}", "%d-%m-%Y")
                 expiry = d.strftime("%d%b%y").upper()  # 02DEC25
             
-                # Clean strike
                 strike = strike.replace(".00", "").replace(".0", "")
             
                 # Zerodha format = SYMBOL + EXPIRY + STRIKE + CE/PE
                 return f"{symbol}{expiry}{strike}{opt_type}"
+
 
 
 
