@@ -6079,6 +6079,36 @@ elif MENU =="Live Trade":
     #import matplotlib.pyplot as plt
     
     #import matplotlib.pyplot as plt
+    def get_option_chain(kite, index_symbol="NIFTY"):
+        """
+        Fetch Zerodha-supported option chain for an index.
+        Returns: DataFrame with tradingsymbol, expiry, strike, type, token, lot_size
+        """
+    
+        import pandas as pd
+    
+        # Get instrument dump from Zerodha
+        instruments = kite.instruments("NFO")
+        df = pd.DataFrame(instruments)
+    
+        # Filter only index options for the given symbol
+        df = df[
+            (df["segment"] == "NFO-OPT") &
+            (df["name"] == index_symbol)
+        ].copy()
+    
+        # Process columns
+        df["expiry"] = pd.to_datetime(df["expiry"])
+        df["strike"] = df["strike"].astype(float)
+        df["type"] = df["instrument_type"]
+    
+        # Sort for readability
+        df = df.sort_values(["expiry", "strike"])
+    
+        return df[
+            ["tradingsymbol", "expiry", "strike", "type", "instrument_token", "lot_size"]
+        ].reset_index(drop=True)
+
     
     def plot_option_trade(option_symbol, entry_time, exit_time, entry_price, exit_price, reason_exit, pnl):
         """
