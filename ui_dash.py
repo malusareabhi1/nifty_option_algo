@@ -6342,28 +6342,28 @@ def convert_to_kite_symbol(identifier):
     
                 return f"{underlying}{day}{month}{year}{option_type}{strike}"
 
-    # ---- PLACE ORDER IN ZERODHA ----
-    try:
-        tradingsymbol = result['option_data']['identifier'].replace("OPTIDX", "")
-        # Example: NIFTY25-11-2025CE26200 (correct format)
-    
-        order = kite.place_order(
-            variety="regular",
-            exchange="NFO",
-            tradingsymbol=tradingsymbol,
-            transaction_type="BUY",
-            quantity=result["total_quantity"],
-            product="MIS",
-            order_type="MARKET"
-        )
-    
-        st.success(f"Order Placed Successfully! Order ID: {order}")
-        st.write(f"**Executed:** {tradingsymbol}")
-        st.write(f"**Qty:** {result['total_quantity']}")
-        st.write(f"**Side:** BUY")
-    
-    except Exception as e:
-        st.error(f"Order Failed: {e}")
+        # ---- PLACE ORDER IN ZERODHA ----
+        try:
+            tradingsymbol = result['option_data']['identifier'].replace("OPTIDX", "")
+            # Example: NIFTY25-11-2025CE26200 (correct format)
+        
+            order = kite.place_order(
+                variety="regular",
+                exchange="NFO",
+                tradingsymbol=tradingsymbol,
+                transaction_type="BUY",
+                quantity=result["total_quantity"],
+                product="MIS",
+                order_type="MARKET"
+            )
+        
+            st.success(f"Order Placed Successfully! Order ID: {order}")
+            st.write(f"**Executed:** {tradingsymbol}")
+            st.write(f"**Qty:** {result['total_quantity']}")
+            st.write(f"**Side:** BUY")
+        
+        except Exception as e:
+            st.error(f"Order Failed: {e}")
 
 
             
