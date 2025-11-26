@@ -6227,17 +6227,7 @@ elif MENU =="Live Trade":
     # -------------------------
     # PLACE ORDER IF CONNECTED
     # -------------------------
-    st.write("### Live Trading Section")
-    
-    if signal:
-        if "kite" in st.session_state and st.session_state.kite:
-            kite = st.session_state.kite
-            
-            st.success("Kite session connected. Ready to place trade.")
-            chain = get_option_chain(kite, "NIFTY")
-            st.dataframe(chain)
-            #st.write("Available keys:", list(result['option_data'].index))
-#-----------------------------------------------------------------------------------------------------------------------------------------
+    #-----------------------------------------------------------------------------------------------------------------------------------------
             def nse_to_kite_symbol0(identifier: str) -> str:
                 """
                 Convert NSE Option Chain identifier (OPTIDX...) into Kite tradingsymbol.
@@ -6347,11 +6337,49 @@ elif MENU =="Live Trade":
                 
             except Exception as e:
                 st.error(f"Order Failed: {e}")
+
+    def find_kite_option(kite, symbol, expiry_date, strike, option_type):
+        """
+        Find exact Zerodha tradingsymbol from expiry + strike + CE/PE.
+        expiry_date must be datetime.date or string '2025-12-04'
+        """
+    
+        import pandas as pd
+    
+        df = get_option_chain(kite, symbol)
+    
+        # Convert expiry
+        expiry_date = pd.to_datetime(expiry_date)
+    
+        # Filter
+        row = df[
+            (df["expiry"] == expiry_date) &
+            (df["strike"] == float(strike)) &
+            (df["type"] == option_type.upper())
+        ]
+    
+        if row.empty:
+            return None
+    
+        return row.iloc[0].to_dict()
+
             
 
 
 
  #-------------------------------------------------------------------------------------------------------------------------------------------------           
+    st.write("### Live Trading Section")
+    
+    if signal:
+        if "kite" in st.session_state and st.session_state.kite:
+            kite = st.session_state.kite
+            
+            st.success("Kite session connected. Ready to place trade.")
+            chain = get_option_chain(kite, "NIFTY")
+            #st.dataframe(chain)
+            
+            #st.write("Available keys:", list(result['option_data'].index))
+
             # Extract option symbol & quantity
             #option_symbol = result['option_data']['tradingsymbol']
             #st.write(result['option_data']['tradingsymbol'])
@@ -6361,6 +6389,19 @@ elif MENU =="Live Trade":
 
             qty = result['total_quantity']
             ltp = result['option_data']['lastPrice']
+            #-------------------------------------------------------------------------------------
+            contract = find_kite_option(
+                kite,
+                symbol="NIFTY",
+                expiry_date="2025-12-04",
+                strike=26150,
+                option_type="CE"
+            )
+            
+            st.write(contract)
+
+
+            #--------------------------------------------------------------------------------------
             
             st.write(f"Placing order for: **{option_symbol}**")
             st.write(f"Quantity: {qty}, LTP: {ltp}")
