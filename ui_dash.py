@@ -6234,6 +6234,8 @@ elif MENU =="Live Trade":
             kite = st.session_state.kite
             
             st.success("Kite session connected. Ready to place trade.")
+            chain = get_option_chain(kite, "NIFTY")
+            st.dataframe(chain)
             #st.write("Available keys:", list(result['option_data'].index))
 #-----------------------------------------------------------------------------------------------------------------------------------------
             def nse_to_kite_symbol0(identifier: str) -> str:
