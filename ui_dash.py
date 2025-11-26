@@ -6211,7 +6211,7 @@ elif MENU =="Live Trade":
         chain = get_option_chain(kite, "NIFTY")
             #st.dataframe(chain)
         result = option_chain_finder(result_chain, spot_price, option_type=ot, lots=10, lot_size=75)
-        selected_option = option_chain_finder(chain, spot_price, option_type=ot, lots=1, lot_size=75)
+        selected_option = option_chain_finder_zerodha(chain, spot_price, option_type=ot, lots=1, lot_size=75)
         st.write(selected_option)
        # st.write("###  find_nearest_itm_option")
         #st.write(result)
