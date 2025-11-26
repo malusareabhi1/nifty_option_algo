@@ -950,7 +950,7 @@ with st.sidebar:
 
     MENU = st.radio(
         "Navigate",
-        ["Home", "Strategies", "Zerodha Broker API","Groww Broker API", "Dashboard","Backtest","Live Trade","Paper Trade", "Products", "Support","Logout"],
+        ["Home", "Strategies","My Account", "Zerodha Broker API","Groww Broker API", "Dashboard","Backtest","Live Trade","Paper Trade", "Products", "Support","Logout"],
         index=0,
     )
 
@@ -6687,6 +6687,107 @@ elif MENU == "Logout":
     
         st.write("---")
         st.caption("Your session is now cleared. Safe exit 👋")    
+
+#--------------------------------------------------------------------------
+elif MENU == "My Account":
+        st.title("My Account")
+        st.set_page_config(page_title="Zerodha Dashboard", layout="wide")
+        st.title("📊 Zerodha Orders & Holdings Dashboard")
+        
+        # ---------------------------
+        # Session State
+        # ---------------------------
+        if "kite" not in st.session_state:
+            st.session_state.kite = None
+        if "access_token" not in st.session_state:
+            st.session_state.access_token = None
+        
+        
+        # ---------------------------
+        # Step 1: Login Function
+        # ---------------------------
+        def login_zerodha():
+            kite = KiteConnect(api_key=API_KEY)
+            login_url = kite.login_url()
+            st.session_state.kite = kite
+            return login_url
+        
+        
+        # ---------------------------
+        # Step 2: Generate Login URL
+        # ---------------------------
+        if st.session_state.access_token is None:
+            st.subheader("🔐 Login to Zerodha")
+            login_url = login_zerodha()
+        
+            st.markdown(f"👉 **Click below to login:**")
+            st.markdown(f"[Login to Zerodha]({login_url})")
+        
+            # Input for request token
+            request_token = st.text_input("Paste the 'request_token' you get after login")
+        
+            if st.button("Generate Access Token"):
+                try:
+                    data = st.session_state.kite.generate_session(request_token, API_SECRET)
+                    st.session_state.access_token = data["access_token"]
+                    st.session_state.kite.set_access_token(st.session_state.access_token)
+                    st.success("✅ Login Successful!")
+                    st.rerun()
+        
+                except Exception as e:
+                    st.error(f"Login Failed: {e}")
+        
+        else:
+            st.success("✅ Zerodha Connected Successfully!")
+        
+        
+        # ---------------------------
+        # Show Dashboard After Login
+        # ---------------------------
+        if st.session_state.access_token:
+        
+            kite = st.session_state.kite
+        
+            st.header("📁 Dashboard")
+        
+            tab1, tab2 = st.tabs(["📄 Holdings", "📘 Orders"])
+        
+            # ---------------------------
+            # HOLDINGS TAB
+            # ---------------------------
+            with tab1:
+                st.subheader("Your Holdings")
+        
+                try:
+                    holdings = kite.holdings()
+                    df_hold = pd.DataFrame(holdings)
+        
+                    if not df_hold.empty:
+                        st.dataframe(df_hold)
+                    else:
+                        st.info("No holdings found")
+        
+                except Exception as e:
+                    st.error(f"Error fetching holdings: {e}")
+        
+            # ---------------------------
+            # ORDERS TAB
+            # ---------------------------
+            with tab2:
+                st.subheader("Order History")
+        
+                try:
+                    orders = kite.orders()
+                    df_orders = pd.DataFrame(orders)
+        
+                    if not df_orders.empty:
+                        st.dataframe(df_orders)
+                    else:
+                        st.info("No orders found")
+        
+                except Exception as e:
+                    st.error(f"Error fetching orders: {e}")    
+
 
 
 # ------------------------------------------------------------
