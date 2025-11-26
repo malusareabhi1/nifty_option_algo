@@ -6146,7 +6146,35 @@ elif MENU =="Live Trade":
     
         plt.tight_layout()
         st.pyplot(fig)
+
+    def option_chain_finder_zerodha(option_chain, spot_price, option_type="CALL", lots=1, lot_size=75):
+        """
+        Find the best matching option from Zerodha option chain for a given spot price.
+        
+        Parameters:
+            option_chain (list or DataFrame): Zerodha instrument list for options.
+            spot_price (float): Current spot price of the underlying.
+            option_type (str): "CALL" or "PUT".
+            lots (int): Number of lots to trade.
+            lot_size (int): Number of units per lot.
+        
+        Returns:
+            dict: Selected option instrument with details.
+        """
     
+        # Filter by option type
+        filtered_chain = [opt for opt in option_chain if opt['instrument_type'] == option_type.upper()]
+    
+        if not filtered_chain:
+            raise ValueError(f"No options found for type {option_type}")
+    
+        # Find the strike closest to the spot price
+        closest_option = min(filtered_chain, key=lambda x: abs(x['strike'] - spot_price))
+    
+        # Add quantity information
+        closest_option['total_quantity'] = lots * lot_size
+    
+        return closest_option
     
     
     
@@ -6179,6 +6207,8 @@ elif MENU =="Live Trade":
         ot = "CE" if signal["option_type"].upper() == "CALL" else "PE"
         # Find nearest ITM option to buy
         result = option_chain_finder(result_chain, spot_price, option_type=ot, lots=10, lot_size=75)
+        selected_option = option_chain_finder(result_chain, spot_price, option_type=ot, lots=1, lot_size=75)
+        st.write(selected_option)
        # st.write("###  find_nearest_itm_option")
         #st.write(result)
         # Convert dict to DataFrame, then transpose
@@ -6368,6 +6398,9 @@ elif MENU =="Live Trade":
         """
     except Exception as e:
             st.error(f"Order Failed: {e}")     
+
+    
+
         
 
 
