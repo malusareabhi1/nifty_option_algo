@@ -6149,32 +6149,29 @@ elif MENU =="Live Trade":
 
     def option_chain_finder_zerodha(option_chain, spot_price, option_type="CALL", lots=1, lot_size=75):
         """
-        Find the best matching option from Zerodha option chain for a given spot price.
-        
-        Parameters:
-            option_chain (list or DataFrame): Zerodha instrument list for options.
-            spot_price (float): Current spot price of the underlying.
-            option_type (str): "CALL" or "PUT".
-            lots (int): Number of lots to trade.
-            lot_size (int): Number of units per lot.
-        
-        Returns:
-            dict: Selected option instrument with details.
+        Find Zerodha option closest to spot price.
+        Works for list of dicts or DataFrame.
         """
+        import pandas as pd
     
-        # Filter by option type
-        filtered_chain = [opt for opt in option_chain if opt['instrument_type'] == option_type.upper()]
+        # Convert DataFrame to list of dicts if needed
+        if isinstance(option_chain, pd.DataFrame):
+            option_chain = option_chain.to_dict('records')
     
+        # Filter by option type safely
+        filtered_chain = [opt for opt in option_chain if opt.get('instrument_type', '').upper() == option_type.upper()]
+        
         if not filtered_chain:
             raise ValueError(f"No options found for type {option_type}")
     
-        # Find the strike closest to the spot price
+        # Find closest strike
         closest_option = min(filtered_chain, key=lambda x: abs(x['strike'] - spot_price))
     
-        # Add quantity information
+        # Add total quantity
         closest_option['total_quantity'] = lots * lot_size
     
         return closest_option
+
     
     
     
