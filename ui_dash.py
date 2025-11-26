@@ -6733,6 +6733,72 @@ elif MENU == "My Account":
         
             st.markdown("### Orders")
             st.dataframe(orders, use_container_width=True, height=200)
+            #---------------------------------------------------------------------------
+
+            # Tabs
+            tab1, tab2, tab3 = st.tabs(["👤 Account Details", "📁 Holdings", "📘 Orders"])
+        
+            # -----------------------------------------------------------
+            # TAB 1 — ACCOUNT HOLDER DETAILS
+            # -----------------------------------------------------------
+            with tab1:
+                st.subheader("👤 Account Holder Details")
+        
+                try:
+                    profile = kite.profile()  # <-- Fetch user details
+        
+                    df_profile = pd.DataFrame({
+                        "Field": ["User ID", "User Name", "Email", "Broker", "Products", "Exchanges"],
+                        "Value": [
+                            profile.get("user_id"),
+                            profile.get("user_name"),
+                            profile.get("email"),
+                            profile.get("broker"),
+                            ", ".join(profile.get("products")) if isinstance(profile.get("products"), list) else profile.get("products"),
+                            ", ".join(profile.get("exchanges")) if isinstance(profile.get("exchanges"), list) else profile.get("exchanges")
+                        ]
+                    })
+        
+                    st.table(df_profile)
+        
+                except Exception as e:
+                    st.error(f"Error fetching account details: {e}")
+        
+            # -----------------------------------------------------------
+            # TAB 2 — HOLDINGS
+            # -----------------------------------------------------------
+            with tab2:
+                st.subheader("📁 Your Holdings")
+        
+                try:
+                    holdings = kite.holdings()
+                    df_hold = pd.DataFrame(holdings)
+        
+                    if not df_hold.empty:
+                        st.dataframe(df_hold, use_container_width=True)
+                    else:
+                        st.info("No holdings found.")
+        
+                except Exception as e:
+                    st.error(f"Error fetching holdings: {e}")
+        
+            # -----------------------------------------------------------
+            # TAB 3 — ORDERS
+            # -----------------------------------------------------------
+            with tab3:
+                st.subheader("📘 Order History")
+        
+                try:
+                    orders = kite.orders()
+                    df_orders = pd.DataFrame(orders)
+        
+                    if not df_orders.empty:
+                        st.dataframe(df_orders, use_container_width=True)
+                    else:
+                        st.info("No orders found.")
+        
+                except Exception as e:
+                    st.error(f"Error fetching orders: {e}")
 
 
 # ------------------------------------------------------------
