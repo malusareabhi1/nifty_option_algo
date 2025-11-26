@@ -6344,7 +6344,7 @@ elif MENU =="Live Trade":
 
     
 # ---- PLACE ORDER IN ZERODHA ----
-   try:
+    try:
             tradingsymbol = result['option_data']['identifier'].replace("OPTIDX", "")
             # Example: NIFTY25-11-2025CE26200 (correct format)
         
