@@ -6349,7 +6349,8 @@ elif MENU =="Live Trade":
                 kite = st.session_state.kite
             tradingsymbol = result['option_data']['identifier'].replace("OPTIDX", "")
             # Example: NIFTY25-11-2025CE26200 (correct format)
-        
+            st.write(tradingsymbol)
+            """
             order = kite.place_order(
                 variety="regular",
                 exchange="NFO",
@@ -6364,7 +6365,7 @@ elif MENU =="Live Trade":
             st.write(f"**Executed:** {tradingsymbol}")
             st.write(f"**Qty:** {result['total_quantity']}")
             st.write(f"**Side:** BUY")
-        
+        """
     except Exception as e:
             st.error(f"Order Failed: {e}")     
         
