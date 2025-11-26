@@ -6692,7 +6692,7 @@ elif MENU == "Logout":
 elif MENU == "My Account":
         st.title("My Account")
         st.set_page_config(page_title="Zerodha Dashboard", layout="wide")
-        st.title("📊 Zerodha Orders & Holdings Dashboard")
+        #st.title("📊 Zerodha Orders & Holdings Dashboard")
         
         # ---------------------------
         # Session State
