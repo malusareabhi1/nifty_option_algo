@@ -6363,7 +6363,7 @@ elif MENU =="Live Trade":
             st.write(f"**Qty:** {result['total_quantity']}")
             st.write(f"**Side:** BUY")
         
-        except Exception as e:
+    except Exception as e:
             st.error(f"Order Failed: {e}")     
         
 
