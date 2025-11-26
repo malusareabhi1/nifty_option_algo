@@ -6720,22 +6720,22 @@ elif MENU == "My Account":
         
             st.subheader("Zerodha Account Overview")
         
-            colA, colB = st.columns(2)
+            #colA, colB = st.columns(2)
         
-            with colA:
-                st.metric("Total Funds", f"₹{funds:,.0f}")
+            #with colA:
+                #st.metric("Total Funds", f"₹{funds:,.0f}")
         
-            with colB:
-                st.metric("Open Positions", len(positions))
+            #with colB:
+                #st.metric("Open Positions", len(positions))
         
-            st.markdown("### Holdings")
-            st.dataframe(holdings, use_container_width=True, height=200)
+            #st.markdown("### Holdings")
+            #st.dataframe(holdings, use_container_width=True, height=200)
         
-            st.markdown("### Positions")
-            st.dataframe(positions, use_container_width=True, height=200)
+            #st.markdown("### Positions")
+            #st.dataframe(positions, use_container_width=True, height=200)
         
-            st.markdown("### Orders")
-            st.dataframe(orders, use_container_width=True, height=200)
+            #st.markdown("### Orders")
+            #st.dataframe(orders, use_container_width=True, height=200)
             #---------------------------------------------------------------------------
 
             # Tabs
