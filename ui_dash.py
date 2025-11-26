@@ -6206,8 +6206,10 @@ elif MENU =="Live Trade":
         #option_type = signal['option_type']
         ot = "CE" if signal["option_type"].upper() == "CALL" else "PE"
         # Find nearest ITM option to buy
+        chain = get_option_chain(kite, "NIFTY")
+            #st.dataframe(chain)
         result = option_chain_finder(result_chain, spot_price, option_type=ot, lots=10, lot_size=75)
-        selected_option = option_chain_finder(result_chain, spot_price, option_type=ot, lots=1, lot_size=75)
+        selected_option = option_chain_finder(chain, spot_price, option_type=ot, lots=1, lot_size=75)
         st.write(selected_option)
        # st.write("###  find_nearest_itm_option")
         #st.write(result)
@@ -6416,8 +6418,7 @@ elif MENU =="Live Trade":
             kite = st.session_state.kite
             
             st.success("Kite session connected. Ready to place trade.")
-            chain = get_option_chain(kite, "NIFTY")
-            #st.dataframe(chain)
+            
             
             #st.write("Available keys:", list(result['option_data'].index))
 
