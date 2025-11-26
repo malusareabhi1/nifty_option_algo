@@ -6343,7 +6343,7 @@ def convert_to_kite_symbol(identifier):
                 return f"{underlying}{day}{month}{year}{option_type}{strike}"
 
             # ---- PLACE ORDER IN ZERODHA ----
-            try:
+ try:
                 tradingsymbol = result['option_data']['identifier'].replace("OPTIDX", "")
                 # Example: NIFTY25-11-2025CE26200 (correct format)
                 
@@ -6362,8 +6362,8 @@ def convert_to_kite_symbol(identifier):
                 st.write(f"**Qty:** {result['total_quantity']}")
                 st.write(f"**Side:** BUY")
                 
-            except Exception as e:
-                st.error(f"Order Failed: {e}")v
+        except Exception as e:
+                st.error(f"Order Failed: {e}")v           
 
             
 
