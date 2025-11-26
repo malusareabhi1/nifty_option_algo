@@ -6249,6 +6249,8 @@ elif MENU =="Live Trade":
                 """
                 Convert NSE Option Chain identifier into Zerodha tradingsymbol.
                 Supports weekly and monthly expiry.
+                Example NSE format: OPTIDXNIFTY02-12-2025CE26100
+                Output Zerodha format: NIFTY02DEC2526100CE
                 """
             
                 identifier = identifier.replace("OPTIDX", "")
@@ -6261,15 +6263,17 @@ elif MENU =="Live Trade":
             
                 symbol, day, month, year, opt_type, strike = match.groups()
             
-                # Format expiry → DDMMMYY
+                # Format expiry → DDMMMYY (Zerodha format)
                 import datetime
                 d = datetime.datetime.strptime(f"{day}-{month}-{year}", "%d-%m-%Y")
-                expiry = d.strftime("%d%b%y").upper()
+                expiry = d.strftime("%d%b%y").upper()  # 02DEC25
             
                 # Clean strike
                 strike = strike.replace(".00", "").replace(".0", "")
             
-                return f"{symbol}{expiry}{opt_type}{strike}"
+                # Zerodha format = SYMBOL + EXPIRY + STRIKE + CE/PE
+                return f"{symbol}{expiry}{strike}{opt_type}"
+
 
 
             def convert_to_kite_symbol(identifier):
