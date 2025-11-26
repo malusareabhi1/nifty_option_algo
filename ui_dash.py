@@ -6228,7 +6228,34 @@ elif MENU =="Live Trade":
     # PLACE ORDER IF CONNECTED
     # -------------------------
     #-----------------------------------------------------------------------------------------------------------------------------------------
-            def nse_to_kite_symbol0(identifier: str) -> str:
+            
+
+    def find_kite_option(kite, symbol, expiry_date, strike, option_type):
+        """
+        Find exact Zerodha tradingsymbol from expiry + strike + CE/PE.
+        expiry_date must be datetime.date or string '2025-12-04'
+        """
+    
+        import pandas as pd
+    
+        df = get_option_chain(kite, symbol)
+    
+        # Convert expiry
+        expiry_date = pd.to_datetime(expiry_date)
+    
+        # Filter
+        row = df[
+            (df["expiry"] == expiry_date) &
+            (df["strike"] == float(strike)) &
+            (df["type"] == option_type.upper())
+        ]
+    
+        if row.empty:
+            return None
+    
+        return row.iloc[0].to_dict()
+
+    def nse_to_kite_symbol0(identifier: str) -> str:
                 """
                 Convert NSE Option Chain identifier (OPTIDX...) into Kite tradingsymbol.
                 Example:
@@ -6267,7 +6294,7 @@ elif MENU =="Live Trade":
             
                 return tradingsymbol
 
-            def nse_to_kite_symbol(identifier: str) -> str:
+def nse_to_kite_symbol(identifier: str) -> str:
                 """
                 Convert NSE Option Chain identifier into Zerodha tradingsymbol.
                 Supports weekly and monthly expiry.
@@ -6297,7 +6324,7 @@ elif MENU =="Live Trade":
 
 
 
-            def convert_to_kite_symbol(identifier):
+def convert_to_kite_symbol(identifier):
                 # Example identifier: OPTIDXNIFTY25-11-2025CE26200
                 x = identifier.replace("OPTIDX", "")  # Remove OPTIDX
                 
@@ -6336,32 +6363,7 @@ elif MENU =="Live Trade":
                 st.write(f"**Side:** BUY")
                 
             except Exception as e:
-                st.error(f"Order Failed: {e}")
-
-    def find_kite_option(kite, symbol, expiry_date, strike, option_type):
-        """
-        Find exact Zerodha tradingsymbol from expiry + strike + CE/PE.
-        expiry_date must be datetime.date or string '2025-12-04'
-        """
-    
-        import pandas as pd
-    
-        df = get_option_chain(kite, symbol)
-    
-        # Convert expiry
-        expiry_date = pd.to_datetime(expiry_date)
-    
-        # Filter
-        row = df[
-            (df["expiry"] == expiry_date) &
-            (df["strike"] == float(strike)) &
-            (df["type"] == option_type.upper())
-        ]
-    
-        if row.empty:
-            return None
-    
-        return row.iloc[0].to_dict()
+                st.error(f"Order Failed: {e}")v
 
             
 
