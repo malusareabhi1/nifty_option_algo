@@ -6294,53 +6294,53 @@ elif MENU =="Live Trade":
             
                 return tradingsymbol
 
-def nse_to_kite_symbol(identifier: str) -> str:
-                """
-                Convert NSE Option Chain identifier into Zerodha tradingsymbol.
-                Supports weekly and monthly expiry.
-                Example NSE format: OPTIDXNIFTY02-12-2025CE26100
-                Output Zerodha format: NIFTY02DEC2526100CE
-                """
-            
-                identifier = identifier.replace("OPTIDX", "")
-            
-                import re
-                pattern = r"([A-Z]+)(\d{2})-(\d{2})-(\d{4})(CE|PE)([\d\.]+)"
-                match = re.match(pattern, identifier)
-                if not match:
-                    return None
-            
-                symbol, day, month, year, opt_type, strike = match.groups()
-            
-                import datetime
-                d = datetime.datetime.strptime(f"{day}-{month}-{year}", "%d-%m-%Y")
-                expiry = d.strftime("%d%b%y").upper()  # 02DEC25
-            
-                strike = strike.replace(".00", "").replace(".0", "")
-            
-                # Zerodha format = SYMBOL + EXPIRY + STRIKE + CE/PE
-                return f"{symbol}{expiry}{strike}{opt_type}"
-
-
-
-
-def convert_to_kite_symbol(identifier):
-                # Example identifier: OPTIDXNIFTY25-11-2025CE26200
-                x = identifier.replace("OPTIDX", "")  # Remove OPTIDX
+    def nse_to_kite_symbol(identifier: str) -> str:
+                    """
+                    Convert NSE Option Chain identifier into Zerodha tradingsymbol.
+                    Supports weekly and monthly expiry.
+                    Example NSE format: OPTIDXNIFTY02-12-2025CE26100
+                    Output Zerodha format: NIFTY02DEC2526100CE
+                    """
                 
-                # Convert 25-11-2025 → 25NOV25
-                parts = x.split("-")
-                day = parts[0][-2:]
-                month = datetime.datetime.strptime(parts[1], "%m").strftime("%b").upper()
-                year = parts[2][:2]
-            
-                # Final:
-                # NIFTY + 25NOV25 + CE + strike
-                underlying = x[:5]
-                strike = x[-5:]
-                option_type = x[-7:-5]
-    
-                return f"{underlying}{day}{month}{year}{option_type}{strike}"
+                    identifier = identifier.replace("OPTIDX", "")
+                
+                    import re
+                    pattern = r"([A-Z]+)(\d{2})-(\d{2})-(\d{4})(CE|PE)([\d\.]+)"
+                    match = re.match(pattern, identifier)
+                    if not match:
+                        return None
+                
+                    symbol, day, month, year, opt_type, strike = match.groups()
+                
+                    import datetime
+                    d = datetime.datetime.strptime(f"{day}-{month}-{year}", "%d-%m-%Y")
+                    expiry = d.strftime("%d%b%y").upper()  # 02DEC25
+                
+                    strike = strike.replace(".00", "").replace(".0", "")
+                
+                    # Zerodha format = SYMBOL + EXPIRY + STRIKE + CE/PE
+                    return f"{symbol}{expiry}{strike}{opt_type}"
+
+
+
+
+    def convert_to_kite_symbol(identifier):
+                    # Example identifier: OPTIDXNIFTY25-11-2025CE26200
+                    x = identifier.replace("OPTIDX", "")  # Remove OPTIDX
+                    
+                    # Convert 25-11-2025 → 25NOV25
+                    parts = x.split("-")
+                    day = parts[0][-2:]
+                    month = datetime.datetime.strptime(parts[1], "%m").strftime("%b").upper()
+                    year = parts[2][:2]
+                
+                    # Final:
+                    # NIFTY + 25NOV25 + CE + strike
+                    underlying = x[:5]
+                    strike = x[-5:]
+                    option_type = x[-7:-5]
+        
+                    return f"{underlying}{day}{month}{year}{option_type}{strike}"
 
         # ---- PLACE ORDER IN ZERODHA ----
         try:
