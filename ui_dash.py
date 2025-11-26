@@ -6342,8 +6342,9 @@ elif MENU =="Live Trade":
         
                     return f"{underlying}{day}{month}{year}{option_type}{strike}"
 
-        # ---- PLACE ORDER IN ZERODHA ----
-        try:
+    
+# ---- PLACE ORDER IN ZERODHA ----
+   try:
             tradingsymbol = result['option_data']['identifier'].replace("OPTIDX", "")
             # Example: NIFTY25-11-2025CE26200 (correct format)
         
@@ -6363,7 +6364,8 @@ elif MENU =="Live Trade":
             st.write(f"**Side:** BUY")
         
         except Exception as e:
-            st.error(f"Order Failed: {e}")
+            st.error(f"Order Failed: {e}")     
+        
 
 
             
