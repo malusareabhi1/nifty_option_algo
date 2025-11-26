@@ -6322,6 +6322,7 @@ elif MENU =="Live Trade":
  #-------------------------------------------------------------------------------------------------------------------------------------------------           
             # Extract option symbol & quantity
             #option_symbol = result['option_data']['tradingsymbol']
+            st.write(result['option_data']['tradingsymbol'])
             option_symbol = nse_to_kite_symbol(result['option_data']['identifier'])
 
             qty = result['total_quantity']
